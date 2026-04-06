@@ -13,25 +13,25 @@ module ASRFacet
     end
 
     def info(message)
-      write("[*] #{message}", :blue)
+      write("[*] #{message}", ASRFacet::Colors.terminal(:primary))
     rescue StandardError
       nil
     end
 
     def warn(message)
-      write("[!] #{message}", :yellow)
+      write("[!] #{message}", ASRFacet::Colors.terminal(:warning))
     rescue StandardError
       nil
     end
 
     def error(message)
-      write("[-] #{message}", :red)
+      write("[-] #{message}", ASRFacet::Colors.terminal(:danger))
     rescue StandardError
       nil
     end
 
     def success(message)
-      write("[+] #{message}", :green)
+      write("[+] #{message}", ASRFacet::Colors.terminal(:success))
     rescue StandardError
       nil
     end

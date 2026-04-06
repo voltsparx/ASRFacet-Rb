@@ -5,7 +5,21 @@ require "time"
 module ASRFacet
   class EventBus
     EVENT_TYPES = %i[
-      dns_name ip_address open_port http_response subdomain ssl_cert finding error
+      domain
+      subdomain
+      dns_record
+      ip_address
+      open_port
+      http_response
+      ssl_cert
+      finding
+      error
+      asn
+      crawl
+      js_endpoint
+      correlation
+      service
+      stage
     ].freeze
 
     def initialize
@@ -25,7 +39,7 @@ module ASRFacet
       nil
     end
 
-    def emit(event_type, data)
+    def emit(event_type, data, dispatch_now: false)
       return nil unless EVENT_TYPES.include?(event_type.to_sym)
 
       event = {
@@ -33,7 +47,11 @@ module ASRFacet
         data: data,
         timestamp: Time.now.iso8601
       }
-      @queue << event
+      if dispatch_now
+        dispatch(event)
+      else
+        @queue << event
+      end
       event
     rescue StandardError
       nil

@@ -1,4 +1,6 @@
 # Part of ASRFacet-Rb — authorized testing only
+require "colorize"
+
 module ASRFacet
   module UI
     module Banner
@@ -15,10 +17,10 @@ module ASRFacet
       LEGAL_LINE = "Authorized testing only.".freeze
 
       def self.print
-        ASRFacet::Core::ThreadSafe.puts(BANNER.cyan)
-        ASRFacet::Core::ThreadSafe.puts(VERSION_LINE.white)
-        ASRFacet::Core::ThreadSafe.puts(TAGLINE.white)
-        ASRFacet::Core::ThreadSafe.puts(LEGAL_LINE.yellow)
+        ASRFacet::Core::ThreadSafe.puts(BANNER.colorize(ASRFacet::Colors.terminal(:primary)))
+        ASRFacet::Core::ThreadSafe.puts(VERSION_LINE.colorize(ASRFacet::Colors.terminal(:violet)))
+        ASRFacet::Core::ThreadSafe.puts(TAGLINE.colorize(ASRFacet::Colors.terminal(:info)))
+        ASRFacet::Core::ThreadSafe.puts(LEGAL_LINE.colorize(ASRFacet::Colors.terminal(:warning)))
       rescue StandardError
         nil
       end

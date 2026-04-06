@@ -66,7 +66,7 @@ module ASRFacet
           :open
         rescue IO::WaitWritable, Errno::EINPROGRESS
           writable = IO.select(nil, [socket], nil, timeout)
-          return :filtered unless writable
+          return timeout_select_result(socket) unless writable
 
           error_code = socket.getsockopt(Socket::SOL_SOCKET, Socket::SO_ERROR).int
           error_code.zero? ? :open : closed_or_filtered(error_code)
@@ -155,6 +155,17 @@ module ASRFacet
         :closed
       rescue StandardError
         :closed
+      end
+
+      def timeout_select_result(socket)
+        return :filtered unless socket.is_a?(Socket)
+
+        error_code = socket.getsockopt(Socket::SOL_SOCKET, Socket::SO_ERROR).int
+        return :closed if error_code.zero?
+
+        closed_or_filtered(error_code)
+      rescue StandardError
+        :filtered
       end
 
       def detect_service(port, banner)

@@ -19,32 +19,32 @@ module ASRFacet
             <meta name="viewport" content="width=device-width, initial-scale=1">
             <title>ASRFacet-Rb Report</title>
             <style>
-              :root { color-scheme: light; --ink: #1f1a17; --muted: #5d5248; --paper: #fffdf9; --wash: #f4efe6; --accent: #1f3a5f; --line: #ddcfbb; --critical: #a2201a; --high: #d9480f; --medium: #d4a017; --low: #1d4ed8; --info: #6b7280; --good: #2f9e44; --warn: #e67700; --bad: #c92a2a; }
+              :root { color-scheme: light; #{ASRFacet::Colors.css_variables} --accent: var(--primary); --critical: var(--danger); --good: var(--success); --warn: var(--orange); --bad: var(--danger); }
               * { box-sizing: border-box; }
-              body { margin: 0; font-family: Georgia, "Times New Roman", serif; background: linear-gradient(180deg, var(--wash) 0%, #faf8f4 100%); color: var(--ink); }
-              header { padding: 2rem; background: var(--accent); color: #fff7e8; }
+              body { margin: 0; font-family: Georgia, "Times New Roman", serif; background: linear-gradient(180deg, var(--wash) 0%, var(--paper) 100%); color: var(--ink); }
+              header { padding: 2rem; background: linear-gradient(135deg, var(--primary) 0%, var(--violet) 100%); color: var(--white); }
               header h1 { margin: 0 0 0.5rem; font-size: 2rem; letter-spacing: 0.04em; }
-              header p { margin: 0.35rem 0; color: #efe3d0; }
+              header p { margin: 0.35rem 0; color: var(--white); }
               main { max-width: 1180px; margin: 0 auto; padding: 1.5rem; }
               details { background: rgba(255,255,255,0.9); border: 1px solid var(--line); border-radius: 14px; padding: 1rem 1.25rem; margin-bottom: 1rem; box-shadow: 0 10px 30px rgba(31,26,23,0.08); }
-              summary { cursor: pointer; font-weight: 700; }
+              summary { cursor: pointer; font-weight: 700; color: var(--primary); }
               table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
-              th, td { text-align: left; padding: 0.65rem; border-bottom: 1px solid #e7dbc7; vertical-align: top; }
-              th { background: #f5ecdf; }
+              th, td { text-align: left; padding: 0.65rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+              th { background: var(--soft); }
               .finding-grid, .score-grid { display: grid; gap: 1rem; margin-top: 1rem; }
-              .finding, .score-card { border-left: 6px solid #6c757d; padding: 1rem; border-radius: 12px; background: #fff; }
-              .finding.critical { border-color: var(--critical); }
+              .finding, .score-card { border-left: 6px solid var(--muted); padding: 1rem; border-radius: 12px; background: var(--panel); }
+              .finding.critical { border-color: var(--danger); }
               .finding.high { border-color: var(--high); }
-              .finding.medium { border-color: var(--medium); }
-              .finding.low { border-color: var(--low); }
-              .finding.info { border-color: var(--info); }
-              .score-card { border-color: var(--accent); }
-              .pill { display: inline-block; margin: 0.2rem 0.4rem 0 0; padding: 0.15rem 0.55rem; background: #f5ecdf; border-radius: 999px; font-size: 0.9rem; }
+              .finding.medium { border-color: var(--warning); }
+              .finding.low { border-color: var(--info); }
+              .finding.info { border-color: var(--muted); }
+              .score-card { border-color: var(--violet); }
+              .pill { display: inline-block; margin: 0.2rem 0.4rem 0 0; padding: 0.15rem 0.55rem; background: var(--soft); border-radius: 999px; font-size: 0.9rem; color: var(--violet); }
               .meta { color: var(--muted); font-size: 0.95rem; }
               footer { text-align: center; padding: 1.5rem; color: var(--muted); }
-              button.toggle-all { margin-top: 1rem; background: #fff7e8; border: 1px solid #e7dbc7; border-radius: 999px; padding: 0.55rem 1rem; cursor: pointer; }
+              button.toggle-all { margin-top: 1rem; background: var(--white); border: 1px solid var(--line); border-radius: 999px; padding: 0.55rem 1rem; cursor: pointer; color: var(--primary); }
               code, pre { font-family: Consolas, monospace; }
-              code { background: #f5ecdf; padding: 0.1rem 0.3rem; border-radius: 4px; }
+              code { background: var(--soft); padding: 0.1rem 0.3rem; border-radius: 4px; }
               pre { white-space: pre-wrap; word-break: break-word; }
               .change.new { color: var(--good); }
               .change.removed { color: var(--bad); }
@@ -143,16 +143,15 @@ module ASRFacet
       end
 
       def section_knowledge_graph(graph)
-        graph_data = symbolize_keys(graph || {})
+        normalized = graph.respond_to?(:to_h) ? graph.to_h : graph
+        graph_data = symbolize_keys(normalized || {})
         return "" if graph_data.empty?
 
-        rows = Array(graph_data[:edges]).map do |edge|
-          [edge[:from], edge[:relation], edge[:to]]
-        end
+        rows = Array(graph_data[:edges]).map { |edge| [edge[:from], edge[:relation], edge[:to]] }
         rows = [["(none)", "(none)", "(none)"]] if rows.empty?
         node_rows = Array(graph_data[:nodes]).map { |node| [node[:id], node[:type], JSON.generate(node[:data] || {})] }
         node_rows = [["(none)", "(none)", "(none)"]] if node_rows.empty?
-        body = "#{section_table_inner(["Node", "Type", "Data"], node_rows)}#{section_table_inner(["From", "Relation", "To"], rows)}"
+        body = "#{section_table_inner(['Node', 'Type', 'Data'], node_rows)}#{section_table_inner(['From', 'Relation', 'To'], rows)}"
         %(<details><summary>Knowledge Graph</summary><h3>Nodes</h3>#{body}</details>)
       rescue StandardError
         ""
@@ -167,8 +166,11 @@ module ASRFacet
         body = []
         body << "<p><strong>JS files scanned:</strong> #{escape(data[:js_files_scanned])}</p>"
         body << "<p><strong>Potential secrets:</strong> #{escape(data[:potential_secrets])}</p>"
-        body << section_table_inner(["Endpoint"], rows)
-        body << section_findings(Array(data[:findings]).map { |finding| symbolize_keys(finding) }.map { |finding| finding })
+        body << section_table_inner(['Endpoint'], rows)
+        unless Array(data[:findings]).empty?
+          cards = Array(data[:findings]).map { |finding| finding_card(symbolize_keys(finding)) }.join
+          body << %(<div class="finding-grid">#{cards}</div>)
+        end
         %(<details><summary>JavaScript Endpoints</summary>#{body.join}</details>)
       rescue StandardError
         ""

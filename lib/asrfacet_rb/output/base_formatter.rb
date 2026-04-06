@@ -30,6 +30,7 @@ module ASRFacet::Output
     end
 
     def normalize_store(store)
+      return {} if store.nil?
       return symbolize_keys(store.to_h) if store.respond_to?(:to_h)
 
       symbolize_keys(store)

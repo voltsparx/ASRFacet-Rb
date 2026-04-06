@@ -7,7 +7,7 @@ module ASRFacet::Output
     def format(results)
       payload = payload_for(results)
       JSON.pretty_generate(payload[:store].merge(
-                             graph: payload[:graph],
+                             graph: payload[:graph].respond_to?(:to_h) ? payload[:graph].to_h : payload[:graph],
                              diff: payload[:diff],
                              top_assets: payload[:top_assets],
                              js_endpoints: payload[:js_endpoints],

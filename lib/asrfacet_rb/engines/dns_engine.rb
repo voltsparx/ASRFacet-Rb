@@ -17,13 +17,14 @@ module ASRFacet
         target = domain.to_s
         records = lookup_records(target)
         wildcard_ips = dns_lookup("wildcard-#{rand(100_000)}.#{target}")
+        status = records.values.flatten.empty? ? :failed : :success
         {
           engine: "dns_engine",
           target: target,
           timestamp: Time.now.iso8601,
-          status: records.values.flatten.empty? ? :failed : :success,
+          status: status,
           data: records.merge(wildcard: !wildcard_ips.empty?, wildcard_ips: wildcard_ips, zone_transfer: attempt_zone_transfer(target)),
-          errors: []
+          errors: status == :failed ? ["No DNS records found"] : []
         }
       rescue StandardError => e
         {

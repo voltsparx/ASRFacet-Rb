@@ -29,7 +29,7 @@ module ASRFacet
         end
 
         def print_status(msg)
-          line = "[*] #{msg}".blue
+          line = "[*] #{msg}".colorize(ASRFacet::Colors.terminal(:primary))
           puts(line)
           line
         rescue StandardError
@@ -37,7 +37,7 @@ module ASRFacet
         end
 
         def print_good(msg)
-          line = "[+] #{msg}".green
+          line = "[+] #{msg}".colorize(ASRFacet::Colors.terminal(:success))
           puts(line)
           line
         rescue StandardError
@@ -45,7 +45,7 @@ module ASRFacet
         end
 
         def print_error(msg)
-          line = "[-] #{msg}".red
+          line = "[-] #{msg}".colorize(ASRFacet::Colors.terminal(:danger))
           puts(line)
           line
         rescue StandardError
@@ -53,7 +53,7 @@ module ASRFacet
         end
 
         def print_warning(msg)
-          line = "[!] #{msg}".yellow
+          line = "[!] #{msg}".colorize(ASRFacet::Colors.terminal(:warning))
           puts(line)
           line
         rescue StandardError

@@ -25,7 +25,7 @@ RSpec.describe ASRFacet::Engines::PortEngine do
     fake_socket = instance_double(Socket)
     allow(Socket).to receive(:new).and_return(fake_socket)
     allow(Socket).to receive(:sockaddr_in).and_return("sockaddr")
-    allow(fake_socket).to receive(:connect_nonblock).and_raise(IO::WaitWritable)
+    allow(fake_socket).to receive(:connect_nonblock).and_raise(Errno::EINPROGRESS)
     allow(fake_socket).to receive(:getsockopt)
     allow(fake_socket).to receive(:close)
     allow(IO).to receive(:select).and_return(nil)

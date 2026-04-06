@@ -65,7 +65,7 @@ module ASRFacet
         response = http.request(request)
         if response.is_a?(Net::HTTPRedirection) && merged_opts[:follow_redirects] && redirects_left.positive?
           location = response["location"].to_s
-          return nil if location.empty?
+          return response if location.empty?
 
           return request(
             method,

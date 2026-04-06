@@ -5,7 +5,7 @@ RSpec.describe ASRFacet::Engines::HttpEngine do
   let(:engine) { described_class.new }
 
   before do
-    stub_request(:get, "https://example.com").to_return(
+    stub_request(:get, "https://example.com/").to_return(
       status: 200,
       body: <<~HTML,
         <html>
@@ -22,7 +22,7 @@ RSpec.describe ASRFacet::Engines::HttpEngine do
       }
     )
 
-    stub_request(:get, %r{\Ahttps://example\.com/}).to_return(status: 404, body: "Not Found")
+    stub_request(:get, %r{\Ahttps://example\.com/.+}).to_return(status: 404, body: "Not Found")
     stub_request(:get, "https://example.com/.git/HEAD").to_return(status: 200, body: "ref: refs/heads/main")
     stub_request(:get, "https://example.com/admin").to_return(status: 302, body: "")
   end

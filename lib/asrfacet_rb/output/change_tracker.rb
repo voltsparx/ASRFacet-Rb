@@ -29,10 +29,10 @@ module ASRFacet
       def format_cli(diff)
         data = symbolize_keys(diff)
         [
-          color_block("NEW ASSETS", data[:new_subdomains], "32"),
-          color_block("REMOVED ASSETS", data[:removed_subdomains], "31"),
-          color_block("NEW FINDINGS", Array(data[:new_findings]).map { |finding| "#{finding[:host]} - #{finding[:title]}" }, "33"),
-          color_block("PORT CHANGES", Array(data[:new_open_ports]).map { |port| "#{port[:host]}:#{port[:port]} (#{port[:service]})" }, "33")
+          color_block("NEW ASSETS", data[:new_subdomains], ASRFacet::Colors.terminal(:success)),
+          color_block("REMOVED ASSETS", data[:removed_subdomains], ASRFacet::Colors.terminal(:danger)),
+          color_block("NEW FINDINGS", Array(data[:new_findings]).map { |finding| "#{finding[:host]} - #{finding[:title]}" }, ASRFacet::Colors.terminal(:warning)),
+          color_block("PORT CHANGES", Array(data[:new_open_ports]).map { |port| "#{port[:host]}:#{port[:port]} (#{port[:service]})" }, ASRFacet::Colors.terminal(:info))
         ].join("\n\n")
       rescue StandardError
         ""
@@ -53,12 +53,13 @@ module ASRFacet
             <meta charset="utf-8">
             <title>ASRFacet-Rb Change Report</title>
             <style>
-              body { font-family: Georgia, serif; background: #f7f1e8; color: #221b18; margin: 0; padding: 2rem; }
-              section { background: #ffffff; border-radius: 14px; padding: 1rem 1.25rem; margin-bottom: 1rem; box-shadow: 0 8px 24px rgba(34,27,24,0.08); }
+              :root { #{ASRFacet::Colors.css_variables} }
+              body { font-family: Georgia, serif; background: var(--wash); color: var(--ink); margin: 0; padding: 2rem; }
+              section { background: var(--panel); border-radius: 14px; padding: 1rem 1.25rem; margin-bottom: 1rem; box-shadow: 0 8px 24px rgba(34,27,24,0.08); }
               h1, h2 { margin-top: 0; }
-              .new { border-left: 6px solid #2f9e44; }
-              .removed { border-left: 6px solid #c92a2a; }
-              .changed { border-left: 6px solid #e67700; }
+              .new { border-left: 6px solid var(--success); }
+              .removed { border-left: 6px solid var(--danger); }
+              .changed { border-left: 6px solid var(--orange); }
               ul { margin: 0; padding-left: 1.2rem; }
             </style>
           </head>
@@ -79,7 +80,7 @@ module ASRFacet
 
       def color_block(title, lines, color)
         body = Array(lines).empty? ? "(none)" : Array(lines).map(&:to_s).join("\n")
-        "\e[#{color}m#{title}\e[0m\n#{body}"
+        "#{title.to_s.colorize(color)}\n#{body}"
       rescue StandardError
         ""
       end

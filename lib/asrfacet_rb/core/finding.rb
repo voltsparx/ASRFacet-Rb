@@ -11,11 +11,11 @@ module ASRFacet
       INFO = :info
 
       COLORS = {
-        critical: :red,
-        high: :light_red,
-        medium: :yellow,
-        low: :blue,
-        info: :white
+        critical: ASRFacet::Colors.severity_terminal(:critical),
+        high: ASRFacet::Colors.severity_terminal(:high),
+        medium: ASRFacet::Colors.severity_terminal(:medium),
+        low: ASRFacet::Colors.severity_terminal(:low),
+        info: ASRFacet::Colors.severity_terminal(:info)
       }.freeze
 
       ORDER = [CRITICAL, HIGH, MEDIUM, LOW, INFO].freeze

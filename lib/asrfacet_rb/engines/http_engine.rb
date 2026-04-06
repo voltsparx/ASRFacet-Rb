@@ -85,6 +85,7 @@ module ASRFacet
           return {
             host: host,
             url: url,
+            status: response.code.to_i,
             status_code: response.code.to_i,
             title: extract_title(body),
             headers: headers,
@@ -155,7 +156,8 @@ module ASRFacet
 
       def extract_security_headers(headers)
         SECURITY_HEADERS.each_with_object({}) do |header, memo|
-          memo[header] = headers[header.downcase] || headers[header]
+          value = headers[header.downcase] || headers[header]
+          memo[header] = value.to_s.empty? ? nil : value
         end
       rescue StandardError
         {}
