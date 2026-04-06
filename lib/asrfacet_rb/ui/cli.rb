@@ -4,6 +4,8 @@ require "thor"
 module ASRFacet
   module UI
     class CLI < Thor
+      default_task :help
+
       class_option :output, aliases: "-o", type: :string, desc: "Output file path"
       class_option :format, aliases: "-f", type: :string, default: "cli", enum: %w[cli json html txt], desc: "Output format"
       class_option :verbose, aliases: "-v", type: :boolean, default: false, desc: "Verbose output"
@@ -14,6 +16,20 @@ module ASRFacet
       class_option :monitor, type: :boolean, default: false, desc: "Show changes since the last scan"
       class_option :top, type: :numeric, default: 5, desc: "Top N scored assets to print"
       class_option :memory, type: :boolean, default: false, desc: "Skip subdomains already confirmed in previous scans"
+      class_option :console, aliases: "-C", type: :boolean, default: false, desc: "Launch the interactive console shell"
+
+      class << self
+        def start(given_args = ARGV, config = {})
+          args = Array(given_args).dup
+          if args.delete("--console") || args.delete("-C")
+            return super(["console"], config)
+          end
+
+          super(args, config)
+        rescue StandardError
+          super(given_args, config)
+        end
+      end
 
       desc "scan DOMAIN", "Run a full reconnaissance pipeline"
       method_option :ports, aliases: "-p", type: :string, desc: "Port range (top100, top1000, 1-1000, 80,443)"
@@ -21,7 +37,6 @@ module ASRFacet
       method_option :wordlist, aliases: "-w", type: :string, desc: "Wordlist path"
       method_option :shodan_key, type: :string, desc: "Shodan API key"
       def scan(domain)
-        ASRFacet::UI::Banner.print
         result = if options[:passive_only]
                    passive_payload(domain)
                  else
@@ -33,8 +48,8 @@ module ASRFacet
       end
 
       desc "passive DOMAIN", "Run passive enumeration only"
+      method_option :shodan_key, type: :string, desc: "Shodan API key"
       def passive(domain)
-        ASRFacet::UI::Banner.print
         output_results(passive_payload(domain), domain)
       rescue StandardError => e
         ASRFacet::Core::ThreadSafe.print_error(e.message)
@@ -43,7 +58,6 @@ module ASRFacet
       desc "ports HOST", "Run a port scan only"
       method_option :ports, aliases: "-p", type: :string, desc: "Port range"
       def ports(host)
-        ASRFacet::UI::Banner.print
         store = ASRFacet::ResultStore.new
         ASRFacet::Engines::PortEngine.new.scan(host, options[:ports] || "top100", workers: options[:threads]).each do |entry|
           store.add(:open_ports, entry)
@@ -55,7 +69,6 @@ module ASRFacet
 
       desc "dns DOMAIN", "Run DNS collection only"
       def dns(domain)
-        ASRFacet::UI::Banner.print
         store = ASRFacet::ResultStore.new
         dns_result = ASRFacet::Engines::DnsEngine.new.run(domain)
         dns_result[:data].each do |record_type, values|
@@ -73,6 +86,49 @@ module ASRFacet
       desc "interactive", "Launch the guided interactive interface"
       def interactive
         ASRFacet::UI::Interactive.new.start
+      rescue StandardError => e
+        ASRFacet::Core::ThreadSafe.print_error(e.message)
+      end
+
+      desc "console", "Launch the persistent interactive console shell"
+      def console
+        ASRFacet::UI::Console.new.start
+      rescue StandardError => e
+        ASRFacet::Core::ThreadSafe.print_error(e.message)
+      end
+
+      desc "help [TOPIC]", "Show the main help menu or explain a specific topic"
+      def help(topic = nil)
+        if topic.to_s.strip.empty?
+          puts(ASRFacet::UI::HelpCatalog.menu)
+        else
+          explain(topic)
+        end
+      rescue StandardError => e
+        ASRFacet::Core::ThreadSafe.print_error(e.message)
+      end
+
+      desc "explain TOPIC", "Explain a command, flag, or workflow topic"
+      def explain(topic)
+        explanation = ASRFacet::UI::HelpCatalog.explain(topic)
+        explanation ||= ASRFacet::UI::Manual.plain_text(topic)
+        if explanation.to_s.empty?
+          ASRFacet::Core::ThreadSafe.print_warning("No detailed help for `#{topic}`. Try `help` to see available topics.")
+        else
+          puts(explanation)
+        end
+      rescue StandardError => e
+        ASRFacet::Core::ThreadSafe.print_error(e.message)
+      end
+
+      desc "manual [SECTION]", "Print the framework manual or a specific manual section"
+      def manual(section = nil)
+        text = ASRFacet::UI::Manual.plain_text(section)
+        if text.to_s.empty?
+          ASRFacet::Core::ThreadSafe.print_warning("No manual section for `#{section}`.")
+        else
+          puts(text)
+        end
       rescue StandardError => e
         ASRFacet::Core::ThreadSafe.print_error(e.message)
       end

@@ -1,0 +1,123 @@
+.TH ASRFACET-RB 1 "April 2026" "ASRFacet-Rb 0.1.0" "User Commands"
+.SH NAME
+asrfacet-rb \- authorized attack surface reconnaissance and security mapping framework
+.SH SYNOPSIS
+.B asrfacet-rb
+<command> [arguments] [options]
+.br
+.B asrfacet-rb
+--console
+.br
+.B asrfacet-rb
+manual [section]
+.SH DESCRIPTION
+ASRFacet-Rb is a Ruby 3.2+ framework for authorized attack surface reconnaissance.
+It combines passive discovery, recursive DNS and certificate enrichment, service mapping,
+HTTP probing, crawling, JavaScript endpoint mining, asset scoring, monitoring, and
+lightweight finding generation.
+.PP
+The framework is intended only for systems you own or have explicit written permission
+to test. Scope control, recon memory, and educational self-documentation are built in.
+.SH COMMANDS
+.TP
+.B scan DOMAIN
+Run the full reconnaissance pipeline.
+.TP
+.B passive DOMAIN
+Run passive discovery only.
+.TP
+.B ports HOST
+Run a focused TCP port scan.
+.TP
+.B dns DOMAIN
+Collect DNS records only.
+.TP
+.B console
+Launch the framework console.
+.TP
+.B interactive
+Launch the standalone guided workflow.
+.TP
+.B help [topic], explain TOPIC, manual [section]
+Show built-in documentation.
+.SH CONSOLE
+The console is the richest operator interface and supports framework-style commands such as:
+.IP
+show commands
+.br
+show options
+.br
+show workflow
+.br
+show config
+.br
+show learning
+.br
+info recon
+.br
+man
+.br
+wizard
+.PP
+Normal framework commands can also be run directly inside the console.
+.SH WIZARD
+The console-only wizard asks what you are trying to achieve, how careful you want to be,
+what format you want, and whether monitoring or memory should be enabled.
+It then recommends a concrete command and can execute it for you.
+.SH RECON BASICS
+Passive reconnaissance uses third-party data without touching the target.
+Active reconnaissance confirms assets by making requests or opening connections.
+Effective attack surface mapping combines both approaches, then ranks the results so
+deeper testing focuses on the most valuable assets first.
+.SH CONFIGURATION
+Project defaults are stored in
+.I config/default.yml
+and user overrides are stored in
+.I ~/.asrfacet_rb/config.yml .
+Common settings include timeouts, thread counts, wordlists, output preferences, and HTTP behavior.
+.SH OUTPUTS
+.TP
+.B cli
+Terminal-friendly tables and summaries.
+.TP
+.B json
+Machine-readable output.
+.TP
+.B html
+Offline report with findings, graph relationships, and top targets.
+.TP
+.B txt
+Plain-text export.
+.SH FILES
+.TP
+.I bin/asrfacet-rb
+Primary executable.
+.TP
+.I config/default.yml
+Project defaults.
+.TP
+.I ~/.asrfacet_rb/config.yml
+User configuration overrides.
+.TP
+.I ~/.asrfacet_rb/memory/
+Per-target scan memory.
+.TP
+.I man/asrfacet-rb.1
+Manual page source.
+.SH EXAMPLES
+.TP
+.B asrfacet-rb scan example.com --format html --output report.html
+Run a full scan and save an HTML report.
+.TP
+.B asrfacet-rb passive example.com --format json --output passive.json
+Run passive discovery only and save JSON output.
+.TP
+.B asrfacet-rb --console
+Open the framework console.
+.SH SAFETY
+Only use ASRFacet-Rb on systems you own or have explicit written permission to test.
+Use scope controls and exclusions to keep the target boundary explicit.
+.SH SEE ALSO
+.B asrfacet-rb manual
+.SH AUTHOR
+ASRFacet-Rb contributors.

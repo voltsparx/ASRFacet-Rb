@@ -1,0 +1,13 @@
+# Part of ASRFacet-Rb — authorized testing only
+# Placeholder for an expanded subdomain wordlist.
+# Replace this file with a larger engagement-approved list when needed.
+www
+mail
+api
+dev
+staging
+admin
+portal
+vpn
+secure
+cdn

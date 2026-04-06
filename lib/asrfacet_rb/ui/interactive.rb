@@ -12,8 +12,6 @@ module ASRFacet
       end
 
       def start
-        ASRFacet::UI::Banner.print
-
         target = @prompt.ask("Target domain:") { |q| q.required(true) }
         mode = @prompt.select("Scan mode:", ["Full", "Passive", "Ports", "DNS"])
         port_range = nil

@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 # Part of ASRFacet-Rb — authorized testing only
-# Note: make this executable with chmod +x bin/asrfacet on Unix-like systems.
+# Note: make this executable with chmod +x bin/asrfacet-rb on Unix-like systems.
 $LOAD_PATH.unshift File.join(__dir__, "..", "lib")
 require "asrfacet_rb"
 

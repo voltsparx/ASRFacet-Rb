@@ -13,9 +13,9 @@ Gem::Specification.new do |spec|
   spec.license = "Nonstandard"
   spec.required_ruby_version = ">= 3.2"
 
-  spec.files = Dir.glob("{bin,config,lib,spec}/**/*").select { |path| File.file?(path) } + %w[Gemfile README.md LICENSE]
+  spec.files = Dir.glob("{bin,config,lib,man,spec,wordlists}/**/*").select { |path| File.file?(path) } + %w[Gemfile README.md LICENSE]
   spec.bindir = "bin"
-  spec.executables = %w[asrfacet asrfacet-rb]
+  spec.executables = %w[asrfacet-rb]
   spec.require_paths = ["lib"]
   spec.metadata = {
     "source_code_uri" => ASRFacet::Metadata::REPO_URL,
