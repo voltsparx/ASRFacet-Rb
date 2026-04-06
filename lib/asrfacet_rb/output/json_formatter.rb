@@ -5,7 +5,16 @@ require "time"
 module ASRFacet::Output
   class JsonFormatter < BaseFormatter
     def format(results)
-      JSON.pretty_generate(results.to_h.merge(generated_at: Time.now.iso8601))
+      payload = payload_for(results)
+      JSON.pretty_generate(payload[:store].merge(
+                             graph: payload[:graph],
+                             diff: payload[:diff],
+                             top_assets: payload[:top_assets],
+                             js_endpoints: payload[:js_endpoints],
+                             correlations: payload[:correlations],
+                             probabilistic_subdomains: payload[:probabilistic_subdomains],
+                             generated_at: Time.now.iso8601
+                           ).compact)
     rescue StandardError
       JSON.pretty_generate(generated_at: Time.now.iso8601)
     end

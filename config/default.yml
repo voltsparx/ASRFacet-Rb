@@ -1,0 +1,24 @@
+# Part of ASRFacet-Rb — authorized testing only
+threads:
+  default: 50
+  dns: 100
+  http: 50
+  paths: 20
+  dir: 40
+timeouts:
+  dns: 2
+  port: 1.5
+  http: 5
+  ssl: 5
+wordlists:
+  subdomain: wordlists/subdomains_small.txt
+  paths: wordlists/paths_common.txt
+output:
+  directory: output
+  format: cli
+http:
+  user_agent: ASRFacet-Rb/0.1.0
+  max_retries: 3
+  follow_redirects: true
+  max_redirects: 5
+  verify_ssl: false

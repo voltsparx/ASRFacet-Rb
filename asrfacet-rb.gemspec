@@ -14,7 +14,7 @@ Gem::Specification.new do |spec|
 
   spec.files = Dir.glob("{bin,lib}/**/*").select { |path| File.file?(path) }
   spec.bindir = "bin"
-  spec.executables = ["asrfacet"]
+  spec.executables = ["asrfacet-rb"]
   spec.require_paths = ["lib"]
 
   spec.add_runtime_dependency "thor"

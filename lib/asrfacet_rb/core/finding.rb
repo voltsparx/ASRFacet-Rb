@@ -103,7 +103,7 @@ module ASRFacet
         )
       end
 
-      def missing_header(host, header)
+      def missing_security_header(host, header)
         build_finding(
           title: "Missing Security Header",
           severity: Severity::MEDIUM,
@@ -113,6 +113,8 @@ module ASRFacet
           evidence: "Header not present in baseline response."
         )
       end
+
+      alias missing_header missing_security_header
 
       def cors_misconfiguration(host)
         build_finding(
@@ -125,14 +127,14 @@ module ASRFacet
         )
       end
 
-      def expired_cert(host)
+      def expired_cert(host, date = nil)
         build_finding(
           title: "Expired TLS Certificate",
           severity: Severity::HIGH,
           host: host,
           description: "The TLS certificate presented by the host is expired.",
           remediation: "Renew and redeploy a valid TLS certificate chain.",
-          evidence: "Certificate not_after date is in the past."
+          evidence: date ? "Certificate expired on #{date}." : "Certificate not_after date is in the past."
         )
       end
 
@@ -157,7 +159,7 @@ module ASRFacet
           evidence: evidence,
           host: host,
           remediation: remediation
-        )
+        ).to_h
       rescue StandardError
         Finding.new(
           title: title.to_s,
@@ -165,7 +167,7 @@ module ASRFacet
           description: description.to_s,
           host: host.to_s,
           remediation: remediation.to_s
-        )
+        ).to_h
       end
     end
   end
