@@ -17,6 +17,10 @@ wordlists:
 output:
   directory: output
   format: cli
+resilience:
+  circuit_breaker:
+    threshold: 3
+    cooldown: 60
 http:
   user_agent: ASRFacet-Rb/0.1.0
   max_retries: 3

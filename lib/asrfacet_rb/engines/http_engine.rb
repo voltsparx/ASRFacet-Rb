@@ -157,7 +157,7 @@ module ASRFacet
       def extract_security_headers(headers)
         SECURITY_HEADERS.each_with_object({}) do |header, memo|
           value = headers[header.downcase] || headers[header]
-          memo[header] = value.to_s.empty? ? nil : value
+          memo[header] = value.to_s.empty? ? false : value
         end
       rescue StandardError
         {}

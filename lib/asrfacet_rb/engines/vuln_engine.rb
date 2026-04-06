@@ -92,8 +92,8 @@ module ASRFacet
         @http_results.flat_map do |result|
           headers = result[:security_headers] || {}
           findings = []
-          findings << missing_header(result[:host], "Strict-Transport-Security") if headers["Strict-Transport-Security"].to_s.empty?
-          findings << missing_header(result[:host], "Content-Security-Policy") if headers["Content-Security-Policy"].to_s.empty?
+          findings << missing_header(result[:host], "Strict-Transport-Security") if missing_security_header?(headers["Strict-Transport-Security"])
+          findings << missing_header(result[:host], "Content-Security-Policy") if missing_security_header?(headers["Content-Security-Policy"])
           findings
         rescue StandardError
           []
@@ -150,6 +150,12 @@ module ASRFacet
         Array(result[:interesting_paths]).find { |entry| entry[:path] == target_path }&.dig(:status)
       rescue StandardError
         nil
+      end
+
+      def missing_security_header?(value)
+        value == false || value.to_s.empty?
+      rescue StandardError
+        true
       end
 
       def resolve_cname(host)

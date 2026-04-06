@@ -1,36 +1,42 @@
-──────────────────────────────────────────────
+# Part of ASRFacet-Rb — authorized testing only
+--------------------------------------------------
 ASRFacet-Rb v1.0 Proprietary License
-──────────────────────────────────────────────
+--------------------------------------------------
 
 Copyright (c) 2026 Voltsparx
 All rights reserved.
 
-Permission is hereby granted, free of charge, to use ARSFacet-Rb solely for personal, educational, or internal security purposes 
-on systems you own or are authorized to monitor. 
+Permission is hereby granted, free of charge, to use ASRFacet-Rb solely for
+personal, educational, or internal security purposes on systems you own or are
+explicitly authorized to assess.
 
-Any other use, including but not limited to modification, distribution, commercial use, rebranding, or sublicensing, 
-requires explicit written permission from the copyright holder (Voltsparx).
+Any other use, including but not limited to modification, distribution,
+commercial use, rebranding, or sublicensing, requires explicit written
+permission from the copyright holder.
 
 You may not:
 
 1. Remove, alter, or obscure any copyright, license, or attribution notices.
 2. Claim authorship or ownership of ASRFacet-Rb or derivative works.
-3. Redistribute ASRFacet-Rb, in whole or in part, in source or binary form, without prior written permission.
-4. Use Sentinel-C for unauthorized penetration testing, hacking, or any illegal activity.
+3. Redistribute ASRFacet-Rb, in whole or in part, in source or binary form,
+   without prior written permission.
+4. Use ASRFacet-Rb for unauthorized penetration testing, hacking, or any
+   illegal activity.
 
 Attribution must be retained in any permitted use:
 
-    "ASRFacet-Rb v1.0+ © 2026 Voltsparx. All rights reserved. 
-    Original project: https://github.com/voltsparx/ASRFacet-Rb"
+  "ASRFacet-Rb v1.0+ (c) 2026 Voltsparx. All rights reserved.
+   Original project: https://github.com/voltsparx/ASRFacet-Rb"
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE 
-WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, OR NON-INFRINGEMENT. IN NO EVENT SHALL THE AUTHOR BE 
-LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT, OR OTHERWISE, ARISING FROM, 
-OUT OF, OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT. IN NO EVENT SHALL THE
+AUTHOR BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY, WHETHER IN AN
+ACTION OF CONTRACT, TORT, OR OTHERWISE, ARISING FROM, OUT OF, OR IN CONNECTION
+WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-For permissions beyond personal/internal use, contact:
+For permissions beyond personal or internal use, contact:
 
-Voltsparx  
-Email: voltsparx@gmail.com  
-Original project: https://github.com/voltsparx/ASRFacet-Rb
-──────────────────────────────────────────────
+Voltsparx
+voltsparx@gmail.com
+https://github.com/voltsparx/ASRFacet-Rb

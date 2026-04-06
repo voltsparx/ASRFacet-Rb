@@ -32,7 +32,7 @@ RSpec.describe ASRFacet::Engines::HttpEngine do
 
     expect(result[:title]).to eq("Example App")
     expect(result[:technologies]).to include("Nginx", "Laravel", "React")
-    expect(result[:security_headers]["Strict-Transport-Security"]).to be_nil
+    expect(result[:security_headers]["Strict-Transport-Security"]).to eq(false)
   end
 
   it "records interesting non-404 paths" do

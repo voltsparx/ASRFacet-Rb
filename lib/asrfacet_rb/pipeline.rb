@@ -25,6 +25,8 @@ module ASRFacet
       @processed_port_ips = Set.new
       @processed_http_hosts = Set.new
       @processed_asn_ips = Set.new
+      @circuit_breakers = Hash.new { |hash, key| hash[key] = build_circuit_breaker }
+      @streamer = build_streamer
       setup_event_subscribers
       emit(:domain, { id: @target.domain, ip: @target.ip })
     rescue StandardError
@@ -48,14 +50,17 @@ module ASRFacet
       @processed_port_ips = Set.new
       @processed_http_hosts = Set.new
       @processed_asn_ips = Set.new
+      @circuit_breakers = Hash.new { |hash, key| hash[key] = build_circuit_breaker }
+      @streamer = build_streamer
       setup_event_subscribers
     end
 
     def run
+      @streamer&.write("scan_started", { target: @target.domain, options: @options })
       emit(:subdomain, { host: @target.domain, parent: @target.domain, data: { root: true } })
 
       stage(1, "Passive reconnaissance") do
-        passive = ASRFacet::Passive::Runner.new(@target.domain, api_keys).run
+        passive = with_circuit("passive_runner") { ASRFacet::Passive::Runner.new(@target.domain, api_keys).run } || { subdomains: [], errors: [] }
         passive[:subdomains].each do |subdomain|
           emit(:subdomain, { host: subdomain, parent: @target.domain })
         end
@@ -63,7 +68,7 @@ module ASRFacet
       end
 
       stage(2, "Recursive DNS and certificate discovery") do
-        drain_subdomain_discovery_queue
+        with_circuit("recursive_discovery") { drain_subdomain_discovery_queue }
       end
 
       stage(3, "Permutation and DNS busting") do
@@ -84,42 +89,44 @@ module ASRFacet
       end
 
       stage(4, "Discovery feedback loop") do
-        drain_subdomain_discovery_queue
+        with_circuit("recursive_discovery") { drain_subdomain_discovery_queue }
       end
 
       stage(5, "Port scanning") do
-        process_pending_ports
+        with_circuit("port_engine") { process_pending_ports }
       end
 
       stage(6, "HTTP, crawl, JavaScript, and correlation") do
-        process_pending_http
-        @correlations = ASRFacet::Engines::CorrelationEngine.new.run(@store.to_h, @graph)
+        with_circuit("http_engine") { process_pending_http }
+        @correlations = with_circuit("correlation_engine") { ASRFacet::Engines::CorrelationEngine.new.run(@store.to_h, @graph) } || []
         @correlations.each { |entry| emit(:correlation, entry) }
-        @top_assets = ASRFacet::Engines::AssetScorer.new.score_all(@store.to_h)
+        @top_assets = with_circuit("asset_scorer") { ASRFacet::Engines::AssetScorer.new.score_all(@store.to_h) } || []
         @top_assets.each { |asset| @store.add(:top_assets, asset) }
       end
 
       stage(7, "WHOIS and ASN enrichment") do
-        whois_result = ASRFacet::Engines::WhoisEngine.new.run(@target.domain)
+        whois_result = with_circuit("whois_engine") { ASRFacet::Engines::WhoisEngine.new.run(@target.domain) } || { data: {} }
         @store.add(:whois, whois_result[:data]) unless whois_result[:data].to_h.empty?
-        process_pending_asn
+        with_circuit("asn_engine") { process_pending_asn }
       end
 
       stage(8, "Vulnerability detection and monitoring") do
         vuln_engine = ASRFacet::Engines::VulnEngine.new(@target, @store.to_h)
-        findings = @filter.filter_findings(vuln_engine.run)
+        findings = @filter.filter_findings(with_circuit("vuln_engine") { vuln_engine.run } || [])
         findings.each do |finding|
           emit(:finding, finding)
         end
 
         current_results = @store.to_h
-        @diff_result = ASRFacet::Engines::MonitoringEngine.new(@target.domain).diff(current_results)
-        @probabilistic_subdomains = ASRFacet::Engines::ProbabilisticSubdomainEngine.new(@target.domain, @store.all(:subdomains)).top_candidates
+        @diff_result = with_circuit("monitoring_engine") { ASRFacet::Engines::MonitoringEngine.new(@target.domain).diff(current_results) } || {}
+        @probabilistic_subdomains = with_circuit("probabilistic_subdomain_engine") do
+          ASRFacet::Engines::ProbabilisticSubdomainEngine.new(@target.domain, @store.all(:subdomains)).top_candidates
+        end || []
         @probabilistic_subdomains.each { |entry| @store.add(:probabilistic_subdomains, entry) }
         @memory.record_scan(current_results)
       end
 
-      {
+      result = {
         store: @store,
         graph: @graph,
         diff: @diff_result,
@@ -128,9 +135,11 @@ module ASRFacet
         correlations: @correlations,
         probabilistic_subdomains: @probabilistic_subdomains
       }
+      @streamer&.write("scan_completed", result)
+      result
     rescue StandardError => e
       record_failure("pipeline", e.message)
-      {
+      result = {
         store: @store,
         graph: @graph,
         diff: @diff_result,
@@ -139,6 +148,8 @@ module ASRFacet
         correlations: @correlations,
         probabilistic_subdomains: @probabilistic_subdomains
       }
+      @streamer&.write("scan_failed", result.merge(error: e.message))
+      result
     end
 
     private
@@ -288,7 +299,9 @@ module ASRFacet
     end
 
     def record_failure(engine_name, reason)
+      @circuit_breakers[engine_name.to_s].record_failure
       @memory.record_failure(engine_name, reason)
+      @streamer&.write("failure", { engine: engine_name, reason: reason, breaker: @circuit_breakers[engine_name.to_s].state })
       emit(:error, { engine: engine_name, reason: reason })
     rescue StandardError
       nil
@@ -412,7 +425,43 @@ module ASRFacet
     end
 
     def emit(event_type, data)
+      @streamer&.write("event", { type: event_type, data: data })
       @event_bus.emit(event_type, data, dispatch_now: true)
+    rescue StandardError
+      nil
+    end
+
+    def with_circuit(engine_name)
+      breaker = @circuit_breakers[engine_name.to_s]
+      unless breaker.allow?
+        reason = "Circuit open for #{engine_name}; skipping until cooldown expires"
+        emit(:error, { engine: engine_name, reason: reason })
+        @streamer&.write("circuit_open", { engine: engine_name, breaker: breaker.state })
+        return nil
+      end
+
+      result = yield
+      breaker.record_success
+      result
+    rescue StandardError => e
+      breaker.record_failure
+      @streamer&.write("circuit_failure", { engine: engine_name, reason: e.message, breaker: breaker.state })
+      raise e
+    end
+
+    def build_circuit_breaker
+      config = ASRFacet::Config.fetch("resilience", "circuit_breaker") || {}
+      ASRFacet::Core::CircuitBreaker.new(
+        threshold: config["threshold"] || 3,
+        cooldown: config["cooldown"] || 60
+      )
+    rescue StandardError
+      ASRFacet::Core::CircuitBreaker.new
+    end
+
+    def build_streamer
+      output_directory = ASRFacet::Config.fetch("output", "directory") || "output"
+      ASRFacet::Output::JsonlStream.new(@target.domain, base_dir: File.join(output_directory, "streams"))
     rescue StandardError
       nil
     end

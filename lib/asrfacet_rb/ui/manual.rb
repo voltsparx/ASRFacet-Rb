@@ -103,7 +103,7 @@ module ASRFacet
           title: "CONFIGURATIONS",
           body: [
             "Project defaults live in config/default.yml and user overrides live in ~/.asrfacet_rb/config.yml.",
-            "Common settings include thread counts, timeouts, wordlist paths, output preferences, and HTTP behavior such as retries, redirects, and SSL verification.",
+            "Common settings include thread counts, timeouts, wordlist paths, output preferences, resilience tuning, and HTTP behavior such as retries, redirects, and SSL verification.",
             "Command-line flags override configuration values for a single run. This makes it easy to keep safe defaults while still customizing individual engagements."
           ]
         },
@@ -133,6 +133,8 @@ module ASRFacet
             "  Per-target scan memory used for monitoring and delta analysis.",
             "wordlists/",
             "  Bundled seed lists for subdomains, ports, and common web paths.",
+            "output/streams/",
+            "  JSON-Lines event stream written during scans for recovery, auditing, and stateful recon workflows.",
             "man/asrfacet-rb.1",
             "  Manual page source for `man asrfacet-rb` on systems where the man page is installed or the repository man directory is on MANPATH."
           ]

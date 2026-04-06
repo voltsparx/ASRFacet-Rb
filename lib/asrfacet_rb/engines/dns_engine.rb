@@ -8,6 +8,16 @@ module ASRFacet
     class DnsEngine
       include ASRFacet::Mixins::Network
 
+      RECORD_TYPES = {
+        a: Resolv::DNS::Resource::IN::A,
+        aaaa: Resolv::DNS::Resource::IN::AAAA,
+        mx: Resolv::DNS::Resource::IN::MX,
+        ns: Resolv::DNS::Resource::IN::NS,
+        txt: Resolv::DNS::Resource::IN::TXT,
+        cname: Resolv::DNS::Resource::IN::CNAME,
+        soa: Resolv::DNS::Resource::IN::SOA
+      }.freeze
+
       def initialize(target = nil, options = {})
         @target = target
         @options = options || {}
@@ -32,18 +42,19 @@ module ASRFacet
           target: domain.to_s,
           timestamp: Time.now.iso8601,
           status: :failed,
-          data: { a: [], aaaa: [], mx: [], ns: [], txt: [], cname: [], soa: [], wildcard: false, wildcard_ips: [], zone_transfer: [] },
+          data: empty_data,
           errors: [e.message]
         }
       end
 
       def attempt_zone_transfer(domain)
-        nameservers = lookup_records(domain)[:ns]
-        nameservers.each do |nameserver|
-          socket = TCPSocket.new(nameserver, 53)
-          socket.close
+        Array(lookup_records(domain)[:ns]).each do |nameserver|
+          socket = TCPSocket.new(nameserver.to_s, 53)
+          socket.write(" ")
         rescue StandardError
           next
+        ensure
+          socket&.close rescue nil
         end
         []
       rescue StandardError
@@ -53,36 +64,62 @@ module ASRFacet
       private
 
       def lookup_records(domain)
-        dns = Resolv::DNS.new
-        {
-          a: fetch_records(dns, domain, Resolv::DNS::Resource::IN::A) { |record| record.address.to_s },
-          aaaa: fetch_records(dns, domain, Resolv::DNS::Resource::IN::AAAA) { |record| record.address.to_s },
-          mx: fetch_records(dns, domain, Resolv::DNS::Resource::IN::MX) { |record| record.exchange.to_s },
-          ns: fetch_records(dns, domain, Resolv::DNS::Resource::IN::NS) { |record| record.name.to_s },
-          txt: fetch_records(dns, domain, Resolv::DNS::Resource::IN::TXT) { |record| record.data.to_s },
-          cname: fetch_records(dns, domain, Resolv::DNS::Resource::IN::CNAME) { |record| record.name.to_s },
-          soa: fetch_records(dns, domain, Resolv::DNS::Resource::IN::SOA) do |record|
-            {
-              mname: record.mname.to_s,
-              rname: record.rname.to_s,
-              serial: record.serial,
-              refresh: record.refresh,
-              retry: record.retry,
-              expire: record.expire,
-              minimum: record.minimum
-            }
-          end
-        }
+        RECORD_TYPES.each_with_object({}) do |(type, klass), memo|
+          memo[type] = fetch_records(domain, klass)
+        end
       rescue StandardError
-        { a: [], aaaa: [], mx: [], ns: [], txt: [], cname: [], soa: [] }
-      ensure
-        dns&.close rescue nil
+        empty_data.reject { |key, _value| %i[wildcard wildcard_ips zone_transfer].include?(key) }
       end
 
-      def fetch_records(dns, domain, klass)
-        dns.getresources(domain.to_s, klass).map { |record| yield(record) }
+      def fetch_records(domain, klass)
+        Resolv::DNS.open do |dns|
+          dns.getresources(domain.to_s, klass).map { |record| normalize_record(record) }.compact.uniq
+        end
       rescue StandardError
         []
+      end
+
+      def normalize_record(record)
+        if record.respond_to?(:address)
+          record.address.to_s
+        elsif record.respond_to?(:exchange)
+          record.exchange.to_s
+        elsif record.respond_to?(:name)
+          record.name.to_s
+        elsif record.respond_to?(:data)
+          Array(record.data).join(" ")
+        elsif record.respond_to?(:mname) && record.respond_to?(:rname)
+          {
+            mname: record.mname.to_s,
+            rname: record.rname.to_s,
+            serial: record.serial,
+            refresh: record.refresh,
+            retry: record.retry,
+            expire: record.expire,
+            minimum: record.minimum
+          }
+        else
+          record.to_s
+        end
+      rescue StandardError
+        nil
+      end
+
+      def empty_data
+        {
+          a: [],
+          aaaa: [],
+          mx: [],
+          ns: [],
+          txt: [],
+          cname: [],
+          soa: [],
+          wildcard: false,
+          wildcard_ips: [],
+          zone_transfer: []
+        }
+      rescue StandardError
+        {}
       end
     end
   end

@@ -10,7 +10,7 @@ Gem::Specification.new do |spec|
   spec.summary = "Authorized attack surface reconnaissance for Ruby 3.2+."
   spec.description = "ASRFacet-Rb is an authorized penetration testing and attack surface reconnaissance toolkit."
   spec.homepage = ASRFacet::Metadata::REPO_URL
-  spec.license = "Nonstandard"
+  spec.license = "LicenseRef-Proprietary"
   spec.required_ruby_version = ">= 3.2"
 
   spec.files = Dir.glob("{bin,config,lib,man,spec,wordlists}/**/*").select { |path| File.file?(path) } + %w[Gemfile README.md LICENSE]
@@ -19,7 +19,9 @@ Gem::Specification.new do |spec|
   spec.require_paths = ["lib"]
   spec.metadata = {
     "source_code_uri" => ASRFacet::Metadata::REPO_URL,
-    "homepage_uri" => ASRFacet::Metadata::REPO_URL
+    "homepage_uri" => ASRFacet::Metadata::REPO_URL,
+    "documentation_uri" => "#{ASRFacet::Metadata::REPO_URL}#readme",
+    "bug_tracker_uri" => "#{ASRFacet::Metadata::REPO_URL}/issues"
   }
 
   spec.add_runtime_dependency "thor"
