@@ -5,7 +5,13 @@ ASRFacet-Rb is a Ruby 3.2+ attack surface reconnaissance toolkit for authorized 
 <p align="center">
     <img src="https://raw.githubusercontent.com/voltsparx/ASRFacet-Rb/refs/heads/main/docs/images/illustration/asrfacet-rb-logo.png" alt="ASRFacet-Rb's Logo">
 </p>
-
+<p align="center">
+  <img src="https://img.shields.io/badge/version-v1.0-0A66C2?style=for-the-badge" alt="Version v10">
+  <img src="https://img.shields.io/badge/ruby-3.2+?style=for-the-badge&logo=ruby&logoColor=white" alt="Ruby Versions">
+  <img src="https://img.shields.io/badge/tests-165%2F165%20passing-2E8B57?style=for-the-badge" alt="Tests Passing">
+  <img src="https://img.shields.io/badge/platforms-70-4C956C?style=for-the-badge" alt="Platforms">
+  <img src="https://img.shields.io/badge/license-Proprietary-8B0000?style=for-the-badge" alt="License Proprietary">
+</p>
 ## Features
 
 - Passive subdomain collection across multiple sources
