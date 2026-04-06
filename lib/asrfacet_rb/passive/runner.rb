@@ -23,19 +23,28 @@ module ASRFacet
         @results = Set.new
         @errors = []
         @mutex = Mutex.new
+        @breakers = {}
       end
 
       def run
         threads = SOURCES.map do |source_class|
           Thread.new do
             source = source_class.new
-            found = source.run(@domain, @api_keys)
+            breaker = breaker_for(source)
+            breaker.call do
+              found = source.run(@domain, @api_keys)
+              @mutex.synchronize do
+                found.each { |entry| @results << entry }
+              end
+            end
+          rescue ASRFacet::Core::CircuitBreaker::CircuitOpenError
             @mutex.synchronize do
-              found.each { |entry| @results << entry }
+              @errors << "#{source.name}: circuit open — skipped (rate limited)"
             end
           rescue StandardError => e
+            breaker&.record_failure rescue nil
             @mutex.synchronize do
-              @errors << { source: source_class.name.split("::").last, error: e.message }
+              @errors << "#{source_class.name.split('::').last}: #{e.message}"
             end
           end
         end
@@ -53,6 +62,17 @@ module ASRFacet
         }
       rescue StandardError
         { subdomains: [], errors: [], source_count: SOURCES.size }
+      end
+
+      private
+
+      def breaker_for(source)
+        key = source.name.to_s
+        @mutex.synchronize do
+          @breakers[key] ||= ASRFacet::Core::CircuitBreaker.new(key)
+        end
+      rescue StandardError
+        ASRFacet::Core::CircuitBreaker.new(source.name.to_s)
       end
     end
   end

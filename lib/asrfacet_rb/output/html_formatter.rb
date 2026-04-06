@@ -65,6 +65,7 @@ module ASRFacet
               #{section_table("Open Ports", ["Host", "Port", "Service", "Banner"], Array(data[:open_ports]).sort_by { |entry| [entry[:host].to_s, entry[:port].to_i] }.map { |entry| [entry[:host], entry[:port], entry[:service], entry[:banner]] })}
               #{section_table("Technologies", ["Host", "Technology", "CDN"], Array(data[:http_responses]).flat_map { |entry| Array(entry[:technologies]).map { |tech| [entry[:host], tech, entry[:cdn]] } })}
               #{section_js_endpoints(payload[:js_endpoints])}
+              #{section_spa_endpoints(data[:spa_endpoints])}
               #{section_findings(Array(data[:findings]))}
               #{section_knowledge_graph(payload[:graph])}
               #{section_table("Correlations", ["Type", "Summary"], Array(payload[:correlations]).map { |entry| [entry[:type], correlation_summary(entry)] })}
@@ -172,6 +173,17 @@ module ASRFacet
           body << %(<div class="finding-grid">#{cards}</div>)
         end
         %(<details><summary>JavaScript Endpoints</summary>#{body.join}</details>)
+      rescue StandardError
+        ""
+      end
+
+      def section_spa_endpoints(entries)
+        rows = Array(entries).map do |entry|
+          item = symbolize_keys(entry)
+          [item[:url], item[:method], item[:discovered_from]]
+        end
+        rows = [["(none)", "(none)", "(none)"]] if rows.empty?
+        %(<details><summary>SPA Endpoints</summary>#{section_table_inner(['URL', 'Method', 'Discovered From'], rows)}</details>)
       rescue StandardError
         ""
       end

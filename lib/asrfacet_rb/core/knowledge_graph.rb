@@ -1,9 +1,11 @@
-# Part of ASRFacet-Rb — authorized testing only
+# Part of ASRFacet-Rb - authorized testing only
 require "time"
 
 module ASRFacet
   module Core
     class KnowledgeGraph
+      NODE_TYPES = %i[domain subdomain ip asn service finding].freeze
+
       def initialize
         @nodes = {}
         @edges = Hash.new { |hash, key| hash[key] = [] }
@@ -15,11 +17,14 @@ module ASRFacet
         return nil if node_id.empty?
 
         @mutex.synchronize do
+          existing = @nodes[node_id] || {}
+          discovered_at = existing[:discovered_at] || Time.now.iso8601
           @nodes[node_id] = {
             id: node_id,
-            type: type.to_sym,
-            data: data.is_a?(Hash) ? data : {},
-            discovered_at: Time.now.iso8601
+            type: normalize_type(type),
+            data: merge_hash(existing[:data], normalize_hash(data)),
+            discovered_at: discovered_at,
+            last_seen: Time.now.iso8601
           }
         end
       rescue StandardError
@@ -31,11 +36,22 @@ module ASRFacet
         target = to_id.to_s
         return nil if source.empty? || target.empty?
 
-        edge = { to: target, relation: relation.to_sym }
+        timestamp = Time.now.iso8601
         @mutex.synchronize do
-          @edges[source] << edge unless @edges[source].any? { |entry| entry[:to] == target && entry[:relation] == relation.to_sym }
+          existing = @edges[source].find { |entry| entry[:to] == target && entry[:relation] == relation.to_sym }
+          if existing
+            existing[:last_seen] = timestamp
+            duplicate_value(existing.merge(from: source))
+          else
+            @edges[source] << {
+              to: target,
+              relation: relation.to_sym,
+              discovered_at: timestamp,
+              last_seen: timestamp
+            }
+            duplicate_value(@edges[source].last.merge(from: source))
+          end
         end
-        edge
       rescue StandardError
         nil
       end
@@ -51,16 +67,24 @@ module ASRFacet
         @mutex.synchronize do
           related_edges = flattened_edges.select { |edge| edge[:from] == node_id || edge[:to] == node_id }
           {
-            node: @nodes[node_id],
-            edges: related_edges,
+            node: duplicate_value(@nodes[node_id]),
+            relationships: related_edges.map { |edge| duplicate_value(edge) },
+            edges: related_edges.map { |edge| duplicate_value(edge) },
             neighbors: related_edges.filter_map do |edge|
               neighbor_id = edge[:from] == node_id ? edge[:to] : edge[:from]
-              @nodes[neighbor_id]
-            end.uniq
+              neighbor = @nodes[neighbor_id]
+              next if neighbor.nil?
+
+              {
+                relation: edge[:relation],
+                direction: edge[:from] == node_id ? :outbound : :inbound,
+                node: duplicate_value(neighbor)
+              }
+            end.uniq { |entry| [entry[:relation], entry[:direction], entry.dig(:node, :id)] }
           }
         end
       rescue StandardError
-        { node: nil, edges: [], neighbors: [] }
+        { node: nil, relationships: [], edges: [], neighbors: [] }
       end
 
       def subgraph(type:)
@@ -69,8 +93,8 @@ module ASRFacet
           nodes = @nodes.values.select { |node| node[:type] == node_type }
           ids = nodes.map { |node| node[:id] }
           {
-            nodes: nodes,
-            edges: flattened_edges.select { |edge| ids.include?(edge[:from]) || ids.include?(edge[:to]) }
+            nodes: nodes.map { |node| duplicate_value(node) },
+            edges: flattened_edges.select { |edge| ids.include?(edge[:from]) || ids.include?(edge[:to]) }.map { |edge| duplicate_value(edge) }
           }
         end
       rescue StandardError
@@ -80,8 +104,8 @@ module ASRFacet
       def to_h
         @mutex.synchronize do
           {
-            nodes: @nodes.values,
-            edges: flattened_edges
+            nodes: @nodes.values.map { |node| duplicate_value(node) },
+            edges: flattened_edges.map { |edge| duplicate_value(edge) }
           }
         end
       rescue StandardError
@@ -93,11 +117,59 @@ module ASRFacet
       def flattened_edges
         @edges.each_with_object([]) do |(from, entries), memo|
           entries.each do |entry|
-            memo << { from: from, to: entry[:to], relation: entry[:relation] }
+            memo << {
+              from: from,
+              to: entry[:to],
+              relation: entry[:relation],
+              discovered_at: entry[:discovered_at],
+              last_seen: entry[:last_seen]
+            }
           end
         end
       rescue StandardError
         []
+      end
+
+      def normalize_type(type)
+        value = type.to_sym
+        NODE_TYPES.include?(value) ? value : :service
+      rescue StandardError
+        :service
+      end
+
+      def normalize_hash(value)
+        value.is_a?(Hash) ? value : {}
+      rescue StandardError
+        {}
+      end
+
+      def merge_hash(left, right)
+        normalize_hash(left).merge(normalize_hash(right)) do |_key, old_value, new_value|
+          if old_value.is_a?(Hash) && new_value.is_a?(Hash)
+            merge_hash(old_value, new_value)
+          elsif old_value.is_a?(Array) || new_value.is_a?(Array)
+            (Array(old_value) + Array(new_value)).uniq
+          else
+            new_value
+          end
+        end
+      rescue StandardError
+        normalize_hash(right)
+      end
+
+      def duplicate_value(value)
+        case value
+        when Hash
+          value.each_with_object({}) do |(key, nested), memo|
+            memo[key] = duplicate_value(nested)
+          end
+        when Array
+          value.map { |entry| duplicate_value(entry) }
+        else
+          value
+        end
+      rescue StandardError
+        value
       end
     end
   end

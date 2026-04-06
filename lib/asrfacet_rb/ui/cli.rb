@@ -5,6 +5,16 @@ module ASRFacet
   module UI
     class CLI < Thor
       default_task :help
+      map %w[s sc] => :scan
+      map %w[p pa] => :passive
+      map %w[pt po] => :ports
+      map %w[d dn] => :dns
+      map %w[i int] => :interactive
+      map %w[c con shell] => :console
+      map %w[h ?] => :help
+      map %w[x exp] => :explain
+      map %w[m man] => :manual
+      map %w[v ver] => :version
 
       class_option :output, aliases: "-o", type: :string, desc: "Output file path"
       class_option :format, aliases: "-f", type: :string, default: "cli", enum: %w[cli json html txt], desc: "Output format"
@@ -17,6 +27,11 @@ module ASRFacet
       class_option :top, type: :numeric, default: 5, desc: "Top N scored assets to print"
       class_option :memory, type: :boolean, default: false, desc: "Skip subdomains already confirmed in previous scans"
       class_option :console, aliases: "-C", type: :boolean, default: false, desc: "Launch the interactive console shell"
+      class_option :headless, type: :boolean, default: false, desc: "Enable headless browser probing for SPAs"
+      class_option :webhook_url, type: :string, desc: "Slack or Discord webhook URL for alerts"
+      class_option :webhook_platform, type: :string, default: "slack", enum: %w[slack discord], desc: "Webhook platform"
+      class_option :delay, type: :numeric, default: 0, desc: "Base delay between requests in milliseconds"
+      class_option :adaptive_rate, type: :boolean, default: true, desc: "Enable adaptive rate control"
 
       class << self
         def start(given_args = ARGV, config = {})
@@ -163,7 +178,12 @@ module ASRFacet
           exclude: options[:exclude],
           monitor: options[:monitor],
           top: options[:top],
-          memory: options[:memory]
+          memory: options[:memory],
+          headless: options[:headless],
+          webhook_url: options[:webhook_url],
+          webhook_platform: options[:webhook_platform],
+          delay: options[:delay],
+          adaptive_rate: options[:adaptive_rate]
         }
       rescue StandardError
         {}

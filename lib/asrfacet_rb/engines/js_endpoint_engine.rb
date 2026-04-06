@@ -1,4 +1,4 @@
-# Part of ASRFacet-Rb — authorized testing only
+# Part of ASRFacet-Rb - authorized testing only
 require "nokogiri"
 require "set"
 require "uri"
@@ -6,15 +6,19 @@ require "uri"
 module ASRFacet
   module Engines
     class JsEndpointEngine
-      JS_PATTERNS = [
-        /['"]\/api\/[a-zA-Z0-9_\-\/]+['"]/,
-        /['"]\/v[0-9]+\/[a-zA-Z0-9_\-\/]+['"]/,
-        /fetch\(['"]([^'"]+)['"]/,
-        /axios\.\w+\(['"]([^'"]+)['"]/,
-        /XMLHttpRequest/,
+      ENDPOINT_PATTERNS = [
+        /(?:fetch|axios\.(?:get|post|put|patch|delete|request)|open)\s*\(\s*['"]([^'"]+)['"]/i,
+        /url\s*:\s*['"]([^'"]+)['"]/i,
+        /['"]((?:\/|https?:\/\/|wss?:\/\/)[^"'\\\s]+)['"]/i,
+        /['"](\.\.?\/[^"'\\\s]+)['"]/i
+      ].freeze
+
+      SECRET_PATTERNS = [
         /api[_-]?key\s*[:=]\s*['"][^'"]{8,}['"]/i,
-        /token\s*[:=]\s*['"][^'"]{16,}['"]/i,
-        /secret\s*[:=]\s*['"][^'"]{8,}['"]/i
+        /token\s*[:=]\s*['"][^'"]{12,}['"]/i,
+        /secret\s*[:=]\s*['"][^'"]{8,}['"]/i,
+        /authorization\s*[:=]\s*['"]bearer\s+[^'"]+['"]/i,
+        /-----BEGIN (?:RSA|EC|OPENSSH|DSA|PGP) PRIVATE KEY-----/i
       ].freeze
 
       def initialize(client: ASRFacet::HTTP::RetryableClient.new)
@@ -22,37 +26,25 @@ module ASRFacet
       end
 
       def run(base_url, js_urls)
-        endpoint_matches = Set.new
+        endpoints = Set.new
         findings = []
-        secret_count = 0
+        scanned_files = Array(js_urls).map(&:to_s).reject(&:empty?).uniq
 
-        Array(js_urls).uniq.each do |js_url|
+        scanned_files.each do |js_url|
           response = @client.get(js_url)
           next if response.nil?
 
           content = response.body.to_s
-          JS_PATTERNS.each do |pattern|
-            content.to_enum(:scan, pattern).each do
-              match = Regexp.last_match
-              extracted = match[1] || match[0]
-              if secret_pattern?(pattern)
-                secret_count += 1
-                findings << secret_finding(base_url, js_url)
-              else
-                endpoint_matches << normalize_match(extracted)
-              end
-            rescue StandardError
-              nil
-            end
-          end
+          extract_endpoints(content, base_url, js_url).each { |endpoint| endpoints << endpoint }
+          findings << secret_finding(base_url, js_url) if potential_secret?(content)
         rescue StandardError
           nil
         end
 
         {
-          js_files_scanned: Array(js_urls).uniq.count,
-          endpoints_found: endpoint_matches.to_a.reject(&:empty?).sort,
-          potential_secrets: secret_count,
+          js_files_scanned: scanned_files.count,
+          endpoints_found: endpoints.to_a.reject(&:empty?).sort,
+          potential_secrets: findings.count,
           findings: findings.uniq { |finding| [finding[:host], finding[:title], finding[:description]] }
         }
       rescue StandardError
@@ -76,15 +68,37 @@ module ASRFacet
 
       private
 
-      def normalize_match(match)
-        match.to_s.gsub(/\A['"]|['"]\z/, "")
+      def extract_endpoints(content, base_url, js_url)
+        matches = Set.new
+        ENDPOINT_PATTERNS.each do |pattern|
+          content.to_enum(:scan, pattern).each do
+            raw = Regexp.last_match(1).to_s
+            normalized = normalize_endpoint(raw, base_url, js_url)
+            matches << normalized unless normalized.empty?
+          rescue StandardError
+            nil
+          end
+        end
+        matches.to_a
+      rescue StandardError
+        []
+      end
+
+      def normalize_endpoint(match, base_url, js_url)
+        candidate = match.to_s.strip.gsub(/\A['"]|['"]\z/, "")
+        return "" if candidate.empty?
+        return "" if candidate.start_with?("data:", "javascript:", "#")
+        return "" unless candidate.match?(%r{\A(?:/|https?://|wss?://|\.\.?/)})
+
+        URI.join(js_url.to_s, candidate).to_s
+      rescue StandardError
+        URI.join(base_url.to_s, candidate.to_s).to_s
       rescue StandardError
         ""
       end
 
-      def secret_pattern?(pattern)
-        source = pattern.source.to_s
-        source.include?("api[_-]?key") || source.include?("token") || source.include?("secret")
+      def potential_secret?(content)
+        SECRET_PATTERNS.any? { |pattern| content.to_s.match?(pattern) }
       rescue StandardError
         false
       end
@@ -95,7 +109,8 @@ module ASRFacet
           title: "Potential Secret Pattern in JavaScript",
           severity: ASRFacet::Core::Severity::MEDIUM,
           host: host,
-          description: "A JavaScript file exposed a pattern consistent with an API key, token, or secret placeholder.",
+          status: "potential secret found",
+          description: "A JavaScript file exposed a pattern consistent with a credential or key, but the value was intentionally not recorded.",
           remediation: "Review #{js_url} and move secrets to server-side storage or rotate them if real values were exposed."
         }
       rescue StandardError
@@ -103,7 +118,8 @@ module ASRFacet
           title: "Potential Secret Pattern in JavaScript",
           severity: ASRFacet::Core::Severity::MEDIUM,
           host: base_url.to_s,
-          description: "A JavaScript file exposed a potential secret pattern.",
+          status: "potential secret found",
+          description: "A JavaScript file exposed a potential secret pattern, but the value was intentionally not recorded.",
           remediation: "Review the affected JavaScript asset and rotate any exposed credentials."
         }
       end

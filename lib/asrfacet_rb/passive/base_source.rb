@@ -7,6 +7,16 @@ require "uri"
 module ASRFacet
   module Passive
     class BaseSource
+      include ASRFacet::Core::PluginSDK
+
+      attr_writer :logger, :http_client, :event_bus, :config
+
+      def self.plugin_type
+        :passive_source
+      rescue StandardError
+        :passive_source
+      end
+
       def name
         raise NotImplementedError, "Subclasses must implement #name"
       end

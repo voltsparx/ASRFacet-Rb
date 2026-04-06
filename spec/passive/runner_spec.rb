@@ -48,7 +48,7 @@ RSpec.describe ASRFacet::Passive::Runner do
 
     expect(result[:subdomains]).to eq(%w[api.example.com dev.example.com www.example.com])
     expect(result[:errors].length).to eq(1)
-    expect(result[:errors].first[:source]).to eq(failing_source.name.split("::").last)
+    expect(result[:errors].first).to include(failing_source.name.split("::").last)
     expect(result[:source_count]).to eq(3)
   end
 end

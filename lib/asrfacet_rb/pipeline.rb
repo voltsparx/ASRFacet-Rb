@@ -1,22 +1,32 @@
-# Part of ASRFacet-Rb — authorized testing only
+# Part of ASRFacet-Rb - authorized testing only
 require "set"
 require "tempfile"
+require "uri"
 
 module ASRFacet
   class Pipeline
     def initialize(target, options = {})
       @target = ASRFacet::Core::Target.new(target)
       @options = options || {}
+      @config = ASRFacet::Config.load
       @store = ASRFacet::ResultStore.new
       @event_bus = ASRFacet::EventBus.new
+      @bus = @event_bus
       @graph = ASRFacet::Core::KnowledgeGraph.new
       @memory = ASRFacet::Core::ReconMemory.new(@target.domain)
       @scope = build_scope(@target.domain)
       @filter = ASRFacet::Core::NoiseFilter.new
+      @rate_controller = build_rate_controller
+      @http_client = build_http_client
+      @notifier = ASRFacet::Notifiers::WebhookNotifier.new(
+        @options[:webhook_url],
+        platform: (@options[:webhook_platform] || :slack).to_sym
+      )
       @js_summary = { js_files_scanned: 0, endpoints_found: [], potential_secrets: 0, findings: [] }
       @correlations = []
       @top_assets = []
       @diff_result = {}
+      @change_summary = ""
       @probabilistic_subdomains = []
       @resolved_map = Hash.new { |hash, key| hash[key] = [] }
       @pending_subdomains = []
@@ -24,24 +34,34 @@ module ASRFacet
       @processed_discovery_hosts = Set.new
       @processed_port_ips = Set.new
       @processed_http_hosts = Set.new
+      @processed_headless_hosts = Set.new
       @processed_asn_ips = Set.new
-      @circuit_breakers = Hash.new { |hash, key| hash[key] = build_circuit_breaker }
+      @circuit_breakers = Hash.new { |hash, key| hash[key] = build_circuit_breaker(key) }
       @streamer = build_streamer
       setup_event_subscribers
       emit(:domain, { id: @target.domain, ip: @target.ip })
     rescue StandardError
       @target = ASRFacet::Core::Target.new(target.to_s)
       @options = options || {}
+      @config = ASRFacet::Config.load
       @store = ASRFacet::ResultStore.new
       @event_bus = ASRFacet::EventBus.new
+      @bus = @event_bus
       @graph = ASRFacet::Core::KnowledgeGraph.new
       @memory = ASRFacet::Core::ReconMemory.new(@target.domain)
       @scope = build_scope(@target.domain)
       @filter = ASRFacet::Core::NoiseFilter.new
+      @rate_controller = build_rate_controller
+      @http_client = build_http_client
+      @notifier = ASRFacet::Notifiers::WebhookNotifier.new(
+        @options[:webhook_url],
+        platform: (@options[:webhook_platform] || :slack).to_sym
+      )
       @js_summary = { js_files_scanned: 0, endpoints_found: [], potential_secrets: 0, findings: [] }
       @correlations = []
       @top_assets = []
       @diff_result = {}
+      @change_summary = ""
       @probabilistic_subdomains = []
       @resolved_map = Hash.new { |hash, key| hash[key] = [] }
       @pending_subdomains = []
@@ -49,8 +69,9 @@ module ASRFacet
       @processed_discovery_hosts = Set.new
       @processed_port_ips = Set.new
       @processed_http_hosts = Set.new
+      @processed_headless_hosts = Set.new
       @processed_asn_ips = Set.new
-      @circuit_breakers = Hash.new { |hash, key| hash[key] = build_circuit_breaker }
+      @circuit_breakers = Hash.new { |hash, key| hash[key] = build_circuit_breaker(key) }
       @streamer = build_streamer
       setup_event_subscribers
     end
@@ -60,8 +81,11 @@ module ASRFacet
       emit(:subdomain, { host: @target.domain, parent: @target.domain, data: { root: true } })
 
       stage(1, "Passive reconnaissance") do
-        passive = with_circuit("passive_runner") { ASRFacet::Passive::Runner.new(@target.domain, api_keys).run } || { subdomains: [], errors: [] }
+        passive_runner = build_component(ASRFacet::Passive::Runner, @target.domain, api_keys)
+        passive = with_circuit("passive_runner") { passive_runner.run } || { subdomains: [], errors: [] }
         passive[:subdomains].each do |subdomain|
+          next unless @scope.in_scope?(subdomain)
+
           emit(:subdomain, { host: subdomain, parent: @target.domain })
         end
         passive[:errors].each { |error| emit(:error, { engine: "passive_runner", reason: error }) }
@@ -81,6 +105,8 @@ module ASRFacet
 
           emit(:subdomain, { host: entry[:subdomain], parent: @target.domain, data: { source: "dns_buster" } })
           Array(entry[:ips]).each do |ip|
+            next unless @scope.in_scope?(ip)
+
             emit(:dns_record, { host: entry[:subdomain], type: :a, value: ip })
           end
         end
@@ -98,56 +124,50 @@ module ASRFacet
 
       stage(6, "HTTP, crawl, JavaScript, and correlation") do
         with_circuit("http_engine") { process_pending_http }
-        @correlations = with_circuit("correlation_engine") { ASRFacet::Engines::CorrelationEngine.new.run(@store.to_h, @graph) } || []
+        process_headless_results if @options[:headless]
+        @correlations = with_circuit("correlation_engine") { build_component(ASRFacet::Engines::CorrelationEngine).run(@store.to_h, @graph) } || []
         @correlations.each { |entry| emit(:correlation, entry) }
-        @top_assets = with_circuit("asset_scorer") { ASRFacet::Engines::AssetScorer.new.score_all(@store.to_h) } || []
+        @top_assets = with_circuit("asset_scorer") { build_component(ASRFacet::Engines::AssetScorer).score_all(@store.to_h) } || []
         @top_assets.each { |asset| @store.add(:top_assets, asset) }
       end
 
       stage(7, "WHOIS and ASN enrichment") do
-        whois_result = with_circuit("whois_engine") { ASRFacet::Engines::WhoisEngine.new.run(@target.domain) } || { data: {} }
+        whois_result = with_circuit("whois_engine") { build_component(ASRFacet::Engines::WhoisEngine).run(@target.domain) } || { data: {} }
         @store.add(:whois, whois_result[:data]) unless whois_result[:data].to_h.empty?
         with_circuit("asn_engine") { process_pending_asn }
       end
 
       stage(8, "Vulnerability detection and monitoring") do
-        vuln_engine = ASRFacet::Engines::VulnEngine.new(@target, @store.to_h)
+        vuln_engine = build_component(ASRFacet::Engines::VulnEngine, @target, @store.to_h)
         findings = @filter.filter_findings(with_circuit("vuln_engine") { vuln_engine.run } || [])
         findings.each do |finding|
           emit(:finding, finding)
+          @notifier.notify_finding(finding)
         end
 
         current_results = @store.to_h
-        @diff_result = with_circuit("monitoring_engine") { ASRFacet::Engines::MonitoringEngine.new(@target.domain).diff(current_results) } || {}
+        monitoring_engine = build_component(ASRFacet::Engines::MonitoringEngine, @target.domain)
+        @diff_result = with_circuit("monitoring_engine") { monitoring_engine.diff(current_results) } || {}
+        @change_summary = monitoring_engine.respond_to?(:report_diff) ? monitoring_engine.report_diff(@diff_result).to_s : ""
+        unless @change_summary.empty?
+          @store.add(:change_summaries, { target: @target.domain, summary: @change_summary, changed_at: Time.now.iso8601 })
+          @streamer&.write("change_summary", { target: @target.domain, summary: @change_summary, diff: @diff_result })
+        end
+
         @probabilistic_subdomains = with_circuit("probabilistic_subdomain_engine") do
-          ASRFacet::Engines::ProbabilisticSubdomainEngine.new(@target.domain, @store.all(:subdomains)).top_candidates
+          build_component(ASRFacet::Engines::ProbabilisticSubdomainEngine, @target.domain, @store.all(:subdomains)).top_candidates
         end || []
         @probabilistic_subdomains.each { |entry| @store.add(:probabilistic_subdomains, entry) }
         @memory.record_scan(current_results)
       end
 
-      result = {
-        store: @store,
-        graph: @graph,
-        diff: @diff_result,
-        top_assets: @top_assets,
-        js_endpoints: @js_summary,
-        correlations: @correlations,
-        probabilistic_subdomains: @probabilistic_subdomains
-      }
+      result = build_result
+      @notifier.notify_scan_complete(@store)
       @streamer&.write("scan_completed", result)
       result
     rescue StandardError => e
       record_failure("pipeline", e.message)
-      result = {
-        store: @store,
-        graph: @graph,
-        diff: @diff_result,
-        top_assets: @top_assets,
-        js_endpoints: @js_summary,
-        correlations: @correlations,
-        probabilistic_subdomains: @probabilistic_subdomains
-      }
+      result = build_result
       @streamer&.write("scan_failed", result.merge(error: e.message))
       result
     end
@@ -188,6 +208,8 @@ module ASRFacet
         next if %i[wildcard wildcard_ips zone_transfer].include?(record_type)
 
         Array(values).each do |value|
+          next if %i[a aaaa].include?(record_type.to_sym) && !@scope.in_scope?(value)
+
           emit(:dns_record, { host: host, type: record_type, value: value })
         end
       end
@@ -241,6 +263,7 @@ module ASRFacet
     def build_scope(target_domain)
       allowed = split_csv(@options[:scope])
       allowed << target_domain
+      allowed << "*.#{target_domain}"
       excluded = split_csv(@options[:exclude])
       allowed_domains, allowed_ips = partition_targets(allowed)
       excluded_domains, excluded_ips = partition_targets(excluded)
@@ -281,14 +304,6 @@ module ASRFacet
       Array(targets).uniq
     end
 
-    def skip_known(subdomains)
-      return Array(subdomains) unless @options[:memory]
-
-      Array(subdomains).reject { |subdomain| subdomain != @target.domain && @memory.known?(subdomain) }
-    rescue StandardError
-      Array(subdomains)
-    end
-
     def merge_js_summary(result)
       @js_summary[:js_files_scanned] += result[:js_files_scanned].to_i
       @js_summary[:potential_secrets] += result[:potential_secrets].to_i
@@ -322,8 +337,8 @@ module ASRFacet
     end
 
     def drain_subdomain_discovery_queue
-      dns_engine = ASRFacet::Engines::DnsEngine.new
-      cert_engine = ASRFacet::Engines::CertEngine.new
+      dns_engine = build_component(ASRFacet::Engines::DnsEngine)
+      cert_engine = build_component(ASRFacet::Engines::CertEngine)
 
       until @pending_subdomains.empty?
         begin
@@ -354,9 +369,10 @@ module ASRFacet
     end
 
     def process_pending_ports
-      port_engine = ASRFacet::Engines::PortEngine.new
+      port_engine = build_component(ASRFacet::Engines::PortEngine)
       scope_filter(@store.all(:ips).uniq).each do |ip|
         next if @processed_port_ips.include?(ip)
+        next unless @scope.in_scope?(ip)
 
         port_engine.scan(ip, @options[:ports] || "top100", workers: thread_count(:dns)).each do |port_result|
           emit(:open_port, port_result.merge(host: ip))
@@ -370,13 +386,14 @@ module ASRFacet
     end
 
     def process_pending_http
-      http_engine = ASRFacet::Engines::HttpEngine.new
-      crawl_engine = ASRFacet::Engines::CrawlEngine.new
-      js_engine = ASRFacet::Engines::JsEndpointEngine.new
+      http_engine = build_component(ASRFacet::Engines::HttpEngine)
+      crawl_engine = build_component(ASRFacet::Engines::CrawlEngine)
+      js_engine = build_component(ASRFacet::Engines::JsEndpointEngine)
       http_results = []
 
       scope_filter(@resolved_map.keys).each do |host|
         next if @processed_http_hosts.include?(host)
+        next unless @scope.in_scope?(host)
 
         response = http_engine.probe(host)
         @processed_http_hosts << host
@@ -407,9 +424,10 @@ module ASRFacet
     end
 
     def process_pending_asn
-      asn_engine = ASRFacet::Engines::AsnEngine.new
+      asn_engine = build_component(ASRFacet::Engines::AsnEngine)
       scope_filter(@store.all(:ips).uniq).each do |ip|
         next if @processed_asn_ips.include?(ip)
+        next unless @scope.in_scope?(ip)
 
         asn_result = asn_engine.run(ip)
         @processed_asn_ips << ip
@@ -449,14 +467,15 @@ module ASRFacet
       raise e
     end
 
-    def build_circuit_breaker
+    def build_circuit_breaker(name = nil)
       config = ASRFacet::Config.fetch("resilience", "circuit_breaker") || {}
       ASRFacet::Core::CircuitBreaker.new(
-        threshold: config["threshold"] || 3,
-        cooldown: config["cooldown"] || 60
+        name,
+        failure_threshold: config["threshold"] || 3,
+        cooldown_seconds: config["cooldown"] || 60
       )
     rescue StandardError
-      ASRFacet::Core::CircuitBreaker.new
+      ASRFacet::Core::CircuitBreaker.new(name)
     end
 
     def build_streamer
@@ -464,6 +483,113 @@ module ASRFacet
       ASRFacet::Output::JsonlStream.new(@target.domain, base_dir: File.join(output_directory, "streams"))
     rescue StandardError
       nil
+    end
+
+    def build_rate_controller
+      return nil if @options[:adaptive_rate] == false
+
+      ASRFacet::Core::AdaptiveRateController.new(
+        base_delay: @options[:delay] || 0,
+        max_delay: 5000
+      )
+    rescue StandardError
+      nil
+    end
+
+    def build_http_client
+      ASRFacet::HTTP::RetryableClient.new(rate_controller: @rate_controller)
+    rescue StandardError
+      ASRFacet::HTTP::RetryableClient.new
+    end
+
+    def build_component(klass, *args)
+      instance = instantiate_component(klass, *args)
+      ASRFacet::Core::PluginSDK::DependencyInjector.inject(
+        instance,
+        logger: ASRFacet::Core::ThreadSafe,
+        http_client: @http_client,
+        event_bus: @bus,
+        config: @config
+      )
+    rescue StandardError
+      instantiate_component(klass, *args)
+    end
+
+    def instantiate_component(klass, *args)
+      params = klass.instance_method(:initialize).parameters
+      accepts_client = params.any? { |type, name| %i[key keyreq keyrest].include?(type) && name == :client }
+      accepts_options = params.any? { |type, _name| %i[opt rest].include?(type) }
+
+      if accepts_client
+        klass.new(*args, client: @http_client)
+      elsif accepts_options && !args.empty?
+        klass.new(*args)
+      else
+        klass.new
+      end
+    rescue StandardError
+      klass.new(*args)
+    end
+
+    def process_headless_results
+      headless_engine = build_component(ASRFacet::Engines::HeadlessEngine, @options)
+      return unless headless_engine.respond_to?(:available?) && headless_engine.available?
+
+      Array(@store.all(:http_responses)).each do |entry|
+        response = symbolize_keys(entry)
+        host = response[:host].to_s
+        next if host.empty?
+        next if @processed_headless_hosts.include?(host)
+        next unless response[:status].to_i == 200 || response[:status_code].to_i == 200
+
+        headless_result = headless_engine.probe("https://#{host}")
+        @processed_headless_hosts << host
+        next if headless_result.nil?
+
+        @store.add(:headless_results, headless_result.merge(host: host))
+        emit(
+          :crawl,
+          {
+            host: host,
+            pages_crawled: [],
+            links: Array(headless_result[:rendered_links]),
+            forms: Array(headless_result[:forms]),
+            scripts: [],
+            comments: Array(headless_result[:js_errors]),
+            interesting_files: [],
+            rendered: true
+          }
+        )
+        extract_headless_spa_endpoints(host, headless_result).each do |spa_entry|
+          @store.add(:spa_endpoints, spa_entry)
+        end
+      rescue StandardError => e
+        record_failure("headless_engine", "#{host}: #{e.message}")
+      end
+    rescue StandardError => e
+      record_failure("headless_engine", e.message)
+    end
+
+    def extract_headless_spa_endpoints(host, headless_result)
+      Array(headless_result[:network_requests]).filter_map do |request|
+        entry = symbolize_keys(request)
+        next if entry[:url].to_s.empty?
+
+        uri = URI.parse(entry[:url].to_s)
+        path = uri.path.to_s
+        method = entry[:method].to_s.upcase
+        next unless path.start_with?("/api/", "/v1/", "/v2/", "/graphql", "/rest/") || %w[POST PUT PATCH DELETE].include?(method)
+
+        {
+          url: entry[:url].to_s,
+          method: method.empty? ? "GET" : method,
+          discovered_from: host
+        }
+      rescue StandardError
+        nil
+      end.uniq
+    rescue StandardError
+      []
     end
 
     def setup_event_subscribers
@@ -476,6 +602,7 @@ module ASRFacet
         entry = symbolize_keys(data)
         host = entry[:host].to_s
         next if host.empty?
+        next unless @scope.in_scope?(host)
 
         @store.add(:subdomains, host)
         @graph.add_node(host, type: :subdomain, data: entry[:data] || {})
@@ -488,6 +615,7 @@ module ASRFacet
         entry = symbolize_keys(data)
         @store.add(:dns, entry)
         next unless %i[a aaaa].include?(entry[:type].to_sym)
+        next unless @scope.in_scope?(entry[:value])
 
         remember_resolution(entry[:host], entry[:value])
         @store.add(:ips, entry[:value])
@@ -506,7 +634,7 @@ module ASRFacet
       @event_bus.subscribe(:http_response) do |data|
         entry = symbolize_keys(data)
         @store.add(:http_responses, entry)
-        @graph.add_node(entry[:host], type: :subdomain, data: { url: entry[:url], title: entry[:title] })
+        @graph.add_node(entry[:host], type: :subdomain, data: { url: entry[:url], title: entry[:title], technologies: entry[:technologies] })
       end
 
       @event_bus.subscribe(:ssl_cert) do |data|
@@ -561,6 +689,30 @@ module ASRFacet
       end
     rescue StandardError
       {}
+    end
+
+    def build_result
+      {
+        store: @store,
+        graph: @graph,
+        diff: @diff_result,
+        change_summary: @change_summary,
+        top_assets: @top_assets,
+        js_endpoints: @js_summary,
+        correlations: @correlations,
+        probabilistic_subdomains: @probabilistic_subdomains
+      }
+    rescue StandardError
+      {
+        store: @store,
+        graph: @graph,
+        diff: {},
+        change_summary: "",
+        top_assets: [],
+        js_endpoints: {},
+        correlations: [],
+        probabilistic_subdomains: []
+      }
     end
   end
 end

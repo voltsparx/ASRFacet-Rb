@@ -251,6 +251,11 @@ module ASRFacet
           ["--monitor", "Print what changed since the last saved scan."],
           ["--top N", "Control how many top-ranked assets print in CLI mode."],
           ["--memory", "Skip already confirmed subdomains from prior scans."],
+          ["--headless", "Render JavaScript-heavy pages in a headless browser when available."],
+          ["--webhook-url URL", "Send high-severity finding alerts to Slack or Discord."],
+          ["--webhook-platform NAME", "Choose slack or discord for webhook payload formatting."],
+          ["--delay MS", "Apply a base delay between requests in milliseconds."],
+          ["--adaptive-rate", "Back off automatically when 429 or 503 responses appear."],
           ["-C, --console", "Open the persistent ASRFacet console shell."]
         ]
         render_ascii_table(

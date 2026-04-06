@@ -13,7 +13,7 @@ Gem::Specification.new do |spec|
   spec.license = "LicenseRef-Proprietary"
   spec.required_ruby_version = ">= 3.2"
 
-  spec.files = Dir.glob("{bin,config,lib,man,spec,wordlists}/**/*").select { |path| File.file?(path) } + %w[Gemfile README.md LICENSE]
+  spec.files = Dir.glob("{bin,config,install,lib,man,spec,wordlists}/**/*").select { |path| File.file?(path) } + %w[Gemfile README.md LICENSE]
   spec.bindir = "bin"
   spec.executables = %w[asrfacet-rb]
   spec.require_paths = ["lib"]
@@ -36,4 +36,5 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "rspec"
   spec.add_development_dependency "webmock"
   spec.add_development_dependency "rubocop"
+  spec.add_development_dependency "ferrum"
 end

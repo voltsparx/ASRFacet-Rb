@@ -5,3 +5,4 @@ __pycache__/
 *.pyc
 temp/
 output/
+install/test-root/

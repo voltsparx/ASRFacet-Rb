@@ -46,19 +46,24 @@ module ASRFacet
           title: "COMMANDS",
           body: [
             "scan DOMAIN",
-            "  Run the full reconnaissance pipeline. This includes passive discovery, recursive DNS/certificate enrichment, active busting, port scanning, HTTP probing, crawl analysis, JavaScript endpoint mining, asset scoring, and vulnerability checks.",
+            "  Run the full reconnaissance pipeline. Aliases: s, sc.",
+            "  This includes passive discovery, recursive DNS/certificate enrichment, active busting, port scanning, HTTP probing, crawl analysis, JavaScript endpoint mining, asset scoring, and vulnerability checks.",
             "passive DOMAIN",
-            "  Run passive source aggregation only. This is the lowest-noise way to inventory subdomains before active validation.",
+            "  Run passive source aggregation only. Aliases: p, pa.",
+            "  This is the lowest-noise way to inventory subdomains before active validation.",
             "ports HOST",
-            "  Run a focused TCP scan against a host or IP. Use this when you want network exposure without the full web workflow.",
+            "  Run a focused TCP scan against a host or IP. Aliases: pt, po.",
+            "  Use this when you want network exposure without the full web workflow.",
             "dns DOMAIN",
-            "  Collect DNS records and basic resolution data only.",
+            "  Collect DNS records and basic resolution data only. Aliases: d, dn.",
             "console",
-            "  Launch the framework console. This is the richest interface and is intended to feel like an operator shell.",
+            "  Launch the framework console. Aliases: c, con, shell.",
+            "  This is the richest interface and is intended to feel like an operator shell.",
             "interactive",
-            "  Launch the standalone guided workflow outside the console.",
+            "  Launch the standalone guided workflow outside the console. Aliases: i, int.",
             "help [topic], explain TOPIC, manual [section]",
-            "  Show self-documentation at different levels of depth."
+            "  Show self-documentation at different levels of depth.",
+            "  Help aliases: h, ?. Explain aliases: x, exp. Manual aliases: m, man. Version aliases: v, ver."
           ]
         },
         "console" => {

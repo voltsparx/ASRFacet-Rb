@@ -3,6 +3,16 @@ require "fileutils"
 
 module ASRFacet::Output
   class BaseFormatter
+    include ASRFacet::Core::PluginSDK
+
+    attr_writer :logger, :http_client, :event_bus, :config
+
+    def self.plugin_type
+      :formatter
+    rescue StandardError
+      :formatter
+    end
+
     def format(_results)
       raise NotImplementedError, "Subclasses must implement #format"
     end

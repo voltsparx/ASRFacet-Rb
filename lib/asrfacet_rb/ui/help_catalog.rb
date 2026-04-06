@@ -125,6 +125,59 @@ module ASRFacet
             "asrfacet-rb scan example.com --monitor"
           ]
         },
+        "headless" => {
+          summary: "Enable headless browser rendering for JavaScript-heavy applications.",
+          usage: "--headless",
+          details: [
+            "Headless mode attempts to render Single Page Applications so client-side routes and network requests become visible.",
+            "If Ferrum is not installed, the pipeline skips this step gracefully."
+          ],
+          examples: [
+            "asrfacet-rb scan example.com --headless"
+          ]
+        },
+        "webhook-url" => {
+          summary: "Send real-time scan alerts to a webhook endpoint.",
+          usage: "--webhook-url URL",
+          details: [
+            "Use this to forward high-severity findings and scan summaries to Slack or Discord during an authorized run.",
+            "Notification failures never stop the scan."
+          ],
+          examples: [
+            "asrfacet-rb scan example.com --webhook-url https://hooks.slack.com/services/...",
+            "asrfacet-rb scan example.com --webhook-url https://discord.com/api/webhooks/... --webhook-platform discord"
+          ]
+        },
+        "webhook-platform" => {
+          summary: "Choose the webhook payload format for Slack or Discord.",
+          usage: "--webhook-platform slack|discord",
+          details: [
+            "Use slack for Slack-compatible text payloads or discord for Discord webhook content payloads."
+          ],
+          examples: [
+            "asrfacet-rb scan example.com --webhook-url https://discord.com/api/webhooks/... --webhook-platform discord"
+          ]
+        },
+        "delay" => {
+          summary: "Set the base request delay in milliseconds.",
+          usage: "--delay MS",
+          details: [
+            "Use this when you want a steady pacing baseline before adaptive rate control reacts to 429 or 503 responses."
+          ],
+          examples: [
+            "asrfacet-rb scan example.com --delay 250"
+          ]
+        },
+        "adaptive-rate" => {
+          summary: "Automatically slow down when a target starts rate limiting or struggling.",
+          usage: "--adaptive-rate",
+          details: [
+            "Adaptive rate control increases delay after 429 or 503 responses and gradually speeds back up after stable responses."
+          ],
+          examples: [
+            "asrfacet-rb scan example.com --adaptive-rate"
+          ]
+        },
         "memory" => {
           summary: "Reuse persistent recon memory to avoid rechecking already confirmed assets.",
           usage: "--memory",
@@ -292,6 +345,11 @@ module ASRFacet
         "--scope" => "scope",
         "--exclude" => "exclude",
         "--monitor" => "monitor",
+        "--headless" => "headless",
+        "--webhook-url" => "webhook-url",
+        "--webhook-platform" => "webhook-platform",
+        "--delay" => "delay",
+        "--adaptive-rate" => "adaptive-rate",
         "--memory" => "memory",
         "--top" => "top",
         "--threads" => "threads",
@@ -303,6 +361,25 @@ module ASRFacet
         "--output" => "output",
         "report" => "output",
         "reports" => "output",
+        "s" => "scan",
+        "sc" => "scan",
+        "p" => "passive",
+        "pa" => "passive",
+        "pt" => "ports",
+        "po" => "ports",
+        "d" => "dns",
+        "dn" => "dns",
+        "i" => "interactive",
+        "int" => "interactive",
+        "c" => "console",
+        "con" => "console",
+        "x" => "explain",
+        "exp" => "explain",
+        "h" => "help",
+        "?" => "help",
+        "m" => "manual",
+        "v" => "version",
+        "ver" => "version",
         "shell" => "console",
         "guided" => "interactive",
         "man" => "manual",
@@ -322,16 +399,16 @@ module ASRFacet
           "  #{executable} --console",
           "",
           "Commands:",
-          "  scan DOMAIN        Full reconnaissance pipeline",
-          "  passive DOMAIN     Passive subdomain discovery only",
-          "  ports HOST         Focused TCP port scan",
-          "  dns DOMAIN         DNS record collection only",
-          "  interactive        Guided beginner workflow",
-          "  console            Persistent console shell",
-          "  explain TOPIC      Explain a command, flag, or workflow",
-          "  help [TOPIC]       Show the main menu or a specific explanation",
-          "  manual [SECTION]   Read the built-in manual",
-          "  version            Print the installed version",
+          "  scan DOMAIN        Full reconnaissance pipeline        Aliases: s, sc",
+          "  passive DOMAIN     Passive subdomain discovery only    Aliases: p, pa",
+          "  ports HOST         Focused TCP port scan               Aliases: pt, po",
+          "  dns DOMAIN         DNS record collection only          Aliases: d, dn",
+          "  interactive        Guided beginner workflow            Aliases: i, int",
+          "  console            Persistent console shell            Aliases: c, con, shell",
+          "  explain TOPIC      Explain a command or topic          Aliases: x, exp",
+          "  help [TOPIC]       Show the help menu                  Aliases: h, ?",
+          "  manual [SECTION]   Read the built-in manual            Aliases: m, man",
+          "  version            Print the installed version         Aliases: v, ver",
           "",
           "Global options:",
           "  -o, --output PATH  Save output to a file instead of printing",
@@ -342,6 +419,11 @@ module ASRFacet
           "      --scope LIST   Additional authorized domains or IPs",
           "      --exclude LIST Domains or IPs to never touch",
           "      --monitor      Show changes since the previous scan",
+          "      --headless     Enable headless browser rendering for SPAs",
+          "      --webhook-url  Send high-severity alerts to Slack or Discord",
+          "      --webhook-platform NAME  slack or discord payload mode",
+          "      --delay MS     Base delay between requests in milliseconds",
+          "      --adaptive-rate Enable adaptive back-off on rate limiting",
           "      --top N        Limit the printed Top Targets list",
           "      --memory       Skip already confirmed subdomains",
           "  -C, --console      Launch the persistent console shell",
