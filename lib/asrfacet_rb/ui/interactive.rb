@@ -2,8 +2,9 @@
 require "tty-prompt"
 require "tty-spinner"
 
-module ASRFacet::UI
-  class Interactive
+module ASRFacet
+  module UI
+    class Interactive
     def initialize(prompt: TTY::Prompt.new)
       @prompt = prompt
     end
@@ -51,12 +52,12 @@ module ASRFacet::UI
           api_keys: { shodan: shodan_key },
           stage_callback: lambda do |index, name|
             current_spinner&.success("Completed stage #{index - 1}") if index > 1
-            current_spinner = TTY::Spinner.new("[:spinner] Stage #{index}/8 #{name}", format: :dots)
+            current_spinner = TTY::Spinner.new("[:spinner] Stage #{index}/9 #{name}", format: :dots)
             current_spinner.auto_spin
           end
         )
         store = pipeline.run
-        current_spinner&.success("Completed stage 8")
+        current_spinner&.success("Completed stage 9")
         store
       when "Passive"
         spinner = TTY::Spinner.new("[:spinner] Running passive enumeration", format: :dots)
@@ -81,7 +82,10 @@ module ASRFacet::UI
         spinner = TTY::Spinner.new("[:spinner] Collecting DNS records", format: :dots)
         spinner.auto_spin
         store = ASRFacet::ResultStore.new
-        ASRFacet::Engines::DnsEngine.new.run(target).each do |record_type, values|
+        dns_result = ASRFacet::Engines::DnsEngine.new.run(target)
+        dns_result[:data].each do |record_type, values|
+          next if %i[wildcard wildcard_ips zone_transfer].include?(record_type)
+
           Array(values).each { |value| store.add(:dns, { host: target, type: record_type, value: value }) }
         end
         spinner.success("DNS collection complete")
@@ -107,6 +111,7 @@ module ASRFacet::UI
       end
     rescue StandardError => e
       ASRFacet::Core::ThreadSafe.print_error(e.message)
+    end
     end
   end
 end

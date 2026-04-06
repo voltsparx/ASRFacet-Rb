@@ -1,8 +1,10 @@
 # Part of ASRFacet-Rb — authorized testing only
 require "nokogiri"
+require "time"
 
-module ASRFacet::Engines
-  class HttpEngine
+module ASRFacet
+  module Engines
+    class HttpEngine
     TECH_FINGERPRINTS = {
       "WordPress" => /wp-content|wp-includes|wordpress/i,
       "Drupal" => /drupal-settings-json|sites\/default|drupal/i,
@@ -52,111 +54,128 @@ module ASRFacet::Engines
       /.well-known/security.txt /console /metrics /debug /status /backup.old
     ].freeze
 
-    def initialize(client: ASRFacet::HTTP::RetryableClient.new)
-      @client = client
-    end
-
-    def probe(host)
-      %w[https http].each do |scheme|
-        url = "#{scheme}://#{host}"
-        response = @client.get(url)
-        next if response.nil?
-
-        body = response.body.to_s
-        headers = response.each_header.to_h
-        return {
-          host: host,
-          url: url,
-          status: response.code.to_i,
-          title: extract_title(body),
-          headers: headers,
-          technologies: detect_technologies(headers, body),
-          security_headers: extract_security_headers(headers),
-          cdn: detect_cdn(headers),
-          interesting_paths: check_paths(host, scheme: scheme),
-          body_preview: body[0, 50_000]
-        }
-      rescue StandardError
-        next
+      def initialize(target = nil, options = {}, client: ASRFacet::HTTP::RetryableClient.new)
+        @target = target
+        @options = options || {}
+        @client = client
       end
-      nil
-    rescue StandardError
-      nil
-    end
 
-    def check_paths(host, scheme: "https")
-      base_url = "#{scheme}://#{host}"
-      results = []
-      mutex = Mutex.new
-      pool = ASRFacet::ThreadPool.new(20)
+      def run(host = @target)
+        data = probe(host)
+        {
+          engine: "http_engine",
+          target: host.to_s,
+          timestamp: Time.now.iso8601,
+          status: data.nil? ? :failed : :success,
+          data: data || {},
+          errors: data.nil? ? ["HTTP probe failed"] : []
+        }
+      rescue StandardError => e
+        { engine: "http_engine", target: host.to_s, timestamp: Time.now.iso8601, status: :failed, data: {}, errors: [e.message] }
+      end
 
-      INTERESTING_PATHS.each do |path|
-        pool.enqueue do
-          response = @client.get("#{base_url}#{path}")
+      def probe(host)
+        %w[https http].each do |scheme|
+          url = "#{scheme}://#{host}"
+          response = @client.get(url)
           next if response.nil?
 
-          status = response.code.to_i
-          next if status == 404
-
-          mutex.synchronize do
-            results << {
-              path: path,
-              status: status,
-              size: response.body.to_s.bytesize
-            }
-          end
+          body = response.body.to_s
+          headers = response.each_header.to_h
+          return {
+            host: host,
+            url: url,
+            status_code: response.code.to_i,
+            title: extract_title(body),
+            headers: headers,
+            technologies: detect_technologies(headers, body),
+            security_headers: extract_security_headers(headers),
+            cdn: detect_cdn(headers),
+            interesting_paths: check_paths(host, scheme: scheme),
+            body_preview: body[0, 50_000]
+          }
         rescue StandardError
-          nil
+          next
         end
+        nil
+      rescue StandardError
+        nil
       end
 
-      pool.wait
-      results.sort_by { |entry| [entry[:status], entry[:path]] }
-    rescue StandardError
-      []
-    end
+      def check_paths(host, scheme: "https")
+        base_url = "#{scheme}://#{host}"
+        results = []
+        mutex = Mutex.new
+        pool = ASRFacet::ThreadPool.new(20)
 
-    private
+        INTERESTING_PATHS.each do |path|
+          pool.enqueue do
+            response = @client.get("#{base_url}#{path}")
+            next if response.nil?
 
-    def extract_title(body)
-      Nokogiri::HTML(body.to_s).at("title")&.text.to_s.strip
-    rescue StandardError
-      ""
-    end
+            status = response.code.to_i
+            next if status == 404
 
-    def detect_technologies(headers, body)
-      cookie_string = Array(headers["set-cookie"]).join(" ")
-      combined = "#{format_headers(headers)}\n#{cookie_string}\n#{body.to_s[0, 50_000]}"
+            mutex.synchronize do
+              results << {
+                path: path,
+                status: status,
+                size: response.body.to_s.bytesize
+              }
+            end
+          rescue StandardError
+            nil
+          end
+        end
 
-      TECH_FINGERPRINTS.each_with_object([]) do |(name, pattern), memo|
-        memo << name if combined.match?(pattern)
+        pool.wait
+        results.sort_by { |entry| [entry[:status], entry[:path]] }
+      rescue StandardError
+        []
       end
-    rescue StandardError
-      []
-    end
 
-    def extract_security_headers(headers)
-      SECURITY_HEADERS.each_with_object({}) do |header, memo|
-        memo[header] = headers[header.downcase] || headers[header]
+      private
+
+      def extract_title(body)
+        Nokogiri::HTML(body.to_s).at("title")&.text.to_s.strip
+      rescue StandardError
+        ""
       end
-    rescue StandardError
-      {}
-    end
 
-    def detect_cdn(headers)
-      formatted = format_headers(headers)
-      CDN_SIGNATURES.each do |name, pattern|
-        return name if formatted.match?(pattern)
+      def detect_technologies(headers, body)
+        cookie_string = Array(headers["set-cookie"]).join(" ")
+        combined = "#{format_headers(headers)}\n#{cookie_string}\n#{body.to_s[0, 50_000]}"
+
+        TECH_FINGERPRINTS.each_with_object([]) do |(name, pattern), memo|
+          memo << name if combined.match?(pattern)
+        end
+      rescue StandardError
+        []
       end
-      nil
-    rescue StandardError
-      nil
-    end
 
-    def format_headers(headers)
-      headers.map { |key, value| "#{key}: #{value}" }.join("\n")
-    rescue StandardError
-      ""
+      def extract_security_headers(headers)
+        SECURITY_HEADERS.each_with_object({}) do |header, memo|
+          memo[header] = headers[header.downcase] || headers[header]
+        end
+      rescue StandardError
+        {}
+      end
+
+      def detect_cdn(headers)
+        formatted = format_headers(headers)
+        CDN_SIGNATURES.each do |name, pattern|
+          return name if formatted.match?(pattern)
+        end
+        nil
+      rescue StandardError
+        nil
+      end
+
+      def format_headers(headers)
+        headers.map { |key, value| "#{key}: #{value}" }.join("\n")
+      rescue StandardError
+        ""
+      end
     end
   end
 end

@@ -1,8 +1,9 @@
 # Part of ASRFacet-Rb — authorized testing only
 require "thor"
 
-module ASRFacet::UI
-  class CLI < Thor
+module ASRFacet
+  module UI
+    class CLI < Thor
     class_option :output, aliases: "-o", type: :string, desc: "Output file path"
     class_option :format, aliases: "-f", type: :string, default: "cli", enum: %w[cli json html], desc: "Output format"
     class_option :verbose, aliases: "-v", type: :boolean, default: false, desc: "Verbose output"
@@ -19,7 +20,7 @@ module ASRFacet::UI
       store = if options[:passive_only]
                 passive_store(domain)
               else
-                ASRFacet::Pipeline.new(domain, build_options).run
+                ASRFacet::Pipeline.new(domain, build_options.merge(stage_callback: method(:announce_stage))).run
               end
       output_results(store)
     rescue StandardError => e
@@ -51,9 +52,14 @@ module ASRFacet::UI
     def dns(domain)
       ASRFacet::UI::Banner.print
       store = ASRFacet::ResultStore.new
-      ASRFacet::Engines::DnsEngine.new.run(domain).each do |record_type, values|
+      dns_result = ASRFacet::Engines::DnsEngine.new.run(domain)
+      dns_result[:data].each do |record_type, values|
+        next if %i[wildcard wildcard_ips zone_transfer].include?(record_type)
+
         Array(values).each { |value| store.add(:dns, { host: domain, type: record_type, value: value }) }
       end
+      Array(dns_result[:data][:a]).each { |ip| store.add(:ips, ip) }
+      Array(dns_result[:data][:aaaa]).each { |ip| store.add(:ips, ip) }
       output_results(store)
     rescue StandardError => e
       ASRFacet::Core::ThreadSafe.print_error(e.message)
@@ -75,12 +81,22 @@ module ASRFacet::UI
 
     private
 
+    def announce_stage(index, name)
+      return unless options[:verbose]
+
+      ASRFacet::Core::ThreadSafe.print_status("Stage #{index}: #{name}")
+    rescue StandardError
+      nil
+    end
+
     def build_options
       {
         ports: options[:ports],
         wordlist: options[:wordlist],
         threads: options[:threads],
         timeout: options[:timeout],
+        crawl_depth: 2,
+        crawl_pages: 100,
         api_keys: { shodan: options[:shodan_key] }
       }
     rescue StandardError
@@ -113,6 +129,7 @@ module ASRFacet::UI
       end
     rescue StandardError => e
       ASRFacet::Core::ThreadSafe.print_error(e.message)
+    end
     end
   end
 end

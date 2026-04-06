@@ -10,10 +10,11 @@ module ASRFacet
     end
 
     def add(category, item)
+      normalized_item = normalize_item(item)
       @mutex.synchronize do
-        @data[category.to_sym] << item
+        @data[category.to_sym] << normalized_item
       end
-      item
+      normalized_item
     rescue StandardError
       nil
     end
@@ -40,6 +41,18 @@ module ASRFacet
       end
     rescue StandardError
       {}
+    end
+
+    private
+
+    def normalize_item(item)
+      if item.respond_to?(:to_h) && !item.is_a?(Hash)
+        item.to_h
+      else
+        item
+      end
+    rescue StandardError
+      item
     end
   end
 end
