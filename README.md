@@ -90,4 +90,4 @@ The author assumes no liability for misuse.
 
 ## 📜 License
 
-Proprietary custom license. See `LICENSE`.
+Proprietary custom license. See <a href="https://raw.githubusercontent.com/voltsparx/ASRFacet-Rb/refs/heads/main/LICENSE">`LICENSE`</a>.
