@@ -1,0 +1,6 @@
+self-assessment/
+.venv/
+venv/
+__pycache__/
+*.pyc
+temp/
