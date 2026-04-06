@@ -2,6 +2,10 @@
 
 ASRFacet-Rb is a Ruby 3.2+ attack surface reconnaissance toolkit for authorized security testing. It combines passive discovery, active validation, web fingerprinting, lightweight vulnerability hints, relationship mapping, change tracking, and event-driven asset correlation in a single offline-capable pipeline.
 
+<p align="center">
+    <img src="https://raw.githubusercontent.com/voltsparx/ASRFacet/main/docs/images/illustrations/asrfacet-rb-logo.png" alt="ASRFacet-Rb's Logo">
+</p>
+
 ## Features
 
 - Passive subdomain collection across multiple sources
