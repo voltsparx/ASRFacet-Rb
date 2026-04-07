@@ -59,6 +59,7 @@ module ASRFacet
       rescue StandardError => e
         status = :failed if status == :success
         error = e
+        @logger&.print_warning("scheduler stage #{name} failed: #{e.message}")
       ensure
         finished_at = Time.now
         entry = {
@@ -73,11 +74,11 @@ module ASRFacet
         @mutex.synchronize { @history << entry }
       end
 
-        { status: status, result: result, error: error&.message.to_s, entry: entry }
-      rescue StandardError => e
-        @logger&.print_warning("scheduler stage #{name} failed to record: #{e.message}")
-        { status: :failed, result: nil, error: e.message, entry: { name: name.to_s, status: :failed } }
-      end
+      { status: status, result: result, error: error&.message.to_s, entry: entry }
+    rescue StandardError => e
+      @logger&.print_warning("scheduler stage #{name} failed to record: #{e.message}")
+      { status: :failed, result: nil, error: e.message, entry: { name: name.to_s, status: :failed } }
+    end
 
       def throttle(key, every:)
         interval = every.to_f
