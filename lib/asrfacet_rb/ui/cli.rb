@@ -41,15 +41,15 @@ module ASRFacet
 
       class << self
         def start(given_args = ARGV, config = {})
-        args = Array(given_args).dup
-        if args.delete("--console") || args.delete("-C")
-          return super(["console"], config)
-        end
-        if args.delete("--web-session")
-          return super(["web"], config)
-        end
+          args = Array(given_args).dup
+          if args.delete("--console") || args.delete("-C")
+            return super(["console"], config)
+          end
+          if args.delete("--web-session")
+            return super(["web"], config)
+          end
 
-        super(args, config)
+          super(args, config)
         rescue StandardError
           super(given_args, config)
         end
