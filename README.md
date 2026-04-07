@@ -7,7 +7,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/version-0.1.0-0A66C2?style=for-the-badge" alt="Version">
   <img src="https://img.shields.io/badge/ruby-%3E%3D%203.2-red?style=for-the-badge&logo=ruby&logoColor=white" alt="Ruby >= 3.2">
-  <img src="https://img.shields.io/badge/tests-32%2F32%20passing-2E8B57?style=for-the-badge" alt="Tests Passing">
+  <img src="https://img.shields.io/badge/tests-36%2F36%20passing-2E8B57?style=for-the-badge" alt="Tests Passing">
   <img src="https://img.shields.io/badge/status-stable-4C956C?style=for-the-badge" alt="Status Stable"> <br>
   <img src="https://img.shields.io/badge/license-Proprietary-8B0000?style=for-the-badge" alt="License">
 </p>
@@ -23,9 +23,10 @@ The full first-release documentation set lives in `docs/`.
 - `docs/architecture.md`
 - `docs/web-session.md`
 - `docs/reporting.md`
+- `docs/lab.md`
 - `docs/publishing.md`
 
-The current README reflects the latest verified test run: `bundle exec rspec` completed with `32 examples, 0 failures`.
+The current README reflects the latest verified test run: `bundle exec rspec` completed with `36 examples, 0 failures`.
 
 ## Authorized Use
 
@@ -70,7 +71,12 @@ Use ASRFacet-Rb only on systems you own or have explicit written permission to t
     <tr>
       <td>Operator UX</td>
       <td>Make the framework teach while it runs</td>
-      <td>CLI help, manual, Metasploit-style console, wizard mode</td>
+      <td>CLI help, <code>about</code>, <code>explain</code>, manual, Metasploit-style console, wizard mode, first-run guidance</td>
+    </tr>
+    <tr>
+      <td>Local Validation</td>
+      <td>Test the framework before real authorized targets</td>
+      <td>Built-in <code>lab</code> mode with placeholder web and API surfaces</td>
     </tr>
   </tbody>
 </table>
@@ -80,6 +86,8 @@ Use ASRFacet-Rb only on systems you own or have explicit written permission to t
 ```bash
 bundle install
 bundle exec ruby bin/asrfacet-rb help
+bundle exec ruby bin/asrfacet-rb about
+bundle exec ruby bin/asrfacet-rb --explain scope
 ```
 
 Cross-platform installers are also available in `install/`:
@@ -129,6 +137,16 @@ MANPATH="$PWD/man:$MANPATH" man asrfacet-rb
       <td>DNS-only inventory</td>
       <td><code>bundle exec ruby bin/asrfacet-rb dns example.com</code></td>
       <td>Collects DNS records and resolution data</td>
+    </tr>
+    <tr>
+      <td>About the framework</td>
+      <td><code>bundle exec ruby bin/asrfacet-rb about</code></td>
+      <td>Prints the framework overview, safety model, and storage paths</td>
+    </tr>
+    <tr>
+      <td>Local validation lab</td>
+      <td><code>bundle exec ruby bin/asrfacet-rb lab</code></td>
+      <td>Starts a safe local target for dry-runs before real systems</td>
     </tr>
     <tr>
       <td>Interactive shell</td>
@@ -185,6 +203,12 @@ MANPATH="$PWD/man:$MANPATH" man asrfacet-rb
       <td>Mail, naming, and resolution inventory</td>
     </tr>
     <tr>
+      <td><code>lab</code></td>
+      <td><code>none</code></td>
+      <td>Launch a safe local validation lab</td>
+      <td>Dry-run the framework against placeholder surfaces before real authorized targets</td>
+    </tr>
+    <tr>
       <td><code>interactive</code></td>
       <td><code>i</code>, <code>int</code></td>
       <td>Launch the guided workflow</td>
@@ -201,6 +225,12 @@ MANPATH="$PWD/man:$MANPATH" man asrfacet-rb
       <td><code>w</code>, <code>ui</code></td>
       <td>Launch the local web control panel</td>
       <td>Saved sessions, browser-driven configuration, and live report access</td>
+    </tr>
+    <tr>
+      <td><code>about</code></td>
+      <td><code>a</code></td>
+      <td>Print a framework overview</td>
+      <td>Quickly understand the framework, safety model, and storage paths</td>
     </tr>
     <tr>
       <td><code>help [TOPIC]</code></td>
@@ -296,6 +326,16 @@ MANPATH="$PWD/man:$MANPATH" man asrfacet-rb
       <td>Use the console UI instead of a one-shot command</td>
     </tr>
     <tr>
+      <td><code>--about</code></td>
+      <td>Print the framework overview</td>
+      <td>Shortcut flag for the <code>about</code> command</td>
+    </tr>
+    <tr>
+      <td><code>--explain TOPIC</code></td>
+      <td>Explain one topic directly</td>
+      <td>Shortcut flag for the <code>explain</code> command</td>
+    </tr>
+    <tr>
       <td><code>--web-session</code></td>
       <td>Open the local browser-based control panel</td>
       <td>Use saved web sessions, live activity, and report browsing</td>
@@ -312,7 +352,25 @@ MANPATH="$PWD/man:$MANPATH" man asrfacet-rb
 
 `--web-session` starts a local-only control panel at `127.0.0.1:4567` by default. The dashboard lets you configure scans, save named sessions, launch runs, watch stage-by-stage activity, and open the stored CLI, TXT, HTML, and JSON reports without leaving the browser.
 
-Session drafts are persisted under `~/.asrfacet_rb/web_sessions/`, so configuration survives accidental browser closes, process crashes, and power loss. Running sessions use heartbeats so stale runs are marked `interrupted` without clobbering a freshly active session, and `--web-host` / `--web-port` are preserved when launching through `--web-session`.
+Session drafts are persisted under `~/.asrfacet_rb/web_sessions/`, so configuration survives accidental browser closes, process crashes, and power loss. Running sessions use heartbeats so stale runs are marked `interrupted` without clobbering a freshly active session, and `--web-host` / `--web-port` are preserved when launching through `--web-session`. The dashboard also includes an About section and an embedded documentation viewer backed by the repository `docs/` content.
+
+## Local Validation Lab
+
+`lab` starts a safe local target with placeholder discovery surfaces so you can validate ASRFacet-Rb before real authorized targets.
+
+```bash
+bundle exec ruby bin/asrfacet-rb lab
+bundle exec ruby bin/asrfacet-rb lab --port 9393
+```
+
+The lab includes:
+
+- a JS-heavy page with API-looking routes
+- a directory-listing style page
+- a permissive CORS example
+- common debug and metrics endpoints
+- a sanitized placeholder `.env` route
+- an admin-style login form
 
 ## Scan-Specific Options
 

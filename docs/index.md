@@ -14,6 +14,8 @@ This documentation set is written for first-release use. It focuses on how to in
   Local control panel behavior, saved sessions, autosave, and recovery.
 - [Reporting Guide](./reporting.md)
   CLI, TXT, HTML, JSON, JSONL, report bundles, and artifact locations.
+- [Local Lab](./lab.md)
+  Safe local validation targets for dry-runs before real authorized systems.
 - [Publishing Notes](./publishing.md)
   First-release readiness notes, test verification, and release checklist.
 

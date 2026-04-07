@@ -16,6 +16,8 @@ The web control panel is local-only by default and binds to `127.0.0.1:4567` unl
 - launch runs from the browser
 - watch stage-by-stage activity
 - view run summaries and saved report links
+- read the built-in documentation set directly inside the dashboard
+- review an about section with framework and storage details
 - persist drafts across browser closes and host interruptions
 
 ## Session Persistence

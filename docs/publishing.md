@@ -10,7 +10,8 @@ This repository is prepared for an initial publish with emphasis on:
 - persistent output bundles
 - installer-based deployment
 - local web control panel with persisted sessions
-- built-in help, manual, and offline reporting
+- built-in help, about, explain, manual, and offline reporting
+- a safe local validation lab before real authorized targets
 
 ## Verification Performed
 
@@ -22,7 +23,7 @@ Verified in the repository before README refresh:
 
 Latest verified suite result:
 
-- `32 examples, 0 failures`
+- `36 examples, 0 failures`
 
 ## Release Checklist
 
@@ -31,6 +32,8 @@ Latest verified suite result:
 - Confirm the installer scripts still support `install`, `test`, `uninstall`, and `update`.
 - Confirm the man page renders locally.
 - Confirm `--web-session` respects `--web-host` and `--web-port`.
+- Confirm `--about` and `--explain` work in command and flag form.
+- Confirm `lab` starts and serves the placeholder validation routes locally.
 - Confirm report bundles are written to the configured output root.
 - Confirm the license and repository metadata are correct.
 

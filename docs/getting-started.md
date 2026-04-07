@@ -11,6 +11,8 @@
 ```bash
 bundle install
 bundle exec ruby bin/asrfacet-rb help
+bundle exec ruby bin/asrfacet-rb about
+bundle exec ruby bin/asrfacet-rb --explain scope
 ```
 
 ## Install As A Local Application
@@ -37,9 +39,12 @@ bundle exec ruby bin/asrfacet-rb scan example.com
 bundle exec ruby bin/asrfacet-rb passive example.com
 bundle exec ruby bin/asrfacet-rb dns example.com
 bundle exec ruby bin/asrfacet-rb ports 192.0.2.10 --ports 22,80,443
+bundle exec ruby bin/asrfacet-rb lab
 bundle exec ruby bin/asrfacet-rb --console
 bundle exec ruby bin/asrfacet-rb --web-session
 ```
+
+On the first interactive run, ASRFacet-Rb prints a short onboarding guide with safe starter commands, where output is stored, and how to open the built-in help surfaces.
 
 ## Recommended First Scan
 
