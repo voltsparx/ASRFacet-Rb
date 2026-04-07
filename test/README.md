@@ -25,3 +25,9 @@ having to remember a long set of manual commands.
 
 The current test harness is intended to back the publish workflow and the
 README verification notes.
+
+Latest verified repository result:
+
+- `bundle exec rake` passed
+- `42 examples, 0 failures`
+- CLI, web-session, lab, installer, and gem-build smoke checks all passed

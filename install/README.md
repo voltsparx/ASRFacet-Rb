@@ -37,4 +37,5 @@ Installer smoke checks are wired into the repository-wide verification flow:
 - `bundle exec rake test:install`
 
 The latest verified install flow confirms that both `asrfacet-rb` and `asrfrb`
-are created in the staged install and launch correctly.
+are created in the staged install and launch correctly as part of the current
+`bundle exec rake` verification pass.
