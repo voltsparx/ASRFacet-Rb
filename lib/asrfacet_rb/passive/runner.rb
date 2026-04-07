@@ -39,8 +39,9 @@ module ASRFacet
       end
 
       def run
-        threads = SOURCES.map do |source_class|
-          Thread.new do
+        pool = ASRFacet::ThreadPool.new(SOURCES.size, queue_size: SOURCES.size, timeout: source_timeout)
+        SOURCES.each do |source_class|
+          pool.enqueue(label: source_class.name, metadata: { source: source_class.name }) do
             source = source_class.new
             breaker = breaker_for(source)
             breaker.call do
@@ -61,11 +62,7 @@ module ASRFacet
           end
         end
 
-        threads.each do |thread|
-          thread.join
-        rescue StandardError
-          nil
-        end
+        pool.wait
 
         {
           subdomains: @results.to_a.sort,
@@ -85,6 +82,13 @@ module ASRFacet
         end
       rescue StandardError
         ASRFacet::Core::CircuitBreaker.new(source.name.to_s)
+      end
+
+      def source_timeout
+        timeout = @options[:timeout]
+        timeout.to_f.positive? ? timeout.to_f : 30
+      rescue StandardError
+        30
       end
     end
   end

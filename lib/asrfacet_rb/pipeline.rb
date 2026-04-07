@@ -28,6 +28,7 @@ module ASRFacet
       @memory = ASRFacet::Core::ReconMemory.new(@target.domain)
       @scope = build_scope(@target.domain)
       @filter = ASRFacet::Core::NoiseFilter.new
+      @scheduler = build_scheduler
       @rate_controller = build_rate_controller
       @http_client = build_http_client
       @notifier = ASRFacet::Notifiers::WebhookNotifier.new(
@@ -48,6 +49,8 @@ module ASRFacet
       @processed_http_hosts = Set.new
       @processed_headless_hosts = Set.new
       @processed_asn_ips = Set.new
+      @stage_history = []
+      @pipeline_failures = []
       @circuit_breakers = Hash.new { |hash, key| hash[key] = build_circuit_breaker(key) }
       @streamer = build_streamer
       setup_event_subscribers
@@ -63,6 +66,7 @@ module ASRFacet
       @memory = ASRFacet::Core::ReconMemory.new(@target.domain)
       @scope = build_scope(@target.domain)
       @filter = ASRFacet::Core::NoiseFilter.new
+      @scheduler = build_scheduler
       @rate_controller = build_rate_controller
       @http_client = build_http_client
       @notifier = ASRFacet::Notifiers::WebhookNotifier.new(
@@ -83,6 +87,8 @@ module ASRFacet
       @processed_http_hosts = Set.new
       @processed_headless_hosts = Set.new
       @processed_asn_ips = Set.new
+      @stage_history = []
+      @pipeline_failures = []
       @circuit_breakers = Hash.new { |hash, key| hash[key] = build_circuit_breaker(key) }
       @streamer = build_streamer
       setup_event_subscribers
@@ -266,9 +272,17 @@ module ASRFacet
 
     def stage(index, name)
       @options[:stage_callback]&.call(index, name, :start, build_stage_snapshot(index, name))
-      result = yield
-      @options[:stage_callback]&.call(index, name, :complete, build_stage_snapshot(index, name))
-      result
+      outcome = @scheduler.stage(name, timeout: stage_timeout(name)) { yield }
+      entry = outcome[:entry].merge(index: index)
+      @stage_history << entry
+      @streamer&.write("stage", entry)
+      if outcome[:status] == :success
+        @options[:stage_callback]&.call(index, name, :complete, build_stage_snapshot(index, name))
+        outcome[:result]
+      else
+        record_failure(name, outcome[:error].to_s.empty? ? "stage failed" : outcome[:error].to_s)
+        nil
+      end
     rescue StandardError => e
       record_failure(name, e.message)
       nil
@@ -328,9 +342,17 @@ module ASRFacet
     end
 
     def record_failure(engine_name, reason)
+      timestamp = Time.now.iso8601
       @circuit_breakers[engine_name.to_s].record_failure
       @memory.record_failure(engine_name, reason)
-      @streamer&.write("failure", { engine: engine_name, reason: reason, breaker: @circuit_breakers[engine_name.to_s].state })
+      entry = {
+        engine: engine_name,
+        reason: reason,
+        breaker: @circuit_breakers[engine_name.to_s].state,
+        timestamp: timestamp
+      }
+      @pipeline_failures << entry
+      @streamer&.write("failure", entry)
       emit(:error, { engine: engine_name, reason: reason })
     rescue StandardError
       nil
@@ -521,6 +543,23 @@ module ASRFacet
       ASRFacet::HTTP::RetryableClient.new(rate_controller: @rate_controller)
     rescue StandardError
       ASRFacet::HTTP::RetryableClient.new
+    end
+
+    def build_scheduler
+      ASRFacet::Execution::Scheduler.new(logger: ASRFacet::Core::ThreadSafe)
+    rescue StandardError
+      ASRFacet::Execution::Scheduler.new
+    end
+
+    def stage_timeout(name)
+      timeouts = symbolize_keys(@options[:stage_timeouts].to_h)
+      specific = timeouts[name.to_s.downcase.to_sym]
+      return specific.to_f if specific.to_f.positive?
+
+      generic = @options[:stage_timeout]
+      generic.to_f.positive? ? generic.to_f : nil
+    rescue StandardError
+      nil
     end
 
     def build_component(klass, *args)
@@ -724,7 +763,12 @@ module ASRFacet
         probabilistic_subdomains: @probabilistic_subdomains,
         stream_path: @streamer&.path,
         output_directory: resolve_output_directory,
-        summary: @store.summary
+        summary: @store.summary,
+        execution: {
+          stages: @stage_history,
+          failures: @pipeline_failures,
+          scheduler: @scheduler&.stats || {}
+        }
       }
     rescue StandardError
       {
@@ -738,7 +782,12 @@ module ASRFacet
         probabilistic_subdomains: [],
         stream_path: @streamer&.path,
         output_directory: resolve_output_directory,
-        summary: {}
+        summary: {},
+        execution: {
+          stages: Array(@stage_history),
+          failures: Array(@pipeline_failures),
+          scheduler: @scheduler&.stats || {}
+        }
       }
     end
 

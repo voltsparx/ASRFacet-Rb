@@ -85,5 +85,7 @@ RSpec.describe ASRFacet::Pipeline do
     expect(store[:whois]).to include(include(registrar: "Example Registrar"))
     expect(graph[:edges]).to include(include(from: "example.com", to: "app.example.com", relation: :belongs_to))
     expect(graph[:edges]).to include(include(from: "app.example.com", to: "198.51.100.20", relation: :resolves_to))
+    expect(result[:execution]).to include(:stages, :failures, :scheduler)
+    expect(result[:execution][:stages]).not_to be_empty
   end
 end
