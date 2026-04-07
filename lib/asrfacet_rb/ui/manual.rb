@@ -18,9 +18,11 @@ module ASRFacet
         name
         synopsis
         description
+        about
         commands
         console
         wizard
+        local_lab
         workflow
         recon_basics
         configurations
@@ -55,6 +57,15 @@ module ASRFacet
             "The console, manual, explain topics, and wizard are intentionally educational so new users can learn both the framework and the underlying reconnaissance concepts while they work."
           ]
         },
+        "about" => {
+          title: "ABOUT",
+          body: [
+            "ASRFacet-Rb is an operator-focused reconnaissance framework for Ruby 3.2+.",
+            "It combines passive discovery, DNS and certificate enrichment, port and HTTP validation, JavaScript endpoint mining, reporting, and change tracking in one workflow.",
+            "Operator interfaces include a one-shot CLI, a persistent console shell, a local browser-based session UI, offline reports, built-in explain topics, and a manual page.",
+            "A safe local lab is also included so users can validate the framework on local placeholder surfaces before touching real authorized systems."
+          ]
+        },
         "commands" => {
           title: "COMMANDS",
           body: [
@@ -75,6 +86,11 @@ module ASRFacet
             "web",
             "  Launch the local web session control panel. Aliases: w, ui.",
             "  This provides saved sessions, live activity, report browsing, and crash-resistant drafts through a browser.",
+            "lab",
+            "  Launch the local validation lab with pre-built placeholder surfaces.",
+            "  Use this to test scanning, crawling, reporting, and UI behavior against a local target before real authorized systems.",
+            "about",
+            "  Print a framework overview and safety-oriented product summary.",
             "interactive",
             "  Launch the standalone guided workflow outside the console. Aliases: i, int.",
             "help [topic], explain TOPIC, manual [section]",
@@ -87,7 +103,7 @@ module ASRFacet
           body: [
             "The console is the primary operator interface. It supports framework-style commands such as `show commands`, `show options`, `show workflow`, `show config`, `info recon`, `man`, and `wizard`.",
             "You can also run normal commands directly inside it, for example `scan example.com`, `passive example.com`, `dns example.com`, or `ports 192.0.2.10 --ports top1000`.",
-            "Console-only helpers like `wizard`, `banner`, and `clear` exist to make the shell friendlier for first-time users."
+            "Console-only helpers like `wizard`, `banner`, `about`, and `clear` exist to make the shell friendlier for first-time users."
           ]
         },
         "wizard" => {
@@ -96,6 +112,14 @@ module ASRFacet
             "The console wizard is a guided planner that asks what you are trying to learn, how careful you want to be, what kind of output you prefer, and whether you want monitoring or memory enabled.",
             "It then translates those answers into a concrete ASRFacet-Rb command, explains why the framework chose that profile, and can execute it for you immediately.",
             "Wizard mode is console-only so it can teach interactively without cluttering the normal CLI surface."
+          ]
+        },
+        "local_lab" => {
+          title: "LOCAL LAB",
+          body: [
+            "Use `asrfacet-rb lab` to launch a safe local validation target on 127.0.0.1 by default.",
+            "The lab exposes placeholder discovery surfaces such as weak headers, permissive CORS, a directory-listing style page, JavaScript endpoint patterns, debug-style routes, and sanitized placeholder configuration files.",
+            "Its purpose is to let you test crawling, reporting, explainability, and local web-session behavior before scanning a real authorized system."
           ]
         },
         "workflow" => {
@@ -183,6 +207,9 @@ module ASRFacet
             "asrfacet-rb scan example.com --format html --output report.html",
             "asrfacet-rb passive example.com --format json --output passive.json",
             "asrfacet-rb ports api.example.com --ports 80,443,8443 --threads 50",
+            "asrfacet-rb lab --port 9393",
+            "asrfacet-rb about",
+            "asrfacet-rb --explain scope",
             "asrfacet-rb scan example.com --scope example.com,api.example.com --exclude dev.example.com --monitor",
             "asrfacet-rb --console",
             "man asrfacet-rb"
@@ -192,11 +219,14 @@ module ASRFacet
 
       ALIASES = {
         "overview" => "description",
+        "about" => "about",
         "usage" => "synopsis",
         "config" => "configurations",
         "configuration" => "configurations",
         "output" => "outputs",
         "reporting" => "outputs",
+        "lab" => "local_lab",
+        "local_lab" => "local_lab",
         "recon" => "recon_basics",
         "basics" => "recon_basics",
         "learning" => "recon_basics",

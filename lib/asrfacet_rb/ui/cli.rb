@@ -26,6 +26,7 @@ module ASRFacet
       map %w[i int] => :interactive
       map %w[c con shell] => :console
       map %w[w web ui] => :web
+      map %w[a] => :about
       map %w[h ?] => :help
       map %w[x exp] => :explain
       map %w[m man] => :manual
@@ -54,11 +55,20 @@ module ASRFacet
       class << self
         def start(given_args = ARGV, config = {})
           args = Array(given_args).dup
+          ASRFacet::UI::FirstRunGuide.maybe_print(args)
           if args.delete("--console") || args.delete("-C")
             return super(["console", *args], config)
           end
           if args.delete("--web-session")
             return super(["web", *args], config)
+          end
+          if args.delete("--about")
+            return super(["about", *args], config)
+          end
+          if (index = args.index("--explain"))
+            topic = args[index + 1].to_s
+            args.slice!(index, 2)
+            return super(["explain", topic, *args], config)
           end
 
           super(args, config)
@@ -131,6 +141,18 @@ module ASRFacet
         ASRFacet::Core::ThreadSafe.print_error(e.message)
       end
 
+      desc "lab", "Launch the local validation lab with safe placeholder templates"
+      method_option :host, type: :string, default: "127.0.0.1", desc: "Bind host for the local lab"
+      method_option :port, type: :numeric, default: 9292, desc: "Bind port for the local lab"
+      def lab
+        ASRFacet::Lab::TemplateServer.new(
+          host: options[:host],
+          port: options[:port]
+        ).start
+      rescue StandardError => e
+        ASRFacet::Core::ThreadSafe.print_error(e.message)
+      end
+
       desc "interactive", "Launch the guided interactive interface"
       def interactive
         ASRFacet::UI::Interactive.new.start
@@ -151,6 +173,13 @@ module ASRFacet
           host: options[:web_host],
           port: options[:web_port]
         ).start
+      rescue StandardError => e
+        ASRFacet::Core::ThreadSafe.print_error(e.message)
+      end
+
+      desc "about", "Show a framework overview, usage guidance, and storage paths"
+      def about
+        puts(ASRFacet::UI::About.plain_text)
       rescue StandardError => e
         ASRFacet::Core::ThreadSafe.print_error(e.message)
       end

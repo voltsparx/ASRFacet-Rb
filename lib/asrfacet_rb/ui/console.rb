@@ -28,6 +28,7 @@ module ASRFacet
       COMMAND_GROUPS = {
         "Core" => {
           "help [command]" => "Show general help or detailed help for one command/topic.",
+          "about" => "Show what ASRFacet-Rb is, what it includes, and where it stores data.",
           "show commands" => "List every console command in a framework-style table.",
           "show options" => "Display the most useful global flags and what they do.",
           "show workflow" => "Display the eight-stage reconnaissance pipeline.",
@@ -46,6 +47,7 @@ module ASRFacet
           "passive <domain>" => "Run passive source aggregation only.",
           "dns <domain>" => "Collect DNS records only.",
           "ports <host>" => "Run a focused TCP port scan.",
+          "lab" => "Launch the local validation lab for safe testing.",
           "interactive" => "Launch the beginner-friendly guided workflow."
         }
       }.freeze
@@ -53,6 +55,10 @@ module ASRFacet
         "banner" => {
           summary: "Print the framework banner again inside the console.",
           usage: "banner"
+        },
+        "about" => {
+          summary: "Print a framework overview including capabilities, operator surfaces, and storage paths.",
+          usage: "about"
         },
         "clear" => {
           summary: "Clear the console screen and keep you inside the shell.",
@@ -134,6 +140,8 @@ module ASRFacet
           clear_screen
         when "banner"
           ASRFacet::UI::Banner.print
+        when "about"
+          ASRFacet::Core::ThreadSafe.puts(ASRFacet::UI::About.plain_text)
         when "version"
           ASRFacet::Core::ThreadSafe.puts(ASRFacet::VERSION.to_s)
         when "show commands"

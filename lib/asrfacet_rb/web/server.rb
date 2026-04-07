@@ -96,7 +96,11 @@ module ASRFacet
               framework_icon: "/assets/icon"
             },
             defaults: default_config,
-            sessions: @session_store.list_sessions.map { |session| summarize_session(session) }
+            sessions: @session_store.list_sessions.map { |session| summarize_session(session) },
+            about: ASRFacet::UI::About.plain_text,
+            first_run: !ASRFacet::UI::FirstRunGuide.seen?,
+            first_run_guide: ASRFacet::UI::FirstRunGuide.guide_lines,
+            docs: documentation_payload
           }
         )
       rescue StandardError
@@ -281,6 +285,19 @@ module ASRFacet
         {}
       end
 
+      def documentation_payload
+        docs_root = File.expand_path("../../../docs", __dir__)
+        Dir.glob(File.join(docs_root, "*.md")).sort.map do |path|
+          {
+            slug: File.basename(path, ".md"),
+            title: File.basename(path, ".md").split(/[_-]/).map(&:capitalize).join(" "),
+            content: File.read(path)
+          }
+        end
+      rescue StandardError
+        []
+      end
+
       def dashboard_html
         <<~HTML
           <!DOCTYPE html>
@@ -317,6 +334,8 @@ module ASRFacet
                   <a href="#configuration">Configuration</a>
                   <a href="#activity">Live Activity</a>
                   <a href="#guidance">Guidance</a>
+                  <a href="#about">About</a>
+                  <a href="#documentation">Documentation</a>
                 </nav>
                 <section class="sessions-card">
                   <div class="section-head">
@@ -357,6 +376,7 @@ module ASRFacet
                   <div class="hero-copy">
                     <h2>Recon session command deck</h2>
                     <p>This local control panel keeps scope planning, run execution, live review, and report access in one place. It follows the same pipeline behavior as the CLI while giving you a richer operating surface and persistent session memory.</p>
+                    <div id="first-run-banner" class="empty-note" style="display:none; margin-top: 14px;"></div>
                   </div>
                   <div class="hero-meta">
                     <div class="hero-chip"><span class="tiny muted">Theme</span><strong id="theme-name">Light</strong></div>
@@ -447,6 +467,17 @@ module ASRFacet
                       <thead><tr><th>Severity</th><th>Title</th><th>Host</th></tr></thead>
                       <tbody id="findings-table"></tbody>
                     </table>
+                  </section>
+                </section>
+                <section class="lower-grid">
+                  <section id="about" class="card">
+                    <h2>About ASRFacet-Rb</h2>
+                    <pre id="about-copy" class="doc-pre"></pre>
+                  </section>
+                  <section id="documentation" class="card">
+                    <h2>Documentation</h2>
+                    <div id="docs-nav" class="report-links"></div>
+                    <pre id="docs-content" class="doc-pre"></pre>
                   </section>
                 </section>
               </main>
@@ -564,6 +595,7 @@ module ASRFacet
           .pie { width: 180px; height: 180px; border-radius: 50%; background: conic-gradient(var(--accent) 0 50%, var(--accent-3) 50% 72%, var(--warn) 72% 88%, rgba(93,82,72,.20) 88% 100%); box-shadow: inset 0 0 0 14px rgba(255,255,255,.68); }
           .log { background: var(--log-bg); color: var(--log-text); border-radius: 18px; padding: 14px; min-height: 340px; max-height: 460px; overflow: auto; font-family: Consolas, "Courier New", monospace; font-size: .87rem; }
           .log div { padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,.06); }
+          .doc-pre { white-space: pre-wrap; word-break: break-word; margin: 0; font-family: Consolas, "Courier New", monospace; font-size: .88rem; background: rgba(255,255,255,.64); border: 1px solid var(--line); border-radius: 18px; padding: 16px; min-height: 260px; max-height: 540px; overflow: auto; }
           table { width: 100%; border-collapse: collapse; overflow: hidden; }
           th, td { padding: 11px 12px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; font-size: .92rem; }
           th { background: rgba(255,255,255,.92); }
@@ -584,7 +616,7 @@ module ASRFacet
         defaults_json = JSON.generate(default_config)
         <<~JAVASCRIPT
           const defaults = #{defaults_json};
-          const state = { sessions: [], current: null, currentSession: null, dirty: false, autosaveTimer: null, refreshInFlight: false };
+          const state = { sessions: [], current: null, currentSession: null, dirty: false, autosaveTimer: null, refreshInFlight: false, docs: [], about: "", firstRun: false, activeDoc: null };
           const fields = ["name","target","mode","format","ports","threads","timeout","delay","scope","exclude","webhook-url","webhook-platform","shodan-key","monitor","memory","headless","verbose","adaptive-rate"];
           const themeKey = "asrfacet-web-theme";
           const el = (id) => document.getElementById(id);
@@ -723,6 +755,32 @@ module ASRFacet
           function renderFindings(session) {
             const findings = Array.isArray(session?.payload?.store?.findings) ? session.payload.store.findings.slice(0, 8) : [];
             el("findings-table").innerHTML = findings.map((finding) => `<tr><td>${escapeHtml(String(finding.severity || "info").toUpperCase())}</td><td>${escapeHtml(finding.title || "Untitled finding")}</td><td>${escapeHtml(finding.host || "-")}</td></tr>`).join("") || '<tr><td colspan="3" class="muted">No findings recorded yet.</td></tr>';
+          }
+
+          function renderAbout() {
+            el("about-copy").textContent = state.about || "ASRFacet-Rb";
+            const banner = el("first-run-banner");
+            if (!state.firstRun) {
+              banner.style.display = "none";
+              banner.textContent = "";
+              return;
+            }
+            banner.style.display = "block";
+            banner.textContent = Array.isArray(state.firstRunGuide) ? state.firstRunGuide.join("\\n") : "Welcome to ASRFacet-Rb.";
+          }
+
+          function showDoc(slug) {
+            const doc = state.docs.find((entry) => entry.slug === slug) || state.docs[0];
+            state.activeDoc = doc?.slug || null;
+            el("docs-content").textContent = doc?.content || "Documentation is unavailable.";
+            Array.from(document.querySelectorAll("[data-doc-slug]")).forEach((node) => node.classList.toggle("active", node.getAttribute("data-doc-slug") === state.activeDoc));
+          }
+
+          function renderDocs() {
+            const nav = el("docs-nav");
+            nav.innerHTML = state.docs.map((doc) => `<button class="secondary" data-doc-slug="${escapeHtml(doc.slug)}">${escapeHtml(doc.title)}</button>`).join("") || '<div class="empty-note">Documentation files were not found.</div>';
+            Array.from(nav.querySelectorAll("[data-doc-slug]")).forEach((node) => node.addEventListener("click", () => showDoc(node.getAttribute("data-doc-slug"))));
+            showDoc(state.activeDoc || state.docs[0]?.slug);
           }
 
           function updateSummary(session) {
@@ -869,8 +927,14 @@ module ASRFacet
           async function bootstrap() {
             setTheme(localStorage.getItem(themeKey) || "light");
             const data = await api("/api/bootstrap");
+            state.about = data.about || "";
+            state.docs = Array.isArray(data.docs) ? data.docs : [];
+            state.firstRun = data.first_run === true;
+            state.firstRunGuide = Array.isArray(data.first_run_guide) ? data.first_run_guide : [];
             state.sessions = Array.isArray(data.sessions) ? data.sessions : [];
             renderSessionList();
+            renderAbout();
+            renderDocs();
             attachListeners();
             if (state.sessions[0]?.id) {
               await loadSession(state.sessions[0].id, false);

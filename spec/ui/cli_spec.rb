@@ -55,8 +55,16 @@ RSpec.describe ASRFacet::UI::CLI do
       expect(server).to have_received(:start)
     end
 
+    it "supports the about flag shortcut" do
+      expect { described_class.start(["--about"]) }.to output(include("ASRFacet-Rb", "authorized attack surface reconnaissance")).to_stdout
+    end
+
+    it "supports the explain flag shortcut" do
+      expect { described_class.start(["--explain", "scope"]) }.to output(include("Explain: scope")).to_stdout
+    end
+
     it "shows the new adaptive and headless flags in the help output" do
-      expect { described_class.start(["help"]) }.to output(include("--headless", "--webhook-url", "--delay", "--adaptive-rate", "--web-session")).to_stdout
+      expect { described_class.start(["help"]) }.to output(include("--headless", "--webhook-url", "--delay", "--adaptive-rate", "--web-session", "--about", "--explain", "lab")).to_stdout
     end
 
     it "stores a full report bundle for scans" do

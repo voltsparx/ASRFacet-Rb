@@ -91,6 +91,30 @@ module ASRFacet
             "asrfacet-rb console"
           ]
         },
+        "about" => {
+          summary: "Show a complete framework overview, safety model, surfaces, and storage paths.",
+          usage: "asrfacet-rb about or asrfacet-rb --about",
+          details: [
+            "Use this when you want a quick but complete overview of what ASRFacet-Rb is, what it does, and where its data lives.",
+            "The same about content is available in the console and web UI."
+          ],
+          examples: [
+            "asrfacet-rb about",
+            "asrfacet-rb --about"
+          ]
+        },
+        "lab" => {
+          summary: "Launch a safe local validation lab with pre-built test surfaces before using real authorized targets.",
+          usage: "asrfacet-rb lab [--host 127.0.0.1] [--port 9292]",
+          details: [
+            "Lab mode starts a local-only WEBrick server that exposes intentionally weak headers, permissive CORS, JavaScript endpoints, directory-listing style content, and common debug paths.",
+            "The lab contains placeholder patterns only and is intended for local validation of discovery, crawling, reporting, and change-tracking behavior."
+          ],
+          examples: [
+            "asrfacet-rb lab",
+            "asrfacet-rb lab --port 9393"
+          ]
+        },
         "web-session" => {
           summary: "Launch the local web control panel with autosaved sessions and live activity.",
           usage: "asrfacet-rb --web-session [--web-host 127.0.0.1] [--web-port 4567]",
@@ -376,6 +400,8 @@ module ASRFacet
         "--webhook-platform" => "webhook-platform",
         "--delay" => "delay",
         "--adaptive-rate" => "adaptive-rate",
+        "--about" => "about",
+        "--explain" => "explain",
         "--memory" => "memory",
         "--top" => "top",
         "--threads" => "threads",
@@ -402,6 +428,9 @@ module ASRFacet
         "w" => "web-session",
         "web" => "web-session",
         "ui" => "web-session",
+        "about" => "about",
+        "lab" => "lab",
+        "a" => "about",
         "x" => "explain",
         "exp" => "explain",
         "h" => "help",
@@ -427,15 +456,19 @@ module ASRFacet
           "  #{executable} <command> [arguments] [options]",
           "  #{executable} --console",
           "  #{executable} --web-session",
+          "  #{executable} --about",
+          "  #{executable} --explain TOPIC",
           "",
           "Commands:",
           "  scan DOMAIN        Full reconnaissance pipeline        Aliases: s, sc",
           "  passive DOMAIN     Passive subdomain discovery only    Aliases: p, pa",
           "  ports HOST         Focused TCP port scan               Aliases: pt, po",
           "  dns DOMAIN         DNS record collection only          Aliases: d, dn",
+          "  lab                Start the local validation lab      Aliases: none",
           "  interactive        Guided beginner workflow            Aliases: i, int",
           "  console            Persistent console shell            Aliases: c, con, shell",
           "  web                Local web control panel             Aliases: w, ui",
+          "  about              Framework overview                  Aliases: a",
           "  explain TOPIC      Explain a command or topic          Aliases: x, exp",
           "  help [TOPIC]       Show the help menu                  Aliases: h, ?",
           "  manual [SECTION]   Read the built-in manual            Aliases: m, man",
@@ -455,6 +488,8 @@ module ASRFacet
           "      --webhook-platform NAME  slack or discord payload mode",
           "      --delay MS     Base delay between requests in milliseconds",
           "      --adaptive-rate Enable adaptive back-off on rate limiting",
+          "      --about        Show framework overview information",
+          "      --explain TOPIC Explain one topic without using the command form",
           "      --web-session  Launch the local web session control panel",
           "      --web-host HOST Bind host for web session mode",
           "      --web-port N   Bind port for web session mode",
@@ -466,7 +501,10 @@ module ASRFacet
           "  #{executable} scan example.com --ports top1000 --format html --output report.html",
           "  #{executable} passive example.com --format json",
           "  #{executable} ports api.example.com --ports 80,443,8443",
+          "  #{executable} lab",
+          "  #{executable} about",
           "  #{executable} help scan",
+          "  #{executable} --explain scope",
           "  #{executable} explain scope",
           "  #{executable} --console",
           "  #{executable} --web-session",

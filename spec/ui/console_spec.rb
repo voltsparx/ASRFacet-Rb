@@ -44,4 +44,11 @@ RSpec.describe ASRFacet::UI::Console do
     expect(explanation).to include("Explain: show workflow")
     expect(explanation).to include("Usage:")
   end
+
+  it "explains the about topic inside the console" do
+    explanation = console.send(:console_explanation, "about")
+
+    expect(explanation).to include("Explain: about")
+    expect(explanation).to include("framework overview")
+  end
 end
