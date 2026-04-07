@@ -30,6 +30,7 @@ module ASRFacet
           body: [
             "asrfacet-rb <command> [arguments] [options]",
             "asrfacet-rb --console",
+            "asrfacet-rb --web-session",
             "asrfacet-rb manual [section]",
             "man asrfacet-rb"
           ]
@@ -59,6 +60,9 @@ module ASRFacet
             "console",
             "  Launch the framework console. Aliases: c, con, shell.",
             "  This is the richest interface and is intended to feel like an operator shell.",
+            "web",
+            "  Launch the local web session control panel. Aliases: w, ui.",
+            "  This provides saved sessions, live activity, report browsing, and crash-resistant drafts through a browser.",
             "interactive",
             "  Launch the standalone guided workflow outside the console. Aliases: i, int.",
             "help [topic], explain TOPIC, manual [section]",
@@ -146,6 +150,8 @@ module ASRFacet
             "  JSON-Lines event stream written during scans for recovery, auditing, and stateful recon workflows.",
             "~/.asrfacet_rb/output/reports/",
             "  Automatically stored CLI, TXT, HTML, and JSON reports grouped by target and timestamp.",
+            "~/.asrfacet_rb/web_sessions/",
+            "  Persistent web-session drafts, run state, and recovered sessions for the local control panel.",
             "man/asrfacet-rb.1",
             "  Manual page source for `man asrfacet-rb` on systems where the man page is installed or the repository man directory is on MANPATH."
           ]

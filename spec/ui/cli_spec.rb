@@ -23,8 +23,18 @@ RSpec.describe ASRFacet::UI::CLI do
       expect(console).to have_received(:start)
     end
 
+    it "accepts the web-session flag and dispatches to web mode" do
+      server = instance_double(ASRFacet::Web::Server, start: nil)
+      allow(ASRFacet::Web::Server).to receive(:new).and_return(server)
+
+      described_class.start(["--web-session"])
+
+      expect(ASRFacet::Web::Server).to have_received(:new)
+      expect(server).to have_received(:start)
+    end
+
     it "shows the new adaptive and headless flags in the help output" do
-      expect { described_class.start(["help"]) }.to output(include("--headless", "--webhook-url", "--delay", "--adaptive-rate")).to_stdout
+      expect { described_class.start(["help"]) }.to output(include("--headless", "--webhook-url", "--delay", "--adaptive-rate", "--web-session")).to_stdout
     end
 
     it "stores a full report bundle for scans" do

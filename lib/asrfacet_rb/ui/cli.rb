@@ -13,6 +13,7 @@ module ASRFacet
       map %w[d dn] => :dns
       map %w[i int] => :interactive
       map %w[c con shell] => :console
+      map %w[w web ui] => :web
       map %w[h ?] => :help
       map %w[x exp] => :explain
       map %w[m man] => :manual
@@ -29,6 +30,9 @@ module ASRFacet
       class_option :top, type: :numeric, default: 5, desc: "Top N scored assets to print"
       class_option :memory, type: :boolean, default: false, desc: "Skip subdomains already confirmed in previous scans"
       class_option :console, aliases: "-C", type: :boolean, default: false, desc: "Launch the interactive console shell"
+      class_option :web_session, type: :boolean, default: false, desc: "Launch the local web session control panel"
+      class_option :web_host, type: :string, default: "127.0.0.1", desc: "Bind host for web session mode"
+      class_option :web_port, type: :numeric, default: 4567, desc: "Bind port for web session mode"
       class_option :headless, type: :boolean, default: false, desc: "Enable headless browser probing for SPAs"
       class_option :webhook_url, type: :string, desc: "Slack or Discord webhook URL for alerts"
       class_option :webhook_platform, type: :string, default: "slack", enum: %w[slack discord], desc: "Webhook platform"
@@ -37,12 +41,15 @@ module ASRFacet
 
       class << self
         def start(given_args = ARGV, config = {})
-          args = Array(given_args).dup
-          if args.delete("--console") || args.delete("-C")
-            return super(["console"], config)
-          end
+        args = Array(given_args).dup
+        if args.delete("--console") || args.delete("-C")
+          return super(["console"], config)
+        end
+        if args.delete("--web-session")
+          return super(["web"], config)
+        end
 
-          super(args, config)
+        super(args, config)
         rescue StandardError
           super(given_args, config)
         end
@@ -122,6 +129,16 @@ module ASRFacet
       desc "console", "Launch the persistent interactive console shell"
       def console
         ASRFacet::UI::Console.new.start
+      rescue StandardError => e
+        ASRFacet::Core::ThreadSafe.print_error(e.message)
+      end
+
+      desc "web", "Launch the local web session control panel"
+      def web
+        ASRFacet::Web::Server.new(
+          host: options[:web_host],
+          port: options[:web_port]
+        ).start
       rescue StandardError => e
         ASRFacet::Core::ThreadSafe.print_error(e.message)
       end

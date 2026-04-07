@@ -122,6 +122,11 @@ MANPATH="$PWD/man:$MANPATH" man asrfacet-rb
       <td>Opens the framework console and beginner wizard</td>
     </tr>
     <tr>
+      <td>Web control panel</td>
+      <td><code>bundle exec ruby bin/asrfacet-rb --web-session</code></td>
+      <td>Starts the local browser UI with saved sessions, live activity, and report browsing</td>
+    </tr>
+    <tr>
       <td>Manual</td>
       <td><code>bundle exec ruby bin/asrfacet-rb manual workflow</code></td>
       <td>Prints a focused manual section</td>
@@ -176,6 +181,12 @@ MANPATH="$PWD/man:$MANPATH" man asrfacet-rb
       <td><code>c</code>, <code>con</code>, <code>shell</code></td>
       <td>Launch the persistent console shell</td>
       <td>Operator-centric usage with help, man, and wizard support</td>
+    </tr>
+    <tr>
+      <td><code>web</code></td>
+      <td><code>w</code>, <code>ui</code></td>
+      <td>Launch the local web control panel</td>
+      <td>Saved sessions, browser-driven configuration, and live report access</td>
     </tr>
     <tr>
       <td><code>help [TOPIC]</code></td>
@@ -270,8 +281,24 @@ MANPATH="$PWD/man:$MANPATH" man asrfacet-rb
       <td>Open the persistent framework shell</td>
       <td>Use the console UI instead of a one-shot command</td>
     </tr>
+    <tr>
+      <td><code>--web-session</code></td>
+      <td>Open the local browser-based control panel</td>
+      <td>Use saved web sessions, live activity, and report browsing</td>
+    </tr>
+    <tr>
+      <td><code>--web-host HOST</code> / <code>--web-port N</code></td>
+      <td>Choose where the web panel binds locally</td>
+      <td>Useful when <code>127.0.0.1:4567</code> is already in use</td>
+    </tr>
   </tbody>
 </table>
+
+## Web Session Mode
+
+`--web-session` starts a local-only control panel at `127.0.0.1:4567` by default. The dashboard lets you configure scans, save named sessions, launch runs, watch stage-by-stage activity, and open the stored CLI, TXT, HTML, and JSON reports without leaving the browser.
+
+Session drafts are persisted under `~/.asrfacet_rb/web_sessions/`, so configuration survives accidental browser closes, process crashes, and power loss. When the dashboard restarts, interrupted runs are marked accordingly instead of silently disappearing.
 
 ## Scan-Specific Options
 

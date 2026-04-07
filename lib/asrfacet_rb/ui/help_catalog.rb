@@ -79,6 +79,19 @@ module ASRFacet
             "asrfacet-rb console"
           ]
         },
+        "web-session" => {
+          summary: "Launch the local web control panel with autosaved sessions and live activity.",
+          usage: "asrfacet-rb --web-session [--web-host 127.0.0.1] [--web-port 4567]",
+          details: [
+            "Web session mode starts a local-only dashboard for recon planning, saved sessions, run history, report browsing, and live stage updates.",
+            "Session drafts are autosaved to disk so configuration survives accidental browser closes, process crashes, and power loss.",
+            "The dashboard uses the same pipeline, memory, monitoring, headless, webhook, and rate-control options as the CLI."
+          ],
+          examples: [
+            "asrfacet-rb --web-session",
+            "asrfacet-rb web --web-port 8080"
+          ]
+        },
         "output" => {
           summary: "Control where reports go and how they are rendered.",
           usage: "--format cli|json|html|txt and --output PATH",
@@ -374,6 +387,9 @@ module ASRFacet
         "int" => "interactive",
         "c" => "console",
         "con" => "console",
+        "w" => "web-session",
+        "web" => "web-session",
+        "ui" => "web-session",
         "x" => "explain",
         "exp" => "explain",
         "h" => "help",
@@ -398,6 +414,7 @@ module ASRFacet
           "Usage:",
           "  #{executable} <command> [arguments] [options]",
           "  #{executable} --console",
+          "  #{executable} --web-session",
           "",
           "Commands:",
           "  scan DOMAIN        Full reconnaissance pipeline        Aliases: s, sc",
@@ -406,6 +423,7 @@ module ASRFacet
           "  dns DOMAIN         DNS record collection only          Aliases: d, dn",
           "  interactive        Guided beginner workflow            Aliases: i, int",
           "  console            Persistent console shell            Aliases: c, con, shell",
+          "  web                Local web control panel             Aliases: w, ui",
           "  explain TOPIC      Explain a command or topic          Aliases: x, exp",
           "  help [TOPIC]       Show the help menu                  Aliases: h, ?",
           "  manual [SECTION]   Read the built-in manual            Aliases: m, man",
@@ -425,6 +443,9 @@ module ASRFacet
           "      --webhook-platform NAME  slack or discord payload mode",
           "      --delay MS     Base delay between requests in milliseconds",
           "      --adaptive-rate Enable adaptive back-off on rate limiting",
+          "      --web-session  Launch the local web session control panel",
+          "      --web-host HOST Bind host for web session mode",
+          "      --web-port N   Bind port for web session mode",
           "      --top N        Limit the printed Top Targets list",
           "      --memory       Skip already confirmed subdomains",
           "  -C, --console      Launch the persistent console shell",
@@ -436,6 +457,7 @@ module ASRFacet
           "  #{executable} help scan",
           "  #{executable} explain scope",
           "  #{executable} --console",
+          "  #{executable} --web-session",
           "",
           "Topics you can explain:",
           "  #{topics.sort.join(', ')}",

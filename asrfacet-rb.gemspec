@@ -32,6 +32,8 @@ Gem::Specification.new do |spec|
   spec.add_runtime_dependency "nokogiri"
   spec.add_runtime_dependency "whois"
   spec.add_runtime_dependency "parallel"
+  spec.add_runtime_dependency "webrick"
+  spec.add_runtime_dependency "fiddle"
 
   spec.add_development_dependency "rspec"
   spec.add_development_dependency "webmock"
