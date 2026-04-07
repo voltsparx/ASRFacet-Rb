@@ -54,7 +54,7 @@ module ASRFacet
           ["Output Root", payload.dig(:meta, :output_directory).to_s]
         ]
         narrative = summary_narrative(payload).map { |line| "  - #{line}" }.join("\n")
-        "#{heading('Scan Overview', :primary)}\n#{TTY::Table.new(rows: summary_rows).render(:unicode)}\n\nWhat It Means:\n#{narrative}"
+        "#{heading('Scan Overview', :primary)}\n#{render_table(rows: summary_rows)}\n\nWhat It Means:\n#{narrative}"
       rescue StandardError
         ""
       end
@@ -77,7 +77,7 @@ module ASRFacet
           ]
         end
 
-        "#{heading('Findings', :danger)}\n#{meaning_for('findings')}\n#{TTY::Table.new(header: ['Title', 'Severity', 'Host', 'Description', 'Recommendation'], rows: rows).render(:unicode)}"
+        "#{heading('Findings', :danger)}\n#{meaning_for('findings')}\n#{render_table(headers: ['Title', 'Severity', 'Host', 'Description', 'Recommendation'], rows: rows)}"
       rescue StandardError
         ""
       end
@@ -88,7 +88,7 @@ module ASRFacet
         end
         return "" if rows.empty?
 
-        "#{heading('Top Targets', :success)}\nThese assets scored highly because they expose multiple signals worth deeper manual review.\n#{TTY::Table.new(header: ['Host', 'Score', 'Matched Rules'], rows: rows).render(:unicode)}"
+        "#{heading('Top Targets', :success)}\nThese assets scored highly because they expose multiple signals worth deeper manual review.\n#{render_table(headers: ['Host', 'Score', 'Matched Rules'], rows: rows)}"
       rescue StandardError
         ""
       end
@@ -106,7 +106,7 @@ module ASRFacet
         rows = artifact_rows(payload)
         return "" if rows.empty?
 
-        "#{heading('Stored Artifacts', :info)}\nThese files are kept on disk so the run can be reviewed later without rerunning the scan.\n#{TTY::Table.new(header: ['Artifact', 'Path'], rows: rows).render(:unicode)}"
+        "#{heading('Stored Artifacts', :info)}\nThese files are kept on disk so the run can be reviewed later without rerunning the scan.\n#{render_table(headers: ['Artifact', 'Path'], rows: rows)}"
       rescue StandardError
         ""
       end
@@ -114,7 +114,7 @@ module ASRFacet
       def table_section(title, headers, rows, color_name, meaning)
         return "" if rows.empty?
 
-        "#{heading(title, color_name)}\n#{meaning}\n#{TTY::Table.new(header: headers, rows: rows).render(:unicode)}"
+        "#{heading(title, color_name)}\n#{meaning}\n#{render_table(headers: headers, rows: rows)}"
       rescue StandardError
         ""
       end
@@ -162,6 +162,31 @@ module ASRFacet
         text.to_s.colorize(ASRFacet::Colors.terminal(color_name))
       rescue StandardError
         text.to_s
+      end
+
+      def render_table(headers: nil, rows:)
+        options = {
+          rows: rows,
+          multiline: true,
+          resize: true,
+          width: preferred_table_width
+        }
+        options[:header] = headers if headers
+        TTY::Table.new(**options).render(:unicode, multiline: true, resize: true, width: preferred_table_width)
+      rescue StandardError
+        Array(rows).map { |row| Array(row).join(" | ") }.join("\n")
+      end
+
+      def preferred_table_width
+        width = if $stdout.respond_to?(:tty?) && $stdout.tty?
+                  TTY::Screen.width
+                else
+                  160
+                end
+        width = width.to_i
+        width > 40 ? width : 160
+      rescue StandardError
+        160
       end
     end
   end

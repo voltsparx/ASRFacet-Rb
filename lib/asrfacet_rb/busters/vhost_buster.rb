@@ -28,7 +28,7 @@ module ASRFacet::Busters
     def run
       baseline = probe_baseline
       results = []
-      pool = ASRFacet::ThreadPool.new(@workers)
+      pool = ASRFacet::ThreadPool.new(@workers, queue_size: bounded_queue_size(@workers))
 
       File.foreach(@wordlist).lazy.each do |line|
         word = line.to_s.strip.downcase

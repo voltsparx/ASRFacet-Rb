@@ -26,5 +26,17 @@ module ASRFacet::Busters
     def run
       raise NotImplementedError, "Subclasses must implement #run"
     end
+
+    protected
+
+    def bounded_queue_size(workers, multiplier: 4, minimum: 16)
+      count = workers.to_i
+      count = 1 unless count.positive?
+      size = count * multiplier.to_i
+      size = minimum.to_i if size < minimum.to_i
+      size
+    rescue StandardError
+      minimum.to_i.positive? ? minimum.to_i : 16
+    end
   end
 end

@@ -17,6 +17,8 @@ require_relative "asrfacet_rb/colors"
 require_relative "asrfacet_rb/config"
 require_relative "asrfacet_rb/logger"
 require_relative "asrfacet_rb/core/thread_safe"
+require_relative "asrfacet_rb/core/warning_filter"
+ASRFacet::Core::WarningFilter.install!
 require_relative "asrfacet_rb/core/error_reporter"
 require_relative "asrfacet_rb/core/integrity_checker"
 require_relative "asrfacet_rb/core/deduplicator"

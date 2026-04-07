@@ -24,7 +24,7 @@ Verified in the repository before README refresh:
 Latest verified suite result:
 
 - `bundle exec rake` completed successfully
-- `43 examples, 0 failures`
+- `49 examples, 0 failures`
 
 ## Release Checklist
 

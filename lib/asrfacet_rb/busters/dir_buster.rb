@@ -29,7 +29,7 @@ module ASRFacet::Busters
     def run
       results = []
       seen = Set.new
-      pool = ASRFacet::ThreadPool.new(@workers)
+      pool = ASRFacet::ThreadPool.new(@workers, queue_size: bounded_queue_size(@workers))
 
       File.foreach(@wordlist).lazy.each do |line|
         word = line.to_s.strip
