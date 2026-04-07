@@ -38,7 +38,15 @@ module ASRFacet
         @mutex.synchronize { @jobs[session_id.to_s] = thread }
         true
       rescue StandardError => e
-        @session_store.mark_failed(session_id, e.message)
+        @session_store.mark_failed(
+          session_id,
+          ASRFacet::Core::ErrorReporter.build(
+            engine: "session_runner",
+            error: e,
+            isolated: false,
+            context: "Unable to start the requested session"
+          )
+        )
         false
       end
 
@@ -60,9 +68,16 @@ module ASRFacet
         config = symbolize(session[:config] || {})
         target = config[:target].to_s.strip
         raise "A target is required before starting a session." if target.empty?
+        integrity = ASRFacet::Core::IntegrityChecker.check(output_root: output_root)
+        if ASRFacet::Core::IntegrityChecker.critical?(integrity)
+          raise "Framework integrity check failed: #{integrity[:summary]}"
+        end
 
         heartbeat_stop = false
         @session_store.mark_running(session_id, config: config, target: target, process_id: Process.pid, runner_id: @runner_id)
+        unless integrity[:status].to_s == "ok"
+          @session_store.append_event(session_id, type: "warning", message: integrity[:summary], data: integrity)
+        end
         heartbeat_thread = Thread.new do
           Thread.current.report_on_exception = false if Thread.current.respond_to?(:report_on_exception=)
           until heartbeat_stop
@@ -72,14 +87,23 @@ module ASRFacet
         rescue StandardError
           nil
         end
-        result = perform_run(session_id, config, target)
+        result = perform_run(session_id, config, target, integrity: integrity)
         payload = normalize_payload(result)
         payload[:summary] ||= payload[:store].respond_to?(:summary) ? payload[:store].summary : {}
         payload[:meta] = build_meta(target)
+        payload[:integrity] ||= integrity
         payload[:artifacts] = save_report_bundle(target, payload)
         @session_store.mark_completed(session_id, payload)
       rescue StandardError => e
-        @session_store.mark_failed(session_id, e.message)
+        @session_store.mark_failed(
+          session_id,
+          ASRFacet::Core::ErrorReporter.build(
+            engine: "session_runner",
+            error: e,
+            isolated: false,
+            context: "The saved session could not finish cleanly"
+          )
+        )
       ensure
         heartbeat_stop = true if defined?(heartbeat_stop)
         heartbeat_thread&.join(0.2) rescue nil
@@ -87,19 +111,20 @@ module ASRFacet
         @mutex.synchronize { @jobs.delete(session_id.to_s) }
       end
 
-      def perform_run(session_id, config, target)
+      def perform_run(session_id, config, target, integrity:)
         mode = config[:mode].to_s
         case mode
         when "passive"
-          run_passive(session_id, target, config)
+          run_passive(session_id, target, config, integrity: integrity)
         when "dns"
-          run_dns(session_id, target)
+          run_dns(session_id, target, integrity: integrity)
         when "ports"
-          run_ports(session_id, target, config)
+          run_ports(session_id, target, config, integrity: integrity)
         else
           ASRFacet::Pipeline.new(
             target,
             pipeline_options(config).merge(
+              integrity_report: integrity,
               stage_callback: lambda do |index, name, phase = :start, snapshot = {}|
                 @session_store.update_stage(session_id, index: index, name: name, phase: phase, snapshot: snapshot)
               end,
@@ -109,11 +134,9 @@ module ASRFacet
             )
           ).run
         end
-      rescue StandardError
-        { store: ASRFacet::ResultStore.new, top_assets: [], summary: {} }
       end
 
-      def run_passive(session_id, target, config)
+      def run_passive(session_id, target, config, integrity:)
         store = ASRFacet::ResultStore.new
         @session_store.update_stage(session_id, index: 1, name: "Passive reconnaissance", phase: :start, snapshot: {})
         result = ASRFacet::Passive::Runner.new(target, api_keys(config)).run
@@ -124,12 +147,21 @@ module ASRFacet
         end
         Array(result[:errors]).each { |error| capture_event(session_id, :error, { engine: "passive_runner", reason: error }) }
         @session_store.update_stage(session_id, index: 1, name: "Passive reconnaissance", phase: :complete, snapshot: { subdomains: store.all(:subdomains).size })
-        { store: store, top_assets: [], summary: store.summary }
-      rescue StandardError
-        { store: ASRFacet::ResultStore.new, top_assets: [], summary: {} }
+        {
+          store: store,
+          top_assets: [],
+          summary: store.summary,
+          execution: {
+            stages: [],
+            failures: Array(result[:errors]).map do |error|
+              ASRFacet::Core::ErrorReporter.build(engine: "passive_runner", error: error, isolated: true)
+            end,
+            integrity: integrity
+          }
+        }
       end
 
-      def run_dns(session_id, target)
+      def run_dns(session_id, target, integrity:)
         store = ASRFacet::ResultStore.new
         @session_store.update_stage(session_id, index: 1, name: "DNS collection", phase: :start, snapshot: {})
         result = ASRFacet::Engines::DnsEngine.new.run(target)
@@ -145,12 +177,10 @@ module ASRFacet
         Array(result[:data][:a]).each { |ip| store.add(:ips, ip) }
         Array(result[:data][:aaaa]).each { |ip| store.add(:ips, ip) }
         @session_store.update_stage(session_id, index: 1, name: "DNS collection", phase: :complete, snapshot: { ips: store.all(:ips).size })
-        { store: store, top_assets: [], summary: store.summary }
-      rescue StandardError
-        { store: ASRFacet::ResultStore.new, top_assets: [], summary: {} }
+        { store: store, top_assets: [], summary: store.summary, execution: { stages: [], failures: [], integrity: integrity } }
       end
 
-      def run_ports(session_id, target, config)
+      def run_ports(session_id, target, config, integrity:)
         store = ASRFacet::ResultStore.new
         @session_store.update_stage(session_id, index: 1, name: "Port scanning", phase: :start, snapshot: {})
         ASRFacet::Engines::PortEngine.new.scan(target, config[:ports] || "top100", workers: config[:threads]).each do |entry|
@@ -158,9 +188,7 @@ module ASRFacet
           capture_event(session_id, :open_port, entry.merge(host: target))
         end
         @session_store.update_stage(session_id, index: 1, name: "Port scanning", phase: :complete, snapshot: { open_ports: store.all(:open_ports).size })
-        { store: store, top_assets: [], summary: store.summary }
-      rescue StandardError
-        { store: ASRFacet::ResultStore.new, top_assets: [], summary: {} }
+        { store: store, top_assets: [], summary: store.summary, execution: { stages: [], failures: [], integrity: integrity } }
       end
 
       def capture_event(session_id, event_type, data)

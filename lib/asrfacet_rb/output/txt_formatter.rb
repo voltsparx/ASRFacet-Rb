@@ -32,6 +32,8 @@ module ASRFacet
         sections << render_block("SPA Endpoints", Array(store[:spa_endpoints]).map { |entry| "#{entry[:method]} #{entry[:url]} (from #{entry[:discovered_from]})" })
         sections << render_block("DNS Records", Array(store[:dns]).map { |entry| "#{entry[:host]} #{entry[:type]} #{entry[:value]}" })
         sections << render_block("Correlations", Array(payload[:correlations]).map { |entry| JSON.generate(entry) })
+        sections << render_block("Fault Isolation and Execution Notes", failure_rows(payload).map { |engine, summary, details, recommendation| "#{engine}: #{summary}\n  Details: #{details}\n  Recommendation: #{recommendation}" })
+        sections << render_block("Framework Integrity", integrity_rows(payload).map { |severity, summary, details, recommendation| "#{severity.to_s.upcase}: #{summary}\n  Details: #{details}\n  Recommendation: #{recommendation}" })
         sections << render_block("Change Summary", [payload[:change_summary].to_s, JSON.pretty_generate(payload[:diff] || {})])
         sections << render_block("Stored Artifacts", artifact_rows(payload).map { |name, path| "#{name}: #{path}" })
         sections.compact.join("\n\n")

@@ -141,8 +141,7 @@ module ASRFacet
         end
 
         def validate_wordlists(report, root)
-          config = ASRFacet::Config.load
-          configured_lists = symbolize(config).fetch(:wordlists, {})
+          configured_lists = symbolize(config_for_root(root)).fetch(:wordlists, {})
           configured_lists.each do |name, relative_path|
             next if relative_path.to_s.strip.empty?
 
@@ -263,6 +262,15 @@ module ASRFacet
           else
             value
           end
+        rescue StandardError
+          {}
+        end
+
+        def config_for_root(root)
+          path = File.join(root, "config", "default.yml")
+          return {} unless File.file?(path)
+
+          YAML.safe_load(File.read(path), permitted_classes: [Symbol], aliases: true) || {}
         rescue StandardError
           {}
         end

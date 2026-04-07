@@ -103,20 +103,24 @@ module ASRFacet
           last_heartbeat_at: timestamp,
           payload: normalize_payload(payload),
           artifacts: symbolize(payload[:artifacts] || {}),
-          summary: symbolize(payload[:summary] || {})
+          summary: symbolize(payload[:summary] || {}),
+          integrity: symbolize(payload[:integrity] || payload.dig(:execution, :integrity) || {}),
+          error_details: {}
         )
       rescue StandardError
         nil
       end
 
       def mark_failed(id, message)
-        append_event(id, type: "error", message: message.to_s)
+        details = normalize_failure(message)
+        append_event(id, type: "error", message: details[:summary], data: details)
         timestamp = Time.now.utc.iso8601
         update_session(
           id,
           status: "failed",
           running: false,
-          error: message.to_s,
+          error: details[:summary],
+          error_details: details,
           last_run_completed_at: timestamp,
           last_heartbeat_at: timestamp
         )
@@ -211,10 +215,12 @@ module ASRFacet
             format: "html"
           },
           summary: {},
+          integrity: {},
           artifacts: {},
           events: [],
           payload: {},
           error: nil,
+          error_details: {},
           last_heartbeat_at: nil,
           created_at: Time.now.utc.iso8601,
           updated_at: Time.now.utc.iso8601
@@ -321,6 +327,25 @@ module ASRFacet
         true
       rescue StandardError
         false
+      end
+
+      def normalize_failure(message)
+        details = symbolize(message)
+        return details if details.is_a?(Hash) && details[:summary]
+
+        {
+          summary: message.to_s,
+          reason: message.to_s,
+          details: message.to_s,
+          recommendation: "Review the session activity log and rerun with a healthier framework or target configuration."
+        }
+      rescue StandardError
+        {
+          summary: message.to_s,
+          reason: message.to_s,
+          details: message.to_s,
+          recommendation: "Review the session activity log and rerun with a healthier framework or target configuration."
+        }
       end
     end
   end

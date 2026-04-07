@@ -30,6 +30,8 @@ module ASRFacet
         sections << table_section("JavaScript and SPA Endpoints", ["Source", "Endpoint"], endpoint_rows(payload, store), :violet, meaning_for("js_endpoints"))
         sections << table_section("DNS Highlights", ["Host", "Type", "Value"], dns_rows(store), :info, meaning_for("dns"))
         sections << table_section("Correlations", ["Type", "Summary"], correlation_rows(payload), :success, meaning_for("correlations"))
+        sections << table_section("Fault Isolation and Execution Notes", ["Component", "What Happened", "Details", "Recommendation"], failure_rows(payload), :warning, "These notes explain which engines or stages hit problems while the framework kept going.")
+        sections << table_section("Framework Integrity", ["Severity", "Issue", "Details", "Recommendation"], integrity_rows(payload), :danger, "These checks help detect whether the framework itself is missing files, misconfigured, or unable to write results safely.")
         sections << recommendations_section(payload)
         sections << artifact_section(payload)
         sections.reject(&:empty?).join("\n\n")

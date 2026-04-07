@@ -83,6 +83,8 @@ module ASRFacet
       method_option :wordlist, aliases: "-w", type: :string, desc: "Wordlist path"
       method_option :shodan_key, type: :string, desc: "Shodan API key"
       def scan(domain)
+        return unless ensure_framework_ready!
+
         result = if options[:passive_only]
                    passive_payload(domain)
                  else
@@ -96,20 +98,24 @@ module ASRFacet
                  end
         output_results(result, domain)
       rescue StandardError => e
-        ASRFacet::Core::ThreadSafe.print_error(e.message)
+        report_exception("scan", e)
       end
 
       desc "passive DOMAIN", "Run passive enumeration only"
       method_option :shodan_key, type: :string, desc: "Shodan API key"
       def passive(domain)
+        return unless ensure_framework_ready!
+
         output_results(passive_payload(domain), domain)
       rescue StandardError => e
-        ASRFacet::Core::ThreadSafe.print_error(e.message)
+        report_exception("passive", e)
       end
 
       desc "ports HOST", "Run a port scan only"
       method_option :ports, aliases: "-p", type: :string, desc: "Port range"
       def ports(host)
+        return unless ensure_framework_ready!
+
         store = ASRFacet::ResultStore.new
         ASRFacet::Core::ThreadSafe.print_status("Starting focused port discovery against #{host}") if options[:verbose]
         ASRFacet::Engines::PortEngine.new.scan(host, options[:ports] || "top100", workers: options[:threads]).each do |entry|
@@ -118,11 +124,13 @@ module ASRFacet
         end
         output_results({ store: store, top_assets: [], summary: store.summary }, host)
       rescue StandardError => e
-        ASRFacet::Core::ThreadSafe.print_error(e.message)
+        report_exception("ports", e)
       end
 
       desc "dns DOMAIN", "Run DNS collection only"
       def dns(domain)
+        return unless ensure_framework_ready!
+
         store = ASRFacet::ResultStore.new
         ASRFacet::Core::ThreadSafe.print_status("Collecting DNS records for #{domain}") if options[:verbose]
         dns_result = ASRFacet::Engines::DnsEngine.new.run(domain)
@@ -138,43 +146,51 @@ module ASRFacet
         Array(dns_result[:data][:aaaa]).each { |ip| store.add(:ips, ip) }
         output_results({ store: store, top_assets: [], summary: store.summary }, domain)
       rescue StandardError => e
-        ASRFacet::Core::ThreadSafe.print_error(e.message)
+        report_exception("dns", e)
       end
 
       desc "lab", "Launch the local validation lab with safe placeholder templates"
       method_option :host, type: :string, default: "127.0.0.1", desc: "Bind host for the local lab"
       method_option :port, type: :numeric, default: 9292, desc: "Bind port for the local lab"
       def lab
+        return unless ensure_framework_ready!
+
         ASRFacet::Lab::TemplateServer.new(
           host: options[:host],
           port: options[:port]
         ).start
       rescue StandardError => e
-        ASRFacet::Core::ThreadSafe.print_error(e.message)
+        report_exception("lab", e)
       end
 
       desc "interactive", "Launch the guided interactive interface"
       def interactive
+        return unless ensure_framework_ready!
+
         ASRFacet::UI::Interactive.new.start
       rescue StandardError => e
-        ASRFacet::Core::ThreadSafe.print_error(e.message)
+        report_exception("interactive", e)
       end
 
       desc "console", "Launch the persistent interactive console shell"
       def console
+        return unless ensure_framework_ready!
+
         ASRFacet::UI::Console.new.start
       rescue StandardError => e
-        ASRFacet::Core::ThreadSafe.print_error(e.message)
+        report_exception("console", e)
       end
 
       desc "web", "Launch the local web session control panel"
       def web
+        return unless ensure_framework_ready!
+
         ASRFacet::Web::Server.new(
           host: options[:web_host],
           port: options[:web_port]
         ).start
       rescue StandardError => e
-        ASRFacet::Core::ThreadSafe.print_error(e.message)
+        report_exception("web", e)
       end
 
       desc "about", "Show a framework overview, usage guidance, and storage paths"
@@ -324,7 +340,7 @@ module ASRFacet
         print_monitoring(payload, domain) if options[:monitor]
         print_artifact_summary(payload[:artifacts])
       rescue StandardError => e
-        ASRFacet::Core::ThreadSafe.print_error(e.message)
+        report_exception("output", e)
       end
 
       def render_to_screen(payload)
@@ -337,7 +353,7 @@ module ASRFacet
           puts(formatter_for(formatter_key).format(payload))
         end
       rescue StandardError => e
-        ASRFacet::Core::ThreadSafe.print_error(e.message)
+        report_exception("rendering", e)
       end
 
       def normalize_payload(result)
@@ -477,6 +493,42 @@ module ASRFacet
         end
       rescue StandardError
         {}
+      end
+
+      def ensure_framework_ready!
+        report = ASRFacet::Core::IntegrityChecker.check(output_root: resolve_output_directory)
+        return true if report[:status].to_s == "ok"
+
+        print_integrity_report(report)
+        return true unless report[:status].to_s == "critical"
+
+        ASRFacet::Core::ThreadSafe.print_error("Framework integrity check failed. The requested operation was not started.")
+        false
+      rescue StandardError
+        true
+      end
+
+      def print_integrity_report(report)
+        status = report[:status].to_s
+        printer = status == "critical" ? :print_error : :print_warning
+        ASRFacet::Core::ThreadSafe.public_send(printer, report[:summary].to_s)
+        Array(report[:issues]).each do |issue|
+          ASRFacet::Core::ThreadSafe.puts("  - #{issue[:summary]}")
+          ASRFacet::Core::ThreadSafe.puts("    Details: #{issue[:details]}") unless issue[:details].to_s.empty?
+          ASRFacet::Core::ThreadSafe.puts("    Path: #{issue[:path]}") unless issue[:path].to_s.empty?
+          ASRFacet::Core::ThreadSafe.puts("    Recommendation: #{issue[:recommendation]}") unless issue[:recommendation].to_s.empty?
+        end
+      rescue StandardError
+        nil
+      end
+
+      def report_exception(engine_name, error)
+        failure = ASRFacet::Core::ErrorReporter.build(engine: engine_name, error: error, isolated: false)
+        ASRFacet::Core::ThreadSafe.print_error(failure[:summary])
+        ASRFacet::Core::ThreadSafe.puts("    Details: #{failure[:details]}") unless failure[:details].to_s.empty?
+        ASRFacet::Core::ThreadSafe.puts("    Recommendation: #{failure[:recommendation]}") unless failure[:recommendation].to_s.empty?
+      rescue StandardError
+        ASRFacet::Core::ThreadSafe.print_error(error.to_s)
       end
     end
   end

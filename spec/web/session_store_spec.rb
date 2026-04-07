@@ -58,4 +58,25 @@ RSpec.describe ASRFacet::Web::SessionStore do
       expect(recovered[:running]).to be(true)
     end
   end
+
+  it "stores structured error details for failed sessions" do
+    Dir.mktmpdir do |dir|
+      store = described_class.new(root: dir)
+      session = store.create_or_update(name: "Failure details", config: { target: "example.com" })
+      store.mark_failed(
+        session[:id],
+        summary: "The saved session could not finish cleanly.",
+        details: "Passive runner: timeout while contacting a passive source.",
+        recommendation: "Retry with lower pressure or when the source is reachable again."
+      )
+
+      recovered = store.fetch(session[:id])
+
+      expect(recovered[:error]).to eq("The saved session could not finish cleanly.")
+      expect(recovered[:error_details]).to include(
+        summary: "The saved session could not finish cleanly.",
+        recommendation: "Retry with lower pressure or when the source is reachable again."
+      )
+    end
+  end
 end

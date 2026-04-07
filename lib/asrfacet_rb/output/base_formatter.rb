@@ -115,6 +115,14 @@ module ASRFacet::Output
       else
         lines << "A historical change summary is available, which helps separate new exposure from older baseline inventory."
       end
+      failures = execution_failures(payload)
+      lines << "ASRFacet-Rb isolated #{failures.size} runtime problems and recorded them for review." if failures.any?
+      integrity = integrity_report(payload)
+      if integrity[:status].to_s == "warning"
+        lines << "The framework reported non-blocking integrity issues, so the run completed with extra caution."
+      elsif integrity[:status].to_s == "critical"
+        lines << "The framework integrity check found a blocking issue before the run could proceed normally."
+      end
       lines
     rescue StandardError
       []
@@ -139,6 +147,14 @@ module ASRFacet::Output
 
       if Array(data[:open_ports]).any? { |entry| [22, 3389, 5900, 2375, 6443].include?(entry[:port].to_i) }
         recommendations << "Inspect exposed management and remote-access services carefully because they often provide the highest-value follow-up paths."
+      end
+
+      if execution_failures(payload).any?
+        recommendations << "Review the fault-isolation notes before trusting the run as complete, because one or more engines degraded or were skipped."
+      end
+
+      if integrity_report(payload)[:status].to_s != "ok"
+        recommendations << "Resolve the framework integrity findings before the next run so missing files or write-path issues do not distort results."
       end
 
       recommendations << "Use the HTML report for the richest offline review and keep the JSON output for automation or downstream tooling." if recommendations.empty?
@@ -169,6 +185,47 @@ module ASRFacet::Output
         next if value.to_s.empty?
 
         [key.to_s.tr("_", " "), value]
+      end
+    rescue StandardError
+      []
+    end
+
+    def execution_failures(payload)
+      Array(symbolize_keys(payload.dig(:execution, :failures) || payload[:failures]))
+    rescue StandardError
+      []
+    end
+
+    def integrity_report(payload)
+      symbolize_keys(payload[:integrity] || payload.dig(:execution, :integrity) || {})
+    rescue StandardError
+      {}
+    end
+
+    def failure_rows(payload)
+      execution_failures(payload).map do |entry|
+        item = symbolize_keys(entry)
+        [
+          item[:engine],
+          item[:summary].to_s.empty? ? item[:reason] : item[:summary],
+          item[:details],
+          item[:recommendation]
+        ]
+      end
+    rescue StandardError
+      []
+    end
+
+    def integrity_rows(payload)
+      report = integrity_report(payload)
+      Array(report[:issues]).map do |entry|
+        item = symbolize_keys(entry)
+        [
+          item[:severity],
+          item[:summary],
+          item[:details],
+          item[:recommendation]
+        ]
       end
     rescue StandardError
       []

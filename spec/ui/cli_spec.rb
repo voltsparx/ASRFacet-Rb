@@ -99,6 +99,69 @@ RSpec.describe ASRFacet::UI::CLI do
         expect(Dir.glob(File.join(dir, "reports", "example_com", "*", "report.cli.txt"))).not_to be_empty
       end
     end
+
+    it "prints fault-isolation and integrity notes from scan results" do
+      store = ASRFacet::ResultStore.new
+      store.add(:subdomains, "example.com")
+      result = {
+        store: store,
+        top_assets: [],
+        summary: { subdomains: 1 },
+        execution: {
+          failures: [
+            {
+              engine: "http_engine",
+              summary: "Http Engine hit a recoverable problem and ASRFacet-Rb continued with fault isolation.",
+              details: "example.com: timeout",
+              recommendation: "Increase --timeout, reduce --threads, or retry against a more responsive target window."
+            }
+          ],
+          integrity: {
+            status: "warning",
+            summary: "ASRFacet-Rb found non-blocking integrity issues. The framework can still run, but some surfaces may be incomplete.",
+            issues: [
+              {
+                severity: "warning",
+                summary: "An optional framework file is missing.",
+                details: "README.md was not found. Core scanning can continue, but a support surface may be incomplete.",
+                recommendation: "Refresh the install if you expect the optional documentation or man page to be present."
+              }
+            ]
+          }
+        }
+      }
+      pipeline = instance_double(ASRFacet::Pipeline, run: result)
+      allow(ASRFacet::Pipeline).to receive(:new).and_return(pipeline)
+      allow(ASRFacet::Core::IntegrityChecker).to receive(:check).and_return(status: "ok", summary: "ok", issues: [], recommendations: [])
+
+      output = capture_stdout { described_class.start(["scan", "example.com"]) }
+
+      expect(output).to include("Fault Isolation and Execution Notes")
+      expect(output).to include("Framework Integrity")
+    end
+
+    it "blocks scan execution when framework integrity is critically broken" do
+      allow(ASRFacet::Pipeline).to receive(:new)
+      allow(ASRFacet::Core::IntegrityChecker).to receive(:check).and_return(
+        status: "critical",
+        summary: "ASRFacet-Rb found blocking integrity problems and should be repaired before active use.",
+        issues: [
+          {
+            summary: "A required framework file is missing.",
+            details: "wordlists/subdomains_small.txt could not be found under the application root.",
+            path: "wordlists/subdomains_small.txt",
+            recommendation: "Repair or reinstall the framework so the missing runtime file is restored."
+          }
+        ],
+        recommendations: ["Repair or reinstall the framework so the missing runtime file is restored."]
+      )
+
+      output = capture_stdout { described_class.start(["scan", "example.com"]) }
+
+      expect(output).to include("Framework integrity check failed")
+      expect(output).to include("A required framework file is missing")
+      expect(ASRFacet::Pipeline).not_to have_received(:new)
+    end
   end
 
   def capture_stdout

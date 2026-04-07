@@ -51,6 +51,7 @@ module ASRFacet
       @processed_asn_ips = Set.new
       @stage_history = []
       @pipeline_failures = []
+      @integrity_report = build_integrity_report
       @circuit_breakers = Hash.new { |hash, key| hash[key] = build_circuit_breaker(key) }
       @streamer = build_streamer
       setup_event_subscribers
@@ -89,12 +90,25 @@ module ASRFacet
       @processed_asn_ips = Set.new
       @stage_history = []
       @pipeline_failures = []
+      @integrity_report = build_integrity_report
       @circuit_breakers = Hash.new { |hash, key| hash[key] = build_circuit_breaker(key) }
       @streamer = build_streamer
       setup_event_subscribers
     end
 
     def run
+      if integrity_blocking?
+        record_failure(
+          "framework_integrity",
+          "Framework integrity check failed before the scan could start.",
+          isolated: false,
+          context: @integrity_report[:summary]
+        )
+        @streamer&.write("integrity_failure", integrity: @integrity_report)
+        return build_result
+      end
+
+      emit_integrity_warnings if integrity_warning?
       @streamer&.write("scan_started", { target: @target.domain, options: @options })
       emit(:subdomain, { host: @target.domain, parent: @target.domain, data: { root: true } })
 
@@ -184,7 +198,7 @@ module ASRFacet
       @streamer&.write("scan_completed", result)
       result
     rescue StandardError => e
-      record_failure("pipeline", e.message)
+      record_failure("pipeline", e, isolated: false)
       result = build_result
       @streamer&.write("scan_failed", result.merge(error: e.message))
       result
@@ -341,19 +355,32 @@ module ASRFacet
       nil
     end
 
-    def record_failure(engine_name, reason)
+    def record_failure(engine_name, reason, isolated: true, context: nil)
       timestamp = Time.now.iso8601
       @circuit_breakers[engine_name.to_s].record_failure
-      @memory.record_failure(engine_name, reason)
-      entry = {
+      failure = ASRFacet::Core::ErrorReporter.build(
         engine: engine_name,
-        reason: reason,
-        breaker: @circuit_breakers[engine_name.to_s].state,
+        error: reason,
+        isolated: isolated,
+        context: context,
         timestamp: timestamp
-      }
+      )
+      @memory.record_failure(engine_name, failure[:reason])
+      entry = failure.merge(breaker: @circuit_breakers[engine_name.to_s].state)
       @pipeline_failures << entry
       @streamer&.write("failure", entry)
-      emit(:error, { engine: engine_name, reason: reason })
+      emit(
+        :error,
+        {
+          engine: engine_name,
+          reason: entry[:summary],
+          details: entry[:details],
+          recommendation: entry[:recommendation],
+          isolated: isolated,
+          error_class: entry[:error_class]
+        }
+      )
+      entry
     rescue StandardError
       nil
     end
@@ -755,6 +782,7 @@ module ASRFacet
       {
         store: @store,
         graph: @graph,
+        integrity: @integrity_report,
         diff: @diff_result,
         change_summary: @change_summary,
         top_assets: @top_assets,
@@ -767,6 +795,7 @@ module ASRFacet
         execution: {
           stages: @stage_history,
           failures: @pipeline_failures,
+          integrity: @integrity_report,
           scheduler: @scheduler&.stats || {}
         }
       }
@@ -774,6 +803,7 @@ module ASRFacet
       {
         store: @store,
         graph: @graph,
+        integrity: @integrity_report,
         diff: {},
         change_summary: "",
         top_assets: [],
@@ -786,6 +816,7 @@ module ASRFacet
         execution: {
           stages: Array(@stage_history),
           failures: Array(@pipeline_failures),
+          integrity: @integrity_report,
           scheduler: @scheduler&.stats || {}
         }
       }
@@ -805,6 +836,45 @@ module ASRFacet
       }
     rescue StandardError
       { index: index, name: name }
+    end
+
+    def build_integrity_report
+      provided = symbolize_keys(@options[:integrity_report])
+      return provided unless provided.empty?
+
+      ASRFacet::Core::IntegrityChecker.check(output_root: resolve_output_directory)
+    rescue StandardError
+      { status: "warning", summary: "Framework integrity could not be checked safely.", issues: [], recommendations: [] }
+    end
+
+    def integrity_warning?
+      @integrity_report.to_h[:status].to_s == "warning"
+    rescue StandardError
+      false
+    end
+
+    def integrity_blocking?
+      ASRFacet::Core::IntegrityChecker.critical?(@integrity_report)
+    rescue StandardError
+      false
+    end
+
+    def emit_integrity_warnings
+      Array(@integrity_report[:issues]).each do |issue|
+        emit(
+          :error,
+          {
+            engine: "framework_integrity",
+            reason: issue[:summary],
+            details: issue[:details],
+            recommendation: issue[:recommendation],
+            severity: issue[:severity]
+          }
+        )
+      end
+      @streamer&.write("integrity_warning", integrity: @integrity_report)
+    rescue StandardError
+      nil
     end
   end
 end

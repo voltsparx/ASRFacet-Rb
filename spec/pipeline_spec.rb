@@ -33,6 +33,7 @@ RSpec.describe ASRFacet::Pipeline do
   let(:vuln_engine) { instance_double(ASRFacet::Engines::VulnEngine, run: []) }
   let(:monitoring_engine) { instance_double(ASRFacet::Engines::MonitoringEngine, diff: {}) }
   let(:probabilistic_engine) { instance_double(ASRFacet::Engines::ProbabilisticSubdomainEngine, top_candidates: []) }
+  let(:integrity_ok) { { status: "ok", summary: "ASRFacet-Rb integrity checks passed.", issues: [], recommendations: [] } }
 
   before do
     allow(ASRFacet::Core::Target).to receive(:new).and_return(target)
@@ -53,6 +54,10 @@ RSpec.describe ASRFacet::Pipeline do
     allow(ASRFacet::Engines::VulnEngine).to receive(:new).and_return(vuln_engine)
     allow(ASRFacet::Engines::MonitoringEngine).to receive(:new).and_return(monitoring_engine)
     allow(ASRFacet::Engines::ProbabilisticSubdomainEngine).to receive(:new).and_return(probabilistic_engine)
+    allow(ASRFacet::Core::IntegrityChecker).to receive(:check).and_return(integrity_ok)
+    allow(ASRFacet::Core::IntegrityChecker).to receive(:critical?).and_wrap_original do |_method, report|
+      report.to_h[:status].to_s == "critical"
+    end
 
     allow(dns_engine).to receive(:run) do |host|
       ip = host == "example.com" ? "198.51.100.10" : "198.51.100.20"
@@ -87,5 +92,33 @@ RSpec.describe ASRFacet::Pipeline do
     expect(graph[:edges]).to include(include(from: "app.example.com", to: "198.51.100.20", relation: :resolves_to))
     expect(result[:execution]).to include(:stages, :failures, :scheduler)
     expect(result[:execution][:stages]).not_to be_empty
+    expect(result[:execution][:integrity][:status]).to eq("ok")
+  end
+
+  it "blocks the scan early when framework integrity is critically broken" do
+    allow(ASRFacet::Core::IntegrityChecker).to receive(:check).and_return(
+      status: "critical",
+      summary: "ASRFacet-Rb found blocking integrity problems and should be repaired before active use.",
+      issues: [
+        {
+          severity: "critical",
+          summary: "A required framework file is missing.",
+          details: "wordlists/subdomains_small.txt could not be found under the application root.",
+          recommendation: "Repair or reinstall the framework so the missing runtime file is restored."
+        }
+      ],
+      recommendations: ["Repair or reinstall the framework so the missing runtime file is restored."]
+    )
+
+    result = described_class.new("example.com", threads: 5).run
+
+    expect(passive_runner).not_to have_received(:run)
+    expect(result[:execution][:failures]).to include(
+      include(
+        engine: "framework_integrity",
+        isolated: false
+      )
+    )
+    expect(result[:execution][:integrity][:status]).to eq("critical")
   end
 end

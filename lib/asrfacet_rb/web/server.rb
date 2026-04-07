@@ -195,7 +195,9 @@ module ASRFacet
           summary: item[:summary] || {},
           current_stage: item[:current_stage] || {},
           artifacts: item[:artifacts] || {},
-          error: item[:error]
+          error: item[:error],
+          error_details: item[:error_details] || {},
+          integrity: item[:integrity] || {}
         }
       rescue StandardError
         {}
@@ -742,7 +744,9 @@ module ASRFacet
               { item: "Host coverage", meaning: `${summary.subdomains || 0} subdomains and ${summary.ips || 0} IPs were collected.`, recommendation: "Investigate high-signal hosts first and confirm ownership for shared infrastructure." },
               { item: "Service exposure", meaning: `${summary.open_ports || 0} open ports were recorded.`, recommendation: "Prioritize unusual ports and externally exposed management services." },
               { item: "Web exposure", meaning: `${summary.http_responses || 0} HTTP responses were fingerprinted.`, recommendation: "Open the HTML report to inspect technologies, routes, and captured artifacts." },
-              { item: "Findings", meaning: `${summary.findings || 0} findings were generated.`, recommendation: "Validate critical and high findings first, then work through medium items." }
+              { item: "Findings", meaning: `${summary.findings || 0} findings were generated.`, recommendation: "Validate critical and high findings first, then work through medium items." },
+              { item: "Failure state", meaning: session?.error ? (session.error_details?.details || session.error) : "No blocking session crash was recorded.", recommendation: session?.error_details?.recommendation || "Review the activity log and fault-isolation notes if any engine warnings were recorded." },
+              { item: "Framework integrity", meaning: session?.integrity?.summary || "No integrity issues were recorded for this session.", recommendation: (session?.integrity?.recommendations || [])[0] || "If the framework ever reports corruption, repair it before the next run." }
             ];
             el("detail-table").innerHTML = rows.map((row) => `<tr><td>${escapeHtml(row.item)}</td><td>${escapeHtml(row.meaning)}</td><td>${escapeHtml(row.recommendation)}</td></tr>`).join("");
           }
@@ -854,7 +858,9 @@ module ASRFacet
                 summary: data.session.summary || {},
                 current_stage: data.session.current_stage || {},
                 artifacts: data.session.artifacts || {},
-                error: data.session.error
+                error: data.session.error,
+                error_details: data.session.error_details || {},
+                integrity: data.session.integrity || {}
               };
               if (existingIndex >= 0) {
                 state.sessions.splice(existingIndex, 1, summary);

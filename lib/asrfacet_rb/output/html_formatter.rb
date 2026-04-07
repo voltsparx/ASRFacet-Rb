@@ -90,6 +90,8 @@ module ASRFacet
               #{section_top_targets(payload[:top_assets])}
               #{section_change_summary(payload)}
               #{section_findings(Array(data[:findings]))}
+              #{section_execution_notes(payload)}
+              #{section_integrity(payload)}
               #{section_http_exposure(data[:http_responses])}
               #{section_table("Subdomains", "These are the hosts the scan believes belong to the authorized target surface.", ["Host"], Array(data[:subdomains]).sort.map { |host| [host] }, open: true)}
               #{section_table("Open Ports", "These are reachable TCP services that expand the external attack surface.", ["Host", "Port", "Service", "Banner"], Array(data[:open_ports]).sort_by { |entry| [entry[:host].to_s, entry[:port].to_i] }.map { |entry| [entry[:host], entry[:port], entry[:service], entry[:banner]] })}
@@ -217,6 +219,33 @@ module ASRFacet
           body << %(<div class="finding-grid">#{cards}</div>)
         end
         %(<details><summary>JavaScript and SPA Endpoints</summary>#{body.join}</details>)
+      rescue StandardError
+        ""
+      end
+
+      def section_execution_notes(payload)
+        rows = failure_rows(payload)
+        return "" if rows.empty?
+
+        section_table(
+          "Fault Isolation and Execution Notes",
+          "These entries explain what failed, how ASRFacet-Rb isolated the problem, and what the operator should do next.",
+          ["Component", "What Happened", "Details", "Recommendation"],
+          rows
+        )
+      rescue StandardError
+        ""
+      end
+
+      def section_integrity(payload)
+        report = integrity_report(payload)
+        rows = integrity_rows(payload)
+        return "" if rows.empty? && report[:status].to_s == "ok"
+
+        body = []
+        body << %(<div class="callout #{report[:status].to_s == "critical" ? "warn" : "good"}"><strong>Status:</strong> #{escape(report[:summary].to_s.empty? ? "No integrity status was recorded." : report[:summary])}</div>)
+        body << section_table_inner(["Severity", "Issue", "Details", "Recommendation"], rows.empty? ? [["ok", "No integrity issues were recorded.", "-", "-"]] : rows)
+        %(<details#{report[:status].to_s == "critical" ? " open" : ""}><summary>Framework Integrity</summary>#{body.join}</details>)
       rescue StandardError
         ""
       end
