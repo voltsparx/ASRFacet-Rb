@@ -29,6 +29,7 @@ RSpec.describe ASRFacet::Core::IntegrityChecker do
           subdomain: wordlists/subdomains_small.txt
           paths: wordlists/paths_common.txt
       YAML
+      File.write(File.join(dir, "README.md"), "# temp app root\n")
       File.write(File.join(dir, "wordlists", "subdomains_small.txt"), "www\n")
       File.write(File.join(dir, "wordlists", "paths_common.txt"), "/admin\n")
       File.write(File.join(dir, "man", "asrfacet-rb.1"), ".TH asrfacet-rb 1\n")

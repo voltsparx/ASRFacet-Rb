@@ -840,6 +840,7 @@ module ASRFacet
 
     def build_integrity_report
       provided = symbolize_keys(@options[:integrity_report])
+      provided = {} unless provided.is_a?(Hash)
       return provided unless provided.empty?
 
       ASRFacet::Core::IntegrityChecker.check(output_root: resolve_output_directory)
