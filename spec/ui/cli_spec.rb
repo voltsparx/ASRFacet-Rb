@@ -18,7 +18,7 @@ require "tmpdir"
 RSpec.describe ASRFacet::UI::CLI do
   describe "command aliases" do
     it "prints the version through the short alias" do
-      expect { described_class.start(["v"]) }.to output("0.1.0\n").to_stdout
+      expect { described_class.start(["v"]) }.to output("1.0.0\n").to_stdout
     end
 
     it "routes help aliases to topic help" do

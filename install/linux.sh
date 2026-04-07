@@ -16,15 +16,18 @@ set -u
 set -o pipefail
 
 APP_NAME="asrfacet-rb"
+ALIAS_NAME="asrfrb"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 INSTALL_ROOT="$HOME/.local/share/$APP_NAME"
 USER_BIN_DIR="$HOME/.local/bin"
 SYSTEM_LAUNCHER="$USER_BIN_DIR/$APP_NAME"
+ALIAS_LAUNCHER="$USER_BIN_DIR/$ALIAS_NAME"
 TEST_BASE="$SCRIPT_DIR/test-root"
 TEST_ROOT="$TEST_BASE/$APP_NAME"
 TEST_BIN_DIR="$TEST_BASE/bin"
 TEST_LAUNCHER="$TEST_BIN_DIR/$APP_NAME"
+TEST_ALIAS_LAUNCHER="$TEST_BIN_DIR/$ALIAS_NAME"
 USER_CONFIG_ROOT="$HOME/.asrfacet_rb"
 USER_CONFIG_PATH="$USER_CONFIG_ROOT/config.yml"
 DEFAULT_OUTPUT_ROOT="$USER_CONFIG_ROOT/output"
@@ -254,21 +257,33 @@ smoke_test() {
 show_install_summary() {
   local install_mode="$1"
   local app_root="$2"
-  local launcher_path="$3"
+  local launcher_paths="$3"
   ok "ASRFacet-Rb $install_mode completed successfully."
   info "Installed application: $app_root"
-  info "Launcher path: $launcher_path"
+  info "System commands: $APP_NAME, $ALIAS_NAME"
+  info "Launcher paths: $launcher_paths"
   info "Stored reports root: $DEFAULT_OUTPUT_ROOT"
   info "Man page path: $app_root/man"
   info "Reload your shell or run: export PATH=\"$USER_BIN_DIR:\$PATH\" && export MANPATH=\"$app_root/man:\${MANPATH:-}\""
 }
 
+write_launchers() {
+  local app_root="$1"
+  shift
+  local launcher_path
+
+  for launcher_path in "$@"; do
+    write_launcher "$app_root" "$launcher_path"
+  done
+}
+
 deploy_install() {
   local target_root="$1"
   local launcher_path="$2"
-  local install_mode="$3"
-  local add_to_profile="$4"
-  local include_specs="$5"
+  local alias_launcher_path="$3"
+  local install_mode="$4"
+  local add_to_profile="$5"
+  local include_specs="$6"
   local parent_dir
   local stage_root
   local stage_app
@@ -294,10 +309,10 @@ deploy_install() {
     fail "Unable to move the staged install into place."
   fi
 
-  if ! write_launcher "$target_root" "$launcher_path"; then
+  if ! write_launchers "$target_root" "$launcher_path" "$alias_launcher_path"; then
     rm -rf "$target_root"
     [ -d "$backup_root" ] && mv "$backup_root" "$target_root"
-    fail "Unable to create the launcher at $launcher_path."
+    fail "Unable to create launchers in $(dirname "$launcher_path")."
   fi
 
   if [ "$add_to_profile" = "yes" ]; then
@@ -306,8 +321,9 @@ deploy_install() {
   fi
 
   smoke_test "$launcher_path"
+  smoke_test "$alias_launcher_path"
   rm -rf "$stage_root" "$backup_root"
-  show_install_summary "$install_mode" "$target_root" "$launcher_path"
+  show_install_summary "$install_mode" "$target_root" "$launcher_path, $alias_launcher_path"
 }
 
 uninstall_system() {
@@ -320,19 +336,20 @@ uninstall_system() {
   fi
 
   [ -f "$SYSTEM_LAUNCHER" ] && run_cmd rm -f "$SYSTEM_LAUNCHER" && ok "Removed launcher $SYSTEM_LAUNCHER"
+  [ -f "$ALIAS_LAUNCHER" ] && run_cmd rm -f "$ALIAS_LAUNCHER" && ok "Removed launcher $ALIAS_LAUNCHER"
   remove_profile_block
   ok "Shell profile updates were removed."
 }
 
 case "$MODE" in
-  install) deploy_install "$INSTALL_ROOT" "$SYSTEM_LAUNCHER" "install" "yes" "no" ;;
+  install) deploy_install "$INSTALL_ROOT" "$SYSTEM_LAUNCHER" "$ALIAS_LAUNCHER" "install" "yes" "no" ;;
   test)
-    deploy_install "$TEST_ROOT" "$TEST_LAUNCHER" "test" "no" "yes"
-    info "Repo-local test launcher: $TEST_LAUNCHER"
+    deploy_install "$TEST_ROOT" "$TEST_LAUNCHER" "$TEST_ALIAS_LAUNCHER" "test" "no" "yes"
+    info "Repo-local test launchers: $TEST_LAUNCHER, $TEST_ALIAS_LAUNCHER"
     ;;
   update)
     is_managed_install "$INSTALL_ROOT" || fail "No managed installation was found to update. Run install first."
-    deploy_install "$INSTALL_ROOT" "$SYSTEM_LAUNCHER" "update" "yes" "no"
+    deploy_install "$INSTALL_ROOT" "$SYSTEM_LAUNCHER" "$ALIAS_LAUNCHER" "update" "yes" "no"
     ;;
   uninstall) uninstall_system ;;
   *) fail "Unsupported mode '$MODE'. Use install, test, uninstall, or update." ;;

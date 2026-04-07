@@ -11,6 +11,7 @@
 ```bash
 bundle install
 bundle exec ruby bin/asrfacet-rb help
+bundle exec ruby bin/asrfacet-rb version
 bundle exec ruby bin/asrfacet-rb about
 bundle exec ruby bin/asrfacet-rb --explain scope
 ```
@@ -30,7 +31,7 @@ Each installer supports:
 - `uninstall`
 - `update`
 
-They stage the framework into its own `asrfacet-rb` application directory, install dependencies into that directory, create a launcher, and print the final install and report paths when complete.
+They stage the framework into its own `asrfacet-rb` application directory, install dependencies into that directory, create launchers, and print the final install and report paths when complete. After installation you can invoke the framework with either `asrfacet-rb` or the shorter alias `asrfrb`.
 
 ## First Commands
 

@@ -19,6 +19,7 @@ module ASRFacet
       def plain_text
         [
           "ASRFacet-Rb",
+          "Version: #{ASRFacet::VERSION}",
           "",
           "ASRFacet-Rb is a Ruby 3.2+ authorized attack surface reconnaissance framework built for infrastructure inventory, security posture validation, and repeatable external visibility mapping.",
           "",
@@ -60,6 +61,7 @@ module ASRFacet
 
       def summary_lines
         [
+          "Version #{ASRFacet::VERSION}.",
           "Authorized attack surface reconnaissance for Ruby 3.2+.",
           "Designed for inventory, mapping, validation, and repeatable reporting.",
           "Ships with CLI, console, web-session UI, offline reports, and a safe local lab."

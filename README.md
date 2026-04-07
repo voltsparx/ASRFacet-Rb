@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.1.0-0A66C2?style=for-the-badge" alt="Version">
+  <img src="https://img.shields.io/badge/version-1.0.0-0A66C2?style=for-the-badge" alt="Version">
   <img src="https://img.shields.io/badge/ruby-%3E%3D%203.2-red?style=for-the-badge&logo=ruby&logoColor=white" alt="Ruby >= 3.2">
   <img src="https://img.shields.io/badge/tests-36%2F36%20passing-2E8B57?style=for-the-badge" alt="Tests Passing">
   <img src="https://img.shields.io/badge/status-stable-4C956C?style=for-the-badge" alt="Status Stable"> <br>
@@ -13,6 +13,8 @@
 </p>
 
 ASRFacet-Rb is a Ruby 3.2+ attack surface reconnaissance framework for authorized security testing. It combines passive discovery, recursive DNS and certificate enrichment, service mapping, HTTP fingerprinting, crawl analysis, JavaScript endpoint mining, change tracking, correlation, and offline reporting in a single operator-focused workflow.
+
+Current framework version: `1.0.0`
 
 ## Documentation
 
@@ -98,7 +100,7 @@ install/macos.sh      # install | test | uninstall | update
 install/linux.sh      # install | test | uninstall | update
 ```
 
-The installers stage ASRFacet-Rb into its own `asrfacet-rb` application folder, create a launcher on your user `PATH`, keep dependencies inside the install directory, and support a repo-local `test` mode that does not touch your system install.
+The installers stage ASRFacet-Rb into its own `asrfacet-rb` application folder, create launchers on your user `PATH`, keep dependencies inside the install directory, and support a repo-local `test` mode that does not touch your system install. After installation, both `asrfacet-rb` and `asrfrb` are available as system commands that point to the same application.
 On macOS and Linux they also add the installed `man/` directory to `MANPATH`, and all installers print the install path, launcher path, and default stored-report location when they finish.
 
 For local manual-page testing:

@@ -22,15 +22,18 @@ $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
 $AppName = "asrfacet-rb"
+$AliasName = "asrfrb"
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $RepoRoot = Split-Path -Parent $ScriptDir
 $InstallRoot = Join-Path $env:LOCALAPPDATA "Programs\$AppName"
 $UserBinDir = Join-Path $HOME ".local\bin"
 $SystemLauncher = Join-Path $UserBinDir "$AppName.cmd"
+$AliasLauncher = Join-Path $UserBinDir "$AliasName.cmd"
 $TestBase = Join-Path $ScriptDir "test-root"
 $TestRoot = Join-Path $TestBase $AppName
 $TestBinDir = Join-Path $TestBase "bin"
 $TestLauncher = Join-Path $TestBinDir "$AppName.cmd"
+$TestAliasLauncher = Join-Path $TestBinDir "$AliasName.cmd"
 $UserConfigRoot = Join-Path $HOME ".asrfacet_rb"
 $UserConfigPath = Join-Path $UserConfigRoot "config.yml"
 $DefaultOutputRoot = Join-Path $UserConfigRoot "output"
@@ -256,7 +259,8 @@ output:
 function Write-Launcher {
   param(
     [string]$AppRoot,
-    [string]$LauncherPath
+    [string]$LauncherPath,
+    [string]$EntryScript = "asrfacet-rb"
   )
 
   $launcherDir = Split-Path -Parent $LauncherPath
@@ -285,6 +289,17 @@ bundle exec ruby "%APP_ROOT%\bin\asrfacet-rb" %*
 "@
 
   Set-Content -LiteralPath $LauncherPath -Value $content -Encoding ASCII
+}
+
+function Write-Launchers {
+  param(
+    [string]$AppRoot,
+    [string[]]$LauncherPaths
+  )
+
+  foreach ($launcherPath in $LauncherPaths) {
+    Write-Launcher -AppRoot $AppRoot -LauncherPath $launcherPath
+  }
 }
 
 function Add-UserPathEntry {
@@ -348,13 +363,14 @@ function Show-InstallSummary {
   param(
     [string]$InstallMode,
     [string]$AppRoot,
-    [string]$LauncherPath,
+    [string[]]$LauncherPaths,
     [string]$OutputRoot
   )
 
   Write-Success "ASRFacet-Rb $InstallMode completed successfully."
   Write-Info "Installed application: $AppRoot"
-  Write-Info "Launcher path: $LauncherPath"
+  Write-Info "System commands: $AppName, $AliasName"
+  Write-Info "Launcher paths: $($LauncherPaths -join ', ')"
   Write-Info "Stored reports root: $OutputRoot"
   Write-Info "Built-in manual command: asrfacet-rb manual"
 }
@@ -362,7 +378,7 @@ function Show-InstallSummary {
 function Install-Application {
   param(
     [string]$TargetRoot,
-    [string]$LauncherPath,
+    [string[]]$LauncherPaths,
     [string]$InstallMode,
     [switch]$AddToPath,
     [switch]$IncludeSpecs
@@ -391,18 +407,20 @@ function Install-Application {
     }
 
     Move-Item -LiteralPath $stageApp -Destination $TargetRoot -Force
-    Write-Launcher -AppRoot $TargetRoot -LauncherPath $LauncherPath
+    Write-Launchers -AppRoot $TargetRoot -LauncherPaths $LauncherPaths
 
     if ($AddToPath) {
       Add-UserPathEntry -Directory $UserBinDir
       Write-UserConfig -OutputRoot $DefaultOutputRoot
     }
 
-    Invoke-SmokeTest -LauncherPath $LauncherPath
+    foreach ($launcherPath in $LauncherPaths) {
+      Invoke-SmokeTest -LauncherPath $launcherPath
+    }
 
     Remove-TreeSafe -PathToRemove $backupRoot
     Remove-TreeSafe -PathToRemove $stageRoot
-    Show-InstallSummary -InstallMode $InstallMode -AppRoot $TargetRoot -LauncherPath $LauncherPath -OutputRoot $DefaultOutputRoot
+    Show-InstallSummary -InstallMode $InstallMode -AppRoot $TargetRoot -LauncherPaths $LauncherPaths -OutputRoot $DefaultOutputRoot
   } catch {
     Write-WarningLine "Attempting to restore the previous installation state."
     if (Test-Path -LiteralPath $backupRoot) {
@@ -435,9 +453,11 @@ function Uninstall-Application {
     Write-Success "Removed $InstallRoot"
   }
 
-  if (Test-Path -LiteralPath $SystemLauncher) {
-    Remove-Item -LiteralPath $SystemLauncher -Force
-    Write-Success "Removed launcher $SystemLauncher"
+  foreach ($launcher in @($SystemLauncher, $AliasLauncher)) {
+    if (Test-Path -LiteralPath $launcher) {
+      Remove-Item -LiteralPath $launcher -Force
+      Write-Success "Removed launcher $launcher"
+    }
   }
 
   Remove-UserPathEntry -Directory $UserBinDir
@@ -446,18 +466,18 @@ function Uninstall-Application {
 
 switch ($Mode) {
   "install" {
-    Install-Application -TargetRoot $InstallRoot -LauncherPath $SystemLauncher -InstallMode "install" -AddToPath
+    Install-Application -TargetRoot $InstallRoot -LauncherPaths @($SystemLauncher, $AliasLauncher) -InstallMode "install" -AddToPath
   }
   "test" {
-    Install-Application -TargetRoot $TestRoot -LauncherPath $TestLauncher -InstallMode "test" -IncludeSpecs
-    Write-Info "Repo-local test launcher: $TestLauncher"
+    Install-Application -TargetRoot $TestRoot -LauncherPaths @($TestLauncher, $TestAliasLauncher) -InstallMode "test" -IncludeSpecs
+    Write-Info "Repo-local test launchers: $TestLauncher, $TestAliasLauncher"
   }
   "update" {
     if (-not (Test-ManagedInstall -Root $InstallRoot)) {
       Stop-Step "No managed installation was found to update. Run install first."
     }
 
-    Install-Application -TargetRoot $InstallRoot -LauncherPath $SystemLauncher -InstallMode "update" -AddToPath
+    Install-Application -TargetRoot $InstallRoot -LauncherPaths @($SystemLauncher, $AliasLauncher) -InstallMode "update" -AddToPath
   }
   "uninstall" {
     Uninstall-Application

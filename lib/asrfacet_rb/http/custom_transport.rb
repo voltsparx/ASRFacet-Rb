@@ -79,7 +79,7 @@ module ASRFacet
       end
 
       def build_request(method, uri, headers, body)
-        normalized_headers = { "Host" => uri.host.to_s, "User-Agent" => "ASRFacet-Rb/0.1.0", "Connection" => "close" }
+        normalized_headers = { "Host" => uri.host.to_s, "User-Agent" => "ASRFacet-Rb/#{ASRFacet::VERSION}", "Connection" => "close" }
         symbolize_keys(headers).each do |key, value|
           normalized_headers[header_name(key)] = value
         end

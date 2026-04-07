@@ -3,6 +3,10 @@ self-assessment/
 venv/
 __pycache__/
 *.pyc
+*.gem
+.bundle/
+coverage/
+.asrfacet_rb/
 temp/
 tmp/
 output/

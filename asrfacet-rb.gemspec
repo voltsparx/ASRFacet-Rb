@@ -27,11 +27,10 @@ Gem::Specification.new do |spec|
 
   spec.files = Dir.glob("{bin,config,install,lib,man,spec,wordlists}/**/*").select { |path| File.file?(path) } + %w[Gemfile README.md LICENSE]
   spec.bindir = "bin"
-  spec.executables = %w[asrfacet-rb]
+  spec.executables = %w[asrfacet-rb asrfrb]
   spec.require_paths = ["lib"]
   spec.metadata = {
     "source_code_uri" => ASRFacet::Metadata::REPO_URL,
-    "homepage_uri" => ASRFacet::Metadata::REPO_URL,
     "documentation_uri" => "#{ASRFacet::Metadata::REPO_URL}#readme",
     "bug_tracker_uri" => "#{ASRFacet::Metadata::REPO_URL}/issues"
   }

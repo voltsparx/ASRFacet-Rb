@@ -1,3 +1,4 @@
+#!/usr/bin/env ruby
 # SPDX-License-Identifier: Proprietary
 #
 # ASRFacet-Rb: Attack Surface Reconnaissance Framework
@@ -11,6 +12,13 @@
 # This file is part of ASRFacet-Rb and is subject to the terms
 # and conditions defined in the LICENSE file.
 
-module ASRFacet
-  VERSION = "1.0.0".freeze
+# Note: make this executable with chmod +x bin/asrfrb on Unix-like systems.
+$LOAD_PATH.unshift File.join(__dir__, "..", "lib")
+require "asrfacet_rb"
+
+begin
+  ASRFacet::UI::CLI.start(ARGV)
+rescue Interrupt
+  puts
+  exit 0
 end
