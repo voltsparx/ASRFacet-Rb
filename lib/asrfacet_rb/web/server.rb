@@ -234,6 +234,9 @@ module ASRFacet
       end
 
       def framework_icon_path
+        primary = File.expand_path("web_assets/asrfacet-rb-icon.png", __dir__)
+        return primary if File.file?(primary)
+
         File.expand_path("../../../docs/images/illustration/asrfacet-rb-logo.png", __dir__)
       rescue StandardError
         ""
@@ -309,17 +312,27 @@ module ASRFacet
             <meta name="viewport" content="width=device-width, initial-scale=1">
             <meta name="color-scheme" content="light dark">
             <link rel="icon" type="image/png" href="/assets/icon">
-            <title>ASRFacet-Rb Web Session</title>
+            <title>ASRFacet-Rb</title>
             <style>#{styles_css}</style>
           </head>
           <body>
             <div class="layout">
               <aside class="sidebar">
                 <section class="brand-card">
-                  <img src="/assets/icon" alt="ASRFacet-Rb logo">
-                  <div>
-                    <h1>ASRFacet-Rb</h1>
-                    <p>Operator-focused recon control panel with autosaved sessions, detailed reports, and crash-tolerant recovery.</p>
+                  <div class="brand-window">
+                    <div class="window-chrome">
+                      <span class="window-dot red"></span>
+                      <span class="window-dot amber"></span>
+                      <span class="window-dot green"></span>
+                      <strong>ASRFacet-Rb</strong>
+                    </div>
+                    <div class="brand-main">
+                      <img src="/assets/icon" alt="ASRFacet-Rb logo">
+                      <div>
+                        <h1>ASRFacet-Rb</h1>
+                        <p>Operator-focused recon control panel with autosaved sessions, detailed reports, and crash-tolerant recovery.</p>
+                      </div>
+                    </div>
                   </div>
                 </section>
                 <section class="status-card">
@@ -546,8 +559,16 @@ module ASRFacet
           .layout { display: grid; grid-template-columns: 300px 1fr; min-height: 100vh; }
           .sidebar { background: var(--sidebar); border-right: 1px solid var(--line); padding: 24px 18px; display: grid; grid-template-rows: auto auto auto 1fr auto; gap: 16px; }
           .brand-card, .status-card, .quick-nav, .sessions-card, .footer-card, .toolbar-card, .hero-card, .card { border: 1px solid var(--line); background: var(--card-grad); border-radius: 22px; box-shadow: var(--shadow); }
-          .brand-card { padding: 18px; display: grid; grid-template-columns: 72px 1fr; gap: 14px; align-items: center; }
-          .brand-card img { width: 72px; height: 72px; object-fit: contain; border-radius: 18px; background: rgba(255,255,255,.68); padding: 10px; }
+          .brand-card { padding: 14px; }
+          .brand-window { border: 1px solid var(--line); border-radius: 18px; overflow: hidden; background: linear-gradient(180deg, rgba(255,255,255,.76) 0%, rgba(255,255,255,.92) 100%); }
+          .window-chrome { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-bottom: 1px solid var(--line); background: linear-gradient(180deg, rgba(255,255,255,.88) 0%, rgba(250,247,242,.86) 100%); color: var(--muted); font-size: 12px; letter-spacing: .04em; text-transform: uppercase; }
+          .window-chrome strong { margin-left: 4px; font-size: 11px; letter-spacing: .08em; color: var(--muted); }
+          .window-dot { width: 10px; height: 10px; border-radius: 999px; display: inline-block; box-shadow: inset 0 0 0 1px rgba(31,26,23,.14); }
+          .window-dot.red { background: #ef6b5a; }
+          .window-dot.amber { background: #f4bb4b; }
+          .window-dot.green { background: #58c078; }
+          .brand-main { padding: 14px; display: grid; grid-template-columns: 54px 1fr; gap: 12px; align-items: center; }
+          .brand-card img { width: 54px; height: 54px; object-fit: contain; border-radius: 14px; background: rgba(255,255,255,.78); padding: 6px; box-shadow: inset 0 0 0 1px rgba(31,26,23,.06), 0 6px 14px rgba(31,26,23,.08); }
           .brand-card h1, .quick-nav h2, .sessions-card h2, .card h2 { margin: 0; }
           .brand-card p, .hero-copy p { margin: 8px 0 0; color: var(--muted); line-height: 1.5; }
           .status-card, .quick-nav, .sessions-card, .footer-card, .toolbar-card, .hero-card, .card { padding: 18px; }
