@@ -13,6 +13,7 @@
 
 require "fileutils"
 require "json"
+require "securerandom"
 require "time"
 
 module ASRFacet
@@ -22,10 +23,12 @@ module ASRFacet
         @session_store = session_store
         @jobs = {}
         @mutex = Mutex.new
+        @runner_id = SecureRandom.hex(6)
       rescue StandardError
         @session_store = session_store
         @jobs = {}
         @mutex = Mutex.new
+        @runner_id = "runner"
       end
 
       def start(session_id)
@@ -58,7 +61,17 @@ module ASRFacet
         target = config[:target].to_s.strip
         raise "A target is required before starting a session." if target.empty?
 
-        @session_store.mark_running(session_id, config: config, target: target)
+        heartbeat_stop = false
+        @session_store.mark_running(session_id, config: config, target: target, process_id: Process.pid, runner_id: @runner_id)
+        heartbeat_thread = Thread.new do
+          Thread.current.report_on_exception = false if Thread.current.respond_to?(:report_on_exception=)
+          until heartbeat_stop
+            sleep(2)
+            @session_store.update_heartbeat(session_id, process_id: Process.pid, runner_id: @runner_id)
+          end
+        rescue StandardError
+          nil
+        end
         result = perform_run(session_id, config, target)
         payload = normalize_payload(result)
         payload[:summary] ||= payload[:store].respond_to?(:summary) ? payload[:store].summary : {}
@@ -68,6 +81,9 @@ module ASRFacet
       rescue StandardError => e
         @session_store.mark_failed(session_id, e.message)
       ensure
+        heartbeat_stop = true if defined?(heartbeat_stop)
+        heartbeat_thread&.join(0.2) rescue nil
+        heartbeat_thread&.kill rescue nil
         @mutex.synchronize { @jobs.delete(session_id.to_s) }
       end
 

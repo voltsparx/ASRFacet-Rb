@@ -7,12 +7,25 @@
 <p align="center">
   <img src="https://img.shields.io/badge/version-0.1.0-0A66C2?style=for-the-badge" alt="Version">
   <img src="https://img.shields.io/badge/ruby-%3E%3D%203.2-red?style=for-the-badge&logo=ruby&logoColor=white" alt="Ruby >= 3.2">
-  <img src="https://img.shields.io/badge/tests-0%2F25%20passing-2E8B57?style=for-the-badge" alt="Tests Passing">
+  <img src="https://img.shields.io/badge/tests-32%2F32%20passing-2E8B57?style=for-the-badge" alt="Tests Passing">
   <img src="https://img.shields.io/badge/status-stable-4C956C?style=for-the-badge" alt="Status Stable"> <br>
   <img src="https://img.shields.io/badge/license-Proprietary-8B0000?style=for-the-badge" alt="License">
 </p>
 
 ASRFacet-Rb is a Ruby 3.2+ attack surface reconnaissance framework for authorized security testing. It combines passive discovery, recursive DNS and certificate enrichment, service mapping, HTTP fingerprinting, crawl analysis, JavaScript endpoint mining, change tracking, correlation, and offline reporting in a single operator-focused workflow.
+
+## Documentation
+
+The full first-release documentation set lives in `docs/`.
+
+- `docs/index.md`
+- `docs/getting-started.md`
+- `docs/architecture.md`
+- `docs/web-session.md`
+- `docs/reporting.md`
+- `docs/publishing.md`
+
+The current README reflects the latest verified test run: `bundle exec rspec` completed with `32 examples, 0 failures`.
 
 ## Authorized Use
 
@@ -299,7 +312,7 @@ MANPATH="$PWD/man:$MANPATH" man asrfacet-rb
 
 `--web-session` starts a local-only control panel at `127.0.0.1:4567` by default. The dashboard lets you configure scans, save named sessions, launch runs, watch stage-by-stage activity, and open the stored CLI, TXT, HTML, and JSON reports without leaving the browser.
 
-Session drafts are persisted under `~/.asrfacet_rb/web_sessions/`, so configuration survives accidental browser closes, process crashes, and power loss. When the dashboard restarts, interrupted runs are marked accordingly instead of silently disappearing.
+Session drafts are persisted under `~/.asrfacet_rb/web_sessions/`, so configuration survives accidental browser closes, process crashes, and power loss. Running sessions use heartbeats so stale runs are marked `interrupted` without clobbering a freshly active session, and `--web-host` / `--web-port` are preserved when launching through `--web-session`.
 
 ## Scan-Specific Options
 
@@ -743,7 +756,11 @@ By default, stored reports and JSONL event streams now live under `~/.asrfacet_r
       <td>Per-target recon memory and monitoring state</td>
     </tr>
     <tr>
-      <td><code>output/streams/&lt;target&gt;.jsonl</code></td>
+      <td><code>~/.asrfacet_rb/web_sessions/</code></td>
+      <td>Saved web-session drafts and run state</td>
+    </tr>
+    <tr>
+      <td><code>~/.asrfacet_rb/output/streams/&lt;target&gt;.jsonl</code></td>
       <td>Live JSONL event stream written during scans</td>
     </tr>
     <tr>

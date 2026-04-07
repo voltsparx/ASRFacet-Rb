@@ -19,6 +19,8 @@ require "time"
 module ASRFacet
   module Web
     class SessionStore
+      HEARTBEAT_STALE_SECONDS = 15
+
       attr_reader :root
 
       def initialize(root: File.expand_path("~/.asrfacet_rb/web_sessions"))
@@ -74,6 +76,17 @@ module ASRFacet
           last_heartbeat_at: timestamp,
           error: nil,
           current_stage: nil,
+          run_meta: symbolize(meta)
+        )
+      rescue StandardError
+        nil
+      end
+
+      def update_heartbeat(id, meta = {})
+        update_session(
+          id,
+          running: true,
+          last_heartbeat_at: Time.now.utc.iso8601,
           run_meta: symbolize(meta)
         )
       rescue StandardError
@@ -164,6 +177,7 @@ module ASRFacet
       def recover_interrupted_sessions!
         list_sessions.each do |session|
           next unless session[:status].to_s == "running"
+          next unless stale_session?(session)
 
           append_event(session[:id], type: "system", message: "Session recovered after an unclean shutdown. The previous run was marked interrupted.")
           update_session(session[:id], status: "interrupted", running: false, error: "The host process stopped before the run completed.")
@@ -276,6 +290,37 @@ module ASRFacet
         end
       rescue StandardError
         {}
+      end
+
+      def stale_session?(session)
+        heartbeat_at = parse_time(session[:last_heartbeat_at])
+        return true if heartbeat_at.nil?
+
+        pid = session.to_h.dig(:run_meta, :process_id).to_i
+        stale = (Time.now.utc - heartbeat_at) > HEARTBEAT_STALE_SECONDS
+        return false unless stale
+        return true unless pid.positive?
+
+        !process_alive?(pid)
+      rescue StandardError
+        true
+      end
+
+      def parse_time(value)
+        return nil if value.to_s.strip.empty?
+
+        Time.parse(value.to_s)
+      rescue StandardError
+        nil
+      end
+
+      def process_alive?(pid)
+        Process.kill(0, pid)
+        true
+      rescue Errno::EPERM
+        true
+      rescue StandardError
+        false
       end
     end
   end

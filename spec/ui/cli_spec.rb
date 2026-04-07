@@ -45,6 +45,16 @@ RSpec.describe ASRFacet::UI::CLI do
       expect(server).to have_received(:start)
     end
 
+    it "preserves web-session host and port flags" do
+      server = instance_double(ASRFacet::Web::Server, start: nil)
+      allow(ASRFacet::Web::Server).to receive(:new).and_return(server)
+
+      described_class.start(["--web-session", "--web-host", "127.0.0.2", "--web-port", "4573"])
+
+      expect(ASRFacet::Web::Server).to have_received(:new).with(host: "127.0.0.2", port: 4573)
+      expect(server).to have_received(:start)
+    end
+
     it "shows the new adaptive and headless flags in the help output" do
       expect { described_class.start(["help"]) }.to output(include("--headless", "--webhook-url", "--delay", "--adaptive-rate", "--web-session")).to_stdout
     end

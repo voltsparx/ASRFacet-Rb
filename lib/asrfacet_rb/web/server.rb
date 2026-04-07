@@ -747,7 +747,7 @@ module ASRFacet
             renderFindings(session || {});
           }
 
-          async function refreshSessions(preferredId) {
+          async function refreshSessions(preferredId, options = {}) {
             if (state.refreshInFlight) return;
             state.refreshInFlight = true;
             try {
@@ -755,7 +755,8 @@ module ASRFacet
               state.sessions = Array.isArray(data.sessions) ? data.sessions : [];
               renderSessionList();
               const nextId = preferredId || state.current || state.sessions[0]?.id;
-              if (nextId) await loadSession(nextId, false);
+              const shouldReload = options.reloadCurrent !== false && !state.dirty;
+              if (nextId && shouldReload) await loadSession(nextId, false);
             } finally {
               state.refreshInFlight = false;
             }
@@ -763,7 +764,11 @@ module ASRFacet
 
           async function loadSession(id, promptOnDirty = true) {
             if (!id) return;
-            if (promptOnDirty && state.dirty && window.confirm("This session has unsaved changes. Save before switching?")) await saveSession(true);
+            if (promptOnDirty && state.dirty) {
+              const shouldSave = window.confirm("This session has unsaved changes. Press OK to save before switching, or Cancel to stay on the current session.");
+              if (!shouldSave) return;
+              await saveSession(true);
+            }
             const data = await api(`/api/session?id=${encodeURIComponent(id)}`);
             state.currentSession = data.session || null;
             state.current = state.currentSession?.id || id;
@@ -778,7 +783,28 @@ module ASRFacet
               state.currentSession = data.session;
               state.current = data.session.id;
               state.dirty = false;
-              await refreshSessions(data.session.id);
+              const existingIndex = state.sessions.findIndex((item) => item.id === data.session.id);
+              const summary = {
+                id: data.session.id,
+                name: data.session.name,
+                status: data.session.status,
+                running: data.session.running,
+                target: data.session.config?.target,
+                mode: data.session.config?.mode,
+                updated_at: data.session.updated_at,
+                last_heartbeat_at: data.session.last_heartbeat_at,
+                summary: data.session.summary || {},
+                current_stage: data.session.current_stage || {},
+                artifacts: data.session.artifacts || {},
+                error: data.session.error
+              };
+              if (existingIndex >= 0) {
+                state.sessions.splice(existingIndex, 1, summary);
+              } else {
+                state.sessions.unshift(summary);
+              }
+              renderSessionList();
+              updateSummary(state.currentSession);
               if (!silent) window.alert("Session saved.");
             }
           }

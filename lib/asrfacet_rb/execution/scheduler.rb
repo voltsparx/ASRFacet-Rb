@@ -35,50 +35,52 @@ module ASRFacet
         status = :success
         result = nil
         error = nil
+        entry = nil
 
-        if timeout.to_f.positive?
-          runner = Thread.new do
-            Thread.current.report_on_exception = false if Thread.current.respond_to?(:report_on_exception=)
-            yield
-          rescue StandardError => e
-            Thread.current[:asrfacet_error] = e
-          end
+        begin
+          if timeout.to_f.positive?
+            runner = Thread.new do
+              Thread.current.report_on_exception = false if Thread.current.respond_to?(:report_on_exception=)
+              yield
+            rescue StandardError => e
+              Thread.current[:asrfacet_error] = e
+            end
 
-          if runner.join(timeout.to_f)
-            raise runner[:asrfacet_error] if runner[:asrfacet_error]
+            if runner.join(timeout.to_f)
+              raise runner[:asrfacet_error] if runner[:asrfacet_error]
 
-            result = runner.value
+              result = runner.value
+            else
+              runner.kill rescue nil
+              status = :timeout
+              error = TimeoutError.new("Stage #{name} exceeded #{timeout}s")
+            end
           else
-            runner.kill rescue nil
-            status = :timeout
-            error = TimeoutError.new("Stage #{name} exceeded #{timeout}s")
+            result = yield
           end
-        else
-          result = yield
+        rescue StandardError => e
+          status = :failed if status == :success
+          error = e
+          @logger&.print_warning("scheduler stage #{name} failed: #{e.message}")
+        ensure
+          finished_at = Time.now
+          entry = {
+            name: name.to_s,
+            status: status,
+            error: error&.message.to_s,
+            error_class: error&.class&.name,
+            started_at: started_at.iso8601,
+            finished_at: finished_at.iso8601,
+            duration_ms: ((finished_at - started_at) * 1000).round
+          }
+          @mutex.synchronize { @history << entry }
         end
-      rescue StandardError => e
-        status = :failed if status == :success
-        error = e
-        @logger&.print_warning("scheduler stage #{name} failed: #{e.message}")
-      ensure
-        finished_at = Time.now
-        entry = {
-          name: name.to_s,
-          status: status,
-          error: error&.message.to_s,
-          error_class: error&.class&.name,
-          started_at: started_at.iso8601,
-          finished_at: finished_at.iso8601,
-          duration_ms: ((finished_at - started_at) * 1000).round
-        }
-        @mutex.synchronize { @history << entry }
-      end
 
-      { status: status, result: result, error: error&.message.to_s, entry: entry }
-    rescue StandardError => e
-      @logger&.print_warning("scheduler stage #{name} failed to record: #{e.message}")
-      { status: :failed, result: nil, error: e.message, entry: { name: name.to_s, status: :failed } }
-    end
+        { status: status, result: result, error: error&.message.to_s, entry: entry }
+      rescue StandardError => e
+        @logger&.print_warning("scheduler stage #{name} failed to record: #{e.message}")
+        { status: :failed, result: nil, error: e.message, entry: { name: name.to_s, status: :failed } }
+      end
 
       def throttle(key, every:)
         interval = every.to_f

@@ -20,6 +20,12 @@ RSpec.describe ASRFacet::Web::SessionStore do
       store = described_class.new(root: dir)
       session = store.create_or_update(name: "Recover me", config: { target: "example.com" })
       store.mark_running(session[:id], target: "example.com")
+      path = File.join(dir, "#{session[:id]}.json")
+      payload = JSON.parse(File.read(path))
+      payload["last_heartbeat_at"] = (Time.now.utc - (described_class::HEARTBEAT_STALE_SECONDS + 5)).iso8601
+      payload["run_meta"] ||= {}
+      payload["run_meta"]["process_id"] = 999_999
+      File.write(path, JSON.pretty_generate(payload))
 
       restarted = described_class.new(root: dir)
       recovered = restarted.fetch(session[:id])
@@ -35,6 +41,21 @@ RSpec.describe ASRFacet::Web::SessionStore do
       end.join(" ")
 
       expect(messages).to include("unclean shutdown")
+    end
+  end
+
+  it "does not interrupt a recently refreshed running session" do
+    Dir.mktmpdir do |dir|
+      store = described_class.new(root: dir)
+      session = store.create_or_update(name: "Live run", config: { target: "example.com" })
+      store.mark_running(session[:id], target: "example.com", process_id: Process.pid)
+      store.update_heartbeat(session[:id], process_id: Process.pid)
+
+      restarted = described_class.new(root: dir)
+      recovered = restarted.fetch(session[:id])
+
+      expect(recovered[:status]).to eq("running")
+      expect(recovered[:running]).to be(true)
     end
   end
 end

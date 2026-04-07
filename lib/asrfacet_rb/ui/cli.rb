@@ -55,10 +55,10 @@ module ASRFacet
         def start(given_args = ARGV, config = {})
           args = Array(given_args).dup
           if args.delete("--console") || args.delete("-C")
-            return super(["console"], config)
+            return super(["console", *args], config)
           end
           if args.delete("--web-session")
-            return super(["web"], config)
+            return super(["web", *args], config)
           end
 
           super(args, config)

@@ -22,5 +22,6 @@ RSpec.describe ASRFacet::Web::Server do
     expect(html).to include("theme-dark")
     expect(html).to include("theme-grey")
     expect(html).to include("ASRFacet-Rb")
+    expect(html).to include("Press OK to save before switching, or Cancel to stay")
   end
 end
