@@ -43,6 +43,31 @@ ASRFacet-Rb runs an event-driven reconnaissance pipeline. Results from one stage
 
 The execution layer lives under `lib/asrfacet_rb/execution/`.
 
+### Execution Contract
+
+ASRFacet-Rb keeps the execution boundary intentionally strict so concurrency
+does not drift into multiple competing control systems.
+
+- Scheduler decides
+- Engines execute
+- Investigators react
+- Fusion layers store
+
+In practical terms:
+
+- `ASRFacet::Pipeline` is the orchestration owner for scan stages.
+- `ASRFacet::Execution::Scheduler` owns retries, stage timing, throttling, and
+  execution history.
+- `ASRFacet::Execution::ThreadPool`, `ParallelEngine`, and `AsyncEngine` are
+  execution adapters, not orchestrators.
+- engines, busters, and passive sources must not create their own schedulers or
+  stage-control loops.
+- correlation, storage, and graph logic should consume results, not control
+  work admission.
+
+This boundary exists because overlapping control layers create failure modes
+that are hard to reason about under load.
+
 ### Thread Pool
 
 `ASRFacet::Execution::ThreadPool` provides:
@@ -65,15 +90,39 @@ This is the primary execution engine for I/O-heavy tasks.
 - throttled execution
 - execution history
 
+It is owned by an orchestrator, not by engines. The runtime contract rejects
+engine-owned scheduler construction so execution ownership does not silently
+blur over time.
+
 The pipeline records scheduler output into the final payload so stage failures are visible instead of silently disappearing.
 
 ### Parallel Engine
 
 `ASRFacet::Execution::ParallelEngine` is available for process-based or threaded batch work where tasks should be isolated and errors should be captured cleanly.
 
+It should be treated as a worker primitive, not a second scheduler.
+
 ### Async Engine
 
 `ASRFacet::Execution::AsyncEngine` supports cooperative concurrency when the optional async stack is present, with a safe fallback path when it is not.
+
+It is an execution adapter only. It should not decide global retries, stage
+ordering, or orchestration policy.
+
+## Performance Posture
+
+ASRFacet-Rb is optimized for operator workflow, correlation, reporting, and
+bounded concurrent reconnaissance. It is not intended to out-throughput native
+specialists such as Nmap, Masscan, or high-scale Go tooling in raw scan volume.
+
+That means the healthy performance posture is:
+
+- use Ruby for orchestration, memory, reporting, and UI
+- keep concurrency bounded and observable
+- prefer streaming and incremental storage over large in-memory fanout
+- use execution adapters as helpers, not as independent control planes
+- treat very high-scale enumeration as a candidate for native-tool delegation
+  later rather than pretending Ruby has no ceiling
 
 ## Resilience Controls
 

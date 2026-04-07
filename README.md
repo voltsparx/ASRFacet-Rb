@@ -29,7 +29,11 @@ The full first-release documentation set lives in `docs/`.
 - `docs/lab.md`
 - `docs/publishing.md`
 
-The current README reflects the latest verified release-style test run on April 7, 2026: `bundle exec rake` completed successfully, including `42 examples, 0 failures`, CLI smoke checks, web-session smoke checks, local lab smoke checks, installer smoke checks, and a clean gem build.
+Execution ownership stays intentionally strict: the scheduler owns orchestration,
+execution helpers run work, and engines do not create their own competing
+control loops.
+
+The current README reflects the latest verified release-style test run on April 7, 2026: `bundle exec rake` completed successfully, including `43 examples, 0 failures`, CLI smoke checks, web-session smoke checks, local lab smoke checks, installer smoke checks, and a clean gem build.
 
 ## Authorized Use
 

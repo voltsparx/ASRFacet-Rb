@@ -573,9 +573,9 @@ module ASRFacet
     end
 
     def build_scheduler
-      ASRFacet::Execution::Scheduler.new(logger: ASRFacet::Core::ThreadSafe)
+      ASRFacet::Execution::Scheduler.new(logger: ASRFacet::Core::ThreadSafe, owner: self.class.name)
     rescue StandardError
-      ASRFacet::Execution::Scheduler.new
+      ASRFacet::Execution::Scheduler.new(owner: self.class.name)
     end
 
     def stage_timeout(name)

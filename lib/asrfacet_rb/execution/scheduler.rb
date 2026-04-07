@@ -16,18 +16,22 @@ require "time"
 module ASRFacet
   module Execution
     class Scheduler
-      attr_reader :history
+      attr_reader :history, :owner
 
-      def initialize(logger: ASRFacet::Core::ThreadSafe)
+      def initialize(logger: ASRFacet::Core::ThreadSafe, owner: nil)
         @logger = logger
         @mutex = Mutex.new
         @history = []
         @throttles = {}
+        @owner = ASRFacet::Execution::Contract.validate_scheduler_owner!(owner)
+      rescue ASRFacet::Execution::Contract::OwnershipError
+        raise
       rescue StandardError
         @logger = logger
         @mutex = Mutex.new
         @history = []
         @throttles = {}
+        @owner = ASRFacet::Execution::Contract.normalize_owner(owner)
       end
 
       def stage(name, timeout: nil)
@@ -66,6 +70,7 @@ module ASRFacet
           finished_at = Time.now
           entry = {
             name: name.to_s,
+            owner: @owner,
             status: status,
             error: error&.message.to_s,
             error_class: error&.class&.name,
@@ -147,13 +152,14 @@ module ASRFacet
       def stats
         @mutex.synchronize do
           {
+            owner: @owner,
             stages: @history.size,
             last_stage: @history.last,
             throttles: @throttles.keys.sort
           }
         end
       rescue StandardError
-        { stages: Array(@history).size, last_stage: nil, throttles: [] }
+        { owner: @owner, stages: Array(@history).size, last_stage: nil, throttles: [] }
       end
 
       private
