@@ -7,6 +7,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/version-0.1.0-0A66C2?style=for-the-badge" alt="Version">
   <img src="https://img.shields.io/badge/ruby-%3E%3D%203.2-red?style=for-the-badge&logo=ruby&logoColor=white" alt="Ruby >= 3.2">
+  <img src="https://img.shields.io/badge/tests-0%2F25%20passing-2E8B57?style=for-the-badge" alt="Tests Passing">
   <img src="https://img.shields.io/badge/status-stable-4C956C?style=for-the-badge" alt="Status Stable">
   <img src="https://img.shields.io/badge/license-Proprietary-8B0000?style=for-the-badge" alt="License">
 </p>
