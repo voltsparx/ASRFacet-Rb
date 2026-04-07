@@ -12,10 +12,10 @@ FileUtils.rm_rf(install_root)
 
 if windows?
   run_command("powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", File.join("install", "windows.ps1"), "test", unbundled: true)
-  primary_launcher = File.join("install", "test-root", "bin", "asrfacet-rb.cmd")
-  alias_launcher = File.join("install", "test-root", "bin", "asrfrb.cmd")
-  primary_version = run_command("cmd", "/c", "\"#{primary_launcher}\" version", unbundled: true).strip
-  alias_version = run_command("cmd", "/c", "\"#{alias_launcher}\" version", unbundled: true).strip
+  primary_launcher = File.join("install", "test-root", "bin", "asrfacet-rb.cmd").tr("/", "\\")
+  alias_launcher = File.join("install", "test-root", "bin", "asrfrb.cmd").tr("/", "\\")
+  primary_version = run_command("cmd", "/c", primary_launcher, "version", unbundled: true).strip
+  alias_version = run_command("cmd", "/c", alias_launcher, "version", unbundled: true).strip
 elsif macos?
   run_command("bash", File.join("install", "macos.sh"), "test", unbundled: true)
   primary_launcher = File.join("install", "test-root", "bin", "asrfacet-rb")
