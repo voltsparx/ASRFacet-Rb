@@ -29,3 +29,12 @@ Each platform script supports the same lifecycle modes:
 - they also set launch paths and related environment wiring for the platform
 - `test-root/` is generated installer output and should not be treated as
   source code
+
+## Verification
+
+Installer smoke checks are wired into the repository-wide verification flow:
+
+- `bundle exec rake test:install`
+
+The latest verified install flow confirms that both `asrfacet-rb` and `asrfrb`
+are created in the staged install and launch correctly.

@@ -14,6 +14,7 @@ bundle exec ruby bin/asrfacet-rb help
 bundle exec ruby bin/asrfacet-rb version
 bundle exec ruby bin/asrfacet-rb about
 bundle exec ruby bin/asrfacet-rb --explain scope
+bundle exec rake
 ```
 
 ## Install As A Local Application

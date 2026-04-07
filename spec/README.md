@@ -22,3 +22,10 @@ the subsystem level.
 
 When adding a new subsystem or user-facing behavior, add or extend specs here
 so release confidence stays high.
+
+## Latest verified status
+
+The current repository verification flow runs through `bundle exec rake`.
+The latest verified RSpec result reflected in the repository is:
+
+- `36 examples, 0 failures`

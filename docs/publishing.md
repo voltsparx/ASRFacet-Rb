@@ -17,17 +17,19 @@ This repository is prepared for an initial publish with emphasis on:
 
 Verified in the repository before README refresh:
 
-- `bundle exec rspec`
+- `bundle exec rake`
 - `ruby -c` on the touched CLI and web-session files
 - `ruby bin/asrfacet-rb help`
 
 Latest verified suite result:
 
+- `bundle exec rake` completed successfully
 - `36 examples, 0 failures`
 
 ## Release Checklist
 
 - Confirm `README.md` matches the current tested behavior.
+- Confirm `bundle exec rake` passes before publishing.
 - Confirm `docs/` links are valid.
 - Confirm the installer scripts still support `install`, `test`, `uninstall`, and `update`.
 - Confirm the man page renders locally.
