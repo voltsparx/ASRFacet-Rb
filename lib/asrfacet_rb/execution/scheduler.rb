@@ -129,9 +129,10 @@ module ASRFacet
 
         task_list = Array(items)
         results = Array.new(task_list.size)
+        queue_limit = queue_size.to_i.positive? ? queue_size.to_i : [[workers.to_i, 1].max * 4, [task_list.size, 1].max].min
         pool = ASRFacet::Execution::ThreadPool.new(
           workers: [workers.to_i, 1].max,
-          queue_size: queue_size,
+          queue_size: queue_limit,
           default_timeout: timeout,
           logger: @logger
         )

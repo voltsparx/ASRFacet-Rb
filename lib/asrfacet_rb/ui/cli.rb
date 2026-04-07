@@ -88,13 +88,14 @@ module ASRFacet
         result = if options[:passive_only]
                    passive_payload(domain)
                  else
-                   ASRFacet::Pipeline.new(
+                   pipeline = ASRFacet::Pipeline.new(
                      domain,
                      build_options.merge(
                        stage_callback: method(:announce_stage),
                        event_callback: method(:announce_event)
                      )
-                   ).run
+                   )
+                   with_graceful_shutdown(pipeline) { pipeline.run }
                  end
         output_results(result, domain)
       rescue StandardError => e
@@ -529,6 +530,26 @@ module ASRFacet
         ASRFacet::Core::ThreadSafe.puts("    Recommendation: #{failure[:recommendation]}") unless failure[:recommendation].to_s.empty?
       rescue StandardError
         ASRFacet::Core::ThreadSafe.print_error(error.to_s)
+      end
+
+      def with_graceful_shutdown(pipeline)
+        previous_handlers = {}
+        %w[INT TERM].each do |signal|
+          previous_handlers[signal] = Signal.trap(signal) do
+            message = "#{signal} received. ASRFacet-Rb is stopping after the current operation and preserving partial results."
+            ASRFacet::Core::ThreadSafe.print_warning(message)
+            pipeline&.request_shutdown(message)
+          end
+        rescue StandardError
+          nil
+        end
+        yield
+      ensure
+        previous_handlers.each do |signal, handler|
+          Signal.trap(signal, handler)
+        rescue StandardError
+          nil
+        end
       end
     end
   end

@@ -16,6 +16,8 @@ require "time"
 
 module ASRFacet
   class EventBus
+    DEFAULT_MAX_QUEUE = 1_000
+
     EVENT_TYPES = %i[
       domain
       subdomain
@@ -34,10 +36,40 @@ module ASRFacet
       stage
     ].freeze
 
-    def initialize
+    def initialize(max_queue: DEFAULT_MAX_QUEUE, logger: ASRFacet::Core::ThreadSafe)
+      @subscribers = Hash.new { |hash, key| hash[key] = [] }
+      @max_queue = max_queue.to_i.positive? ? max_queue.to_i : DEFAULT_MAX_QUEUE
+      @queue = SizedQueue.new(@max_queue)
+      @mutex = Mutex.new
+      @logger = logger
+      @stats = {
+        emitted: 0,
+        dispatched: 0,
+        dropped: 0,
+        blocked_pushes: 0
+      }
+      @accepting = true
+    rescue StandardError
       @subscribers = Hash.new { |hash, key| hash[key] = [] }
       @queue = Queue.new
       @mutex = Mutex.new
+      @logger = logger
+      @max_queue = DEFAULT_MAX_QUEUE
+      @stats = { emitted: 0, dispatched: 0, dropped: 0, blocked_pushes: 0 }
+      @accepting = true
+    end
+
+    def stats
+      @mutex.synchronize do
+        @stats.merge(
+          subscribers: @subscribers.transform_values(&:size),
+          queue_depth: queue_depth,
+          max_queue: @max_queue,
+          accepting: @accepting
+        )
+      end
+    rescue StandardError
+      { emitted: 0, dispatched: 0, dropped: 0, blocked_pushes: 0, subscribers: {}, queue_depth: 0, max_queue: @max_queue, accepting: false }
     end
 
     def subscribe(event_type, &block)
@@ -51,20 +83,23 @@ module ASRFacet
       nil
     end
 
-    def emit(event_type, data, dispatch_now: false)
+    def emit(event_type, data, dispatch_now: false, non_block: false)
       return nil unless EVENT_TYPES.include?(event_type.to_sym)
+      return nil unless accepting?
 
       event = {
         type: event_type.to_sym,
         data: data,
         timestamp: Time.now.iso8601
       }
+      increment_stat(:emitted)
       if dispatch_now
-        dispatch(event)
+        dispatched = dispatch(event)
+        dispatched ? event : nil
       else
-        @queue << event
+        queued = queue_event(event, non_block: non_block)
+        queued ? event : nil
       end
-      event
     rescue StandardError
       nil
     end
@@ -99,6 +134,7 @@ module ASRFacet
     end
 
     def stop(workers:)
+      @mutex.synchronize { @accepting = false }
       [workers.to_i, 1].max.times { @queue << nil }
       true
     rescue StandardError
@@ -114,9 +150,52 @@ module ASRFacet
       rescue StandardError
         nil
       end
+      increment_stat(:dispatched)
       true
     rescue StandardError
       nil
+    end
+
+    def queue_event(event, non_block: false)
+      if non_block
+        @queue.push(event, true)
+      else
+        increment_stat(:blocked_pushes) if queue_full?
+        @queue << event
+      end
+      true
+    rescue ThreadError
+      increment_stat(:dropped)
+      @logger&.print_warning("Event bus queue is full; dropping #{event[:type]} event.")
+      nil
+    rescue StandardError
+      nil
+    end
+
+    def increment_stat(key)
+      @mutex.synchronize { @stats[key] = @stats[key].to_i + 1 }
+    rescue StandardError
+      nil
+    end
+
+    def queue_depth
+      @queue.respond_to?(:length) ? @queue.length : @queue.size
+    rescue StandardError
+      0
+    end
+
+    def queue_full?
+      return false unless @queue.is_a?(SizedQueue)
+
+      queue_depth >= @max_queue
+    rescue StandardError
+      false
+    end
+
+    def accepting?
+      @mutex.synchronize { @accepting }
+    rescue StandardError
+      false
     end
   end
 end

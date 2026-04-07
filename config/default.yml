@@ -1,0 +1,41 @@
+# SPDX-License-Identifier: Proprietary
+#
+# ASRFacet-Rb: Attack Surface Reconnaissance Framework
+# Copyright (c) 2026 voltsparx
+#
+# Author: voltsparx
+# Repository: https://github.com/voltsparx/ASRFacet-Rb
+# Contact: voltsparx@gmail.com
+# License: See LICENSE file in the project root
+#
+# This file is part of ASRFacet-Rb and is subject to the terms
+# and conditions defined in the LICENSE file.
+
+threads:
+  default: 50
+  dns: 100
+  http: 50
+  paths: 20
+  dir: 40
+timeouts:
+  dns: 2
+  port: 1.5
+  http: 5
+  ssl: 5
+wordlists:
+  subdomain: wordlists/subdomains_small.txt
+  ports: wordlists/ports_top100.txt
+  paths: wordlists/paths_common.txt
+output:
+  directory: ~/.asrfacet_rb/output
+  format: cli
+resilience:
+  circuit_breaker:
+    threshold: 3
+    cooldown: 60
+http:
+  user_agent: ASRFacet-Rb/1.0.0
+  max_retries: 3
+  follow_redirects: true
+  max_redirects: 5
+  verify_ssl: false

@@ -121,4 +121,19 @@ RSpec.describe ASRFacet::Pipeline do
     )
     expect(result[:execution][:integrity][:status]).to eq("critical")
   end
+
+  it "stops gracefully after a shutdown request and keeps partial results" do
+    pipeline = nil
+    stage_callback = lambda do |index, _name, phase, _snapshot|
+      pipeline.request_shutdown("Operator requested a graceful shutdown for this run.") if index == 1 && phase.to_sym == :complete
+    end
+
+    pipeline = described_class.new("example.com", threads: 5, stage_callback: stage_callback)
+    result = pipeline.run
+
+    expect(result[:store].all(:subdomains)).to include("example.com", "app.example.com")
+    expect(result[:execution][:shutdown]).to include(requested: true, reason: "Operator requested a graceful shutdown for this run.")
+    expect(result[:execution][:failures]).to include(include(engine: "shutdown", isolated: false))
+    expect(result[:execution][:stages].map { |entry| entry[:index] }).to eq([1])
+  end
 end

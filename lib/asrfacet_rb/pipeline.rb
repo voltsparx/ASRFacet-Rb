@@ -28,6 +28,7 @@ module ASRFacet
       @memory = ASRFacet::Core::ReconMemory.new(@target.domain)
       @scope = build_scope(@target.domain)
       @filter = ASRFacet::Core::NoiseFilter.new
+      @dedupe = ASRFacet::Core::Deduplicator.new
       @scheduler = build_scheduler
       @rate_controller = build_rate_controller
       @http_client = build_http_client
@@ -51,6 +52,10 @@ module ASRFacet
       @processed_asn_ips = Set.new
       @stage_history = []
       @pipeline_failures = []
+      @shutdown_mutex = Mutex.new
+      @shutdown_requested = false
+      @shutdown_reason = nil
+      @shutdown_recorded = false
       @integrity_report = build_integrity_report
       @circuit_breakers = Hash.new { |hash, key| hash[key] = build_circuit_breaker(key) }
       @streamer = build_streamer
@@ -67,6 +72,7 @@ module ASRFacet
       @memory = ASRFacet::Core::ReconMemory.new(@target.domain)
       @scope = build_scope(@target.domain)
       @filter = ASRFacet::Core::NoiseFilter.new
+      @dedupe = ASRFacet::Core::Deduplicator.new
       @scheduler = build_scheduler
       @rate_controller = build_rate_controller
       @http_client = build_http_client
@@ -90,6 +96,10 @@ module ASRFacet
       @processed_asn_ips = Set.new
       @stage_history = []
       @pipeline_failures = []
+      @shutdown_mutex = Mutex.new
+      @shutdown_requested = false
+      @shutdown_reason = nil
+      @shutdown_recorded = false
       @integrity_report = build_integrity_report
       @circuit_breakers = Hash.new { |hash, key| hash[key] = build_circuit_breaker(key) }
       @streamer = build_streamer
@@ -111,6 +121,7 @@ module ASRFacet
       emit_integrity_warnings if integrity_warning?
       @streamer&.write("scan_started", { target: @target.domain, options: @options })
       emit(:subdomain, { host: @target.domain, parent: @target.domain, data: { root: true } })
+      return finalize_shutdown_result if shutdown_requested?
 
       stage(1, "Passive reconnaissance") do
         passive_runner = build_component(ASRFacet::Passive::Runner, @target.domain, api_keys)
@@ -122,10 +133,12 @@ module ASRFacet
         end
         passive[:errors].each { |error| emit(:error, { engine: "passive_runner", reason: error }) }
       end
+      return finalize_shutdown_result if shutdown_requested?
 
       stage(2, "Recursive DNS and certificate discovery") do
         with_circuit("recursive_discovery") { drain_subdomain_discovery_queue }
       end
+      return finalize_shutdown_result if shutdown_requested?
 
       stage(3, "Permutation and DNS busting") do
         permutation_engine = ASRFacet::Engines::PermutationEngine.new
@@ -145,14 +158,17 @@ module ASRFacet
       ensure
         cleanup_tempfile(wordlist_path)
       end
+      return finalize_shutdown_result if shutdown_requested?
 
       stage(4, "Discovery feedback loop") do
         with_circuit("recursive_discovery") { drain_subdomain_discovery_queue }
       end
+      return finalize_shutdown_result if shutdown_requested?
 
       stage(5, "Port scanning") do
         with_circuit("port_engine") { process_pending_ports }
       end
+      return finalize_shutdown_result if shutdown_requested?
 
       stage(6, "HTTP, crawl, JavaScript, and correlation") do
         with_circuit("http_engine") { process_pending_http }
@@ -162,12 +178,14 @@ module ASRFacet
         @top_assets = with_circuit("asset_scorer") { build_component(ASRFacet::Engines::AssetScorer).score_all(@store.to_h) } || []
         @top_assets.each { |asset| @store.add(:top_assets, asset) }
       end
+      return finalize_shutdown_result if shutdown_requested?
 
       stage(7, "WHOIS and ASN enrichment") do
         whois_result = with_circuit("whois_engine") { build_component(ASRFacet::Engines::WhoisEngine).run(@target.domain) } || { data: {} }
         @store.add(:whois, whois_result[:data]) unless whois_result[:data].to_h.empty?
         with_circuit("asn_engine") { process_pending_asn }
       end
+      return finalize_shutdown_result if shutdown_requested?
 
       stage(8, "Vulnerability detection and monitoring") do
         vuln_engine = build_component(ASRFacet::Engines::VulnEngine, @target, @store.to_h)
@@ -192,6 +210,7 @@ module ASRFacet
         @probabilistic_subdomains.each { |entry| @store.add(:probabilistic_subdomains, entry) }
         @memory.record_scan(current_results)
       end
+      return finalize_shutdown_result if shutdown_requested?
 
       result = build_result
       @notifier.notify_scan_complete(@store)
@@ -202,6 +221,28 @@ module ASRFacet
       result = build_result
       @streamer&.write("scan_failed", result.merge(error: e.message))
       result
+    end
+
+    def request_shutdown(reason = nil)
+      message = reason.to_s.strip
+      message = "Shutdown requested. ASRFacet-Rb will preserve partial results and stop after the current operation." if message.empty?
+
+      updated = @shutdown_mutex.synchronize do
+        already_requested = @shutdown_requested
+        @shutdown_requested = true
+        @shutdown_reason ||= message
+        !already_requested
+      end
+      @streamer&.write("shutdown_requested", reason: @shutdown_reason) if updated
+      updated
+    rescue StandardError
+      false
+    end
+
+    def shutdown_requested?
+      @shutdown_mutex.synchronize { @shutdown_requested }
+    rescue StandardError
+      false
     end
 
     private
@@ -404,6 +445,8 @@ module ASRFacet
       cert_engine = build_component(ASRFacet::Engines::CertEngine)
 
       until @pending_subdomains.empty?
+        break if shutdown_requested?
+
         begin
           host = @pending_subdomains.shift
           @queued_subdomains.delete(host)
@@ -434,6 +477,7 @@ module ASRFacet
     def process_pending_ports
       port_engine = build_component(ASRFacet::Engines::PortEngine)
       scope_filter(@store.all(:ips).uniq).each do |ip|
+        break if shutdown_requested?
         next if @processed_port_ips.include?(ip)
         next unless @scope.in_scope?(ip)
 
@@ -455,6 +499,7 @@ module ASRFacet
       http_results = []
 
       scope_filter(@resolved_map.keys).each do |host|
+        break if shutdown_requested?
         next if @processed_http_hosts.include?(host)
         next unless @scope.in_scope?(host)
 
@@ -489,6 +534,7 @@ module ASRFacet
     def process_pending_asn
       asn_engine = build_component(ASRFacet::Engines::AsnEngine)
       scope_filter(@store.all(:ips).uniq).each do |ip|
+        break if shutdown_requested?
         next if @processed_asn_ips.include?(ip)
         next unless @scope.in_scope?(ip)
 
@@ -515,6 +561,7 @@ module ASRFacet
 
     def with_circuit(engine_name)
       breaker = @circuit_breakers[engine_name.to_s]
+      return nil if shutdown_requested?
       unless breaker.allow?
         reason = "Circuit open for #{engine_name}; skipping until cooldown expires"
         emit(:error, { engine: engine_name, reason: reason })
@@ -682,6 +729,8 @@ module ASRFacet
     def setup_event_subscribers
       @event_bus.subscribe(:domain) do |data|
         entry = symbolize_keys(data)
+        next unless @dedupe.first_time?(:domain, entry[:id])
+
         @graph.add_node(entry[:id], type: :domain, data: { ip: entry[:ip] })
       end
 
@@ -694,12 +743,16 @@ module ASRFacet
         @store.add(:subdomains, host)
         @graph.add_node(host, type: :subdomain, data: entry[:data] || {})
         parent = entry[:parent].to_s
-        @graph.add_edge(parent, host, relation: :belongs_to) unless parent.empty? || parent == host
+        if !parent.empty? && parent != host && @dedupe.first_time?(:graph_edge, [parent, host, :belongs_to])
+          @graph.add_edge(parent, host, relation: :belongs_to)
+        end
         enqueue_subdomain(host)
       end
 
       @event_bus.subscribe(:dns_record) do |data|
         entry = symbolize_keys(data)
+        next unless @dedupe.first_time?(:dns_record, entry)
+
         @store.add(:dns, entry)
         next unless %i[a aaaa].include?(entry[:type].to_sym)
         next unless @scope.in_scope?(entry[:value])
@@ -707,19 +760,23 @@ module ASRFacet
         remember_resolution(entry[:host], entry[:value])
         @store.add(:ips, entry[:value])
         @graph.add_node(entry[:value], type: :ip, data: {})
-        @graph.add_edge(entry[:host], entry[:value], relation: :resolves_to)
+        @graph.add_edge(entry[:host], entry[:value], relation: :resolves_to) if @dedupe.first_time?(:graph_edge, [entry[:host], entry[:value], :resolves_to])
       end
 
       @event_bus.subscribe(:open_port) do |data|
         entry = symbolize_keys(data)
+        next unless @dedupe.first_time?(:open_port, { host: entry[:host], port: entry[:port], protocol: entry[:protocol] || "tcp" })
+
         @store.add(:open_ports, entry)
         service_id = "#{entry[:host]}:#{entry[:port]}"
         @graph.add_node(service_id, type: :service, data: entry)
-        @graph.add_edge(entry[:host], service_id, relation: :runs_on)
+        @graph.add_edge(entry[:host], service_id, relation: :runs_on) if @dedupe.first_time?(:graph_edge, [entry[:host], service_id, :runs_on])
       end
 
       @event_bus.subscribe(:http_response) do |data|
         entry = symbolize_keys(data)
+        next unless @dedupe.first_time?(:http_response, entry[:host])
+
         @store.add(:http_responses, entry)
         @graph.add_node(entry[:host], type: :subdomain, data: { url: entry[:url], title: entry[:title], technologies: entry[:technologies] })
       end
@@ -742,18 +799,22 @@ module ASRFacet
 
       @event_bus.subscribe(:asn) do |data|
         entry = symbolize_keys(data)
+        next unless @dedupe.first_time?(:asn, entry)
+
         @store.add(:asn, entry)
         asn_id = entry[:asn].to_s.empty? ? "asn:#{entry[:ip]}" : entry[:asn].to_s
         @graph.add_node(asn_id, type: :asn, data: entry)
-        @graph.add_edge(entry[:ip], asn_id, relation: :belongs_to)
+        @graph.add_edge(entry[:ip], asn_id, relation: :belongs_to) if @dedupe.first_time?(:graph_edge, [entry[:ip], asn_id, :belongs_to])
       end
 
       @event_bus.subscribe(:finding) do |data|
         entry = symbolize_keys(data)
+        next unless @dedupe.first_time?(:finding, { host: entry[:host], title: entry[:title], severity: entry[:severity] })
+
         @store.add(:findings, entry)
         finding_id = "#{entry[:host]}:#{entry[:title]}"
         @graph.add_node(finding_id, type: :finding, data: entry)
-        @graph.add_edge(entry[:host], finding_id, relation: :found_by)
+        @graph.add_edge(entry[:host], finding_id, relation: :found_by) if @dedupe.first_time?(:graph_edge, [entry[:host], finding_id, :found_by])
       end
 
       @event_bus.subscribe(:error) do |data|
@@ -796,7 +857,10 @@ module ASRFacet
           stages: @stage_history,
           failures: @pipeline_failures,
           integrity: @integrity_report,
-          scheduler: @scheduler&.stats || {}
+          scheduler: @scheduler&.stats || {},
+          event_bus: @event_bus&.stats || {},
+          dedupe: @dedupe&.stats || {},
+          shutdown: shutdown_state
         }
       }
     rescue StandardError
@@ -817,7 +881,10 @@ module ASRFacet
           stages: Array(@stage_history),
           failures: Array(@pipeline_failures),
           integrity: @integrity_report,
-          scheduler: @scheduler&.stats || {}
+          scheduler: @scheduler&.stats || {},
+          event_bus: @event_bus&.stats || {},
+          dedupe: @dedupe&.stats || {},
+          shutdown: shutdown_state
         }
       }
     end
@@ -876,6 +943,44 @@ module ASRFacet
       @streamer&.write("integrity_warning", integrity: @integrity_report)
     rescue StandardError
       nil
+    end
+
+    def finalize_shutdown_result
+      record_shutdown_once
+      result = build_result
+      @streamer&.write("scan_shutdown", result.merge(reason: shutdown_state[:reason]))
+      result
+    rescue StandardError
+      build_result
+    end
+
+    def record_shutdown_once
+      should_record = @shutdown_mutex.synchronize do
+        already_recorded = @shutdown_recorded
+        @shutdown_recorded = true
+        !already_recorded
+      end
+      return nil unless should_record
+
+      record_failure(
+        "shutdown",
+        shutdown_state[:reason],
+        isolated: false,
+        context: "ASRFacet-Rb stopped the current run gracefully after a shutdown request and preserved the partial results collected so far."
+      )
+    rescue StandardError
+      nil
+    end
+
+    def shutdown_state
+      @shutdown_mutex.synchronize do
+        {
+          requested: @shutdown_requested,
+          reason: @shutdown_reason.to_s
+        }
+      end
+    rescue StandardError
+      { requested: false, reason: "" }
     end
   end
 end

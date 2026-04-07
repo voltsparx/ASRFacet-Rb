@@ -21,6 +21,12 @@ ASRFacet-Rb runs an event-driven reconnaissance pipeline. Results from one stage
 
 `ASRFacet::ResultStore` collects deduplicated findings, hosts, ports, HTTP responses, crawl artifacts, findings, and summaries.
 
+### Central Deduplication
+
+`ASRFacet::Core::Deduplicator` provides a single thread-safe fingerprint layer
+for pipeline events and relationship writes so the same host, record, port, or
+finding does not get processed repeatedly through different discovery paths.
+
 ### Knowledge Graph
 
 `ASRFacet::Core::KnowledgeGraph` stores relationships such as:
@@ -137,6 +143,17 @@ That means the healthy performance posture is:
 ### Scope Enforcement
 
 `ASRFacet::Core::ScopeEngine` is applied before active probing so the framework does not intentionally drift out of scope.
+
+### Event Backpressure
+
+`ASRFacet::EventBus` uses a bounded internal queue and exposes queue stats so
+producers cannot grow an invisible unbounded backlog without any signal.
+
+### Graceful Shutdown
+
+`ASRFacet::Pipeline` accepts a shutdown request, completes the current unit of
+work, records why the run stopped, and returns the partial result bundle rather
+than dropping progress on exit.
 
 ## Web Session Runtime
 
