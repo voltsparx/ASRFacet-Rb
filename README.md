@@ -77,6 +77,7 @@ install/linux.sh      # install | test | uninstall | update
 ```
 
 The installers stage ASRFacet-Rb into its own `asrfacet-rb` application folder, create a launcher on your user `PATH`, keep dependencies inside the install directory, and support a repo-local `test` mode that does not touch your system install.
+On macOS and Linux they also add the installed `man/` directory to `MANPATH`, and all installers print the install path, launcher path, and default stored-report location when they finish.
 
 For local manual-page testing:
 
@@ -628,6 +629,7 @@ Wizard mode exists only inside the console. It asks what you are trying to learn
 ## Configuration
 
 Configuration is loaded from `config/default.yml` and then merged with `~/.asrfacet_rb/config.yml`.
+By default, stored reports and JSONL event streams now live under `~/.asrfacet_rb/output/` so installed runs have a predictable place to review old output.
 
 <table>
   <thead>

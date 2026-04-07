@@ -1,9 +1,10 @@
 # Part of ASRFacet-Rb — authorized testing only
 require "spec_helper"
+require "tmpdir"
 
 RSpec.describe ASRFacet::Pipeline do
   let(:target) { instance_double(ASRFacet::Core::Target, domain: "example.com", ip: nil) }
-  let(:streamer) { instance_double(ASRFacet::Output::JsonlStream, write: true) }
+  let(:streamer) { instance_double(ASRFacet::Output::JsonlStream, write: true, path: File.join(Dir.tmpdir, "example_com.jsonl")) }
   let(:memory) { instance_double(ASRFacet::Core::ReconMemory, known?: false, record_failure: nil, record_scan: nil) }
   let(:passive_runner) { instance_double(ASRFacet::Passive::Runner, run: { subdomains: ["app.example.com"], errors: [] }) }
   let(:dns_engine) { instance_double(ASRFacet::Engines::DnsEngine) }

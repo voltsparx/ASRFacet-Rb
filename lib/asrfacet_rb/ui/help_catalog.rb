@@ -85,7 +85,8 @@ module ASRFacet
           details: [
             "CLI output prints directly to the terminal and is best for quick inspection.",
             "JSON is best for scripting, HTML is best for sharing a styled offline report, and TXT is a plain-text export.",
-            "Use `--output` to write the chosen format to disk instead of printing it."
+            "ASRFacet-Rb also stores a full report bundle automatically under ~/.asrfacet_rb/output/reports/<target>/<timestamp>/ so installed users can find earlier runs easily.",
+            "Use `--output` when you want an additional custom file path alongside the stored report bundle."
           ],
           examples: [
             "asrfacet-rb scan example.com --format html --output report.html",

@@ -253,8 +253,10 @@ module ASRFacet
     end
 
     def stage(index, name)
-      @options[:stage_callback]&.call(index, name)
-      yield
+      @options[:stage_callback]&.call(index, name, :start, build_stage_snapshot(index, name))
+      result = yield
+      @options[:stage_callback]&.call(index, name, :complete, build_stage_snapshot(index, name))
+      result
     rescue StandardError => e
       record_failure(name, e.message)
       nil
@@ -444,6 +446,7 @@ module ASRFacet
 
     def emit(event_type, data)
       @streamer&.write("event", { type: event_type, data: data })
+      @options[:event_callback]&.call(event_type, symbolize_keys(data))
       @event_bus.emit(event_type, data, dispatch_now: true)
     rescue StandardError
       nil
@@ -479,10 +482,16 @@ module ASRFacet
     end
 
     def build_streamer
-      output_directory = ASRFacet::Config.fetch("output", "directory") || "output"
+      output_directory = resolve_output_directory
       ASRFacet::Output::JsonlStream.new(@target.domain, base_dir: File.join(output_directory, "streams"))
     rescue StandardError
       nil
+    end
+
+    def resolve_output_directory
+      File.expand_path((ASRFacet::Config.fetch("output", "directory") || "~/.asrfacet_rb/output").to_s)
+    rescue StandardError
+      File.expand_path("~/.asrfacet_rb/output")
     end
 
     def build_rate_controller
@@ -700,7 +709,10 @@ module ASRFacet
         top_assets: @top_assets,
         js_endpoints: @js_summary,
         correlations: @correlations,
-        probabilistic_subdomains: @probabilistic_subdomains
+        probabilistic_subdomains: @probabilistic_subdomains,
+        stream_path: @streamer&.path,
+        output_directory: resolve_output_directory,
+        summary: @store.summary
       }
     rescue StandardError
       {
@@ -711,8 +723,27 @@ module ASRFacet
         top_assets: [],
         js_endpoints: {},
         correlations: [],
-        probabilistic_subdomains: []
+        probabilistic_subdomains: [],
+        stream_path: @streamer&.path,
+        output_directory: resolve_output_directory,
+        summary: {}
       }
+    end
+
+    def build_stage_snapshot(index, name)
+      summary = @store.summary
+      {
+        index: index,
+        name: name,
+        subdomains: summary[:subdomains].to_i,
+        ips: summary[:ips].to_i,
+        open_ports: summary[:open_ports].to_i,
+        http_responses: summary[:http_responses].to_i,
+        findings: summary[:findings].to_i,
+        errors: summary[:errors].to_i
+      }
+    rescue StandardError
+      { index: index, name: name }
     end
   end
 end

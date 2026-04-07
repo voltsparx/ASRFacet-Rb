@@ -1,4 +1,4 @@
-# Part of ASRFacet-Rb — authorized testing only
+# Part of ASRFacet-Rb - authorized testing only
 require "json"
 
 module ASRFacet
@@ -9,11 +9,19 @@ module ASRFacet
         store = payload[:store]
 
         sections = []
-        sections << render_section("Subdomains", Array(store[:subdomains]))
-        sections << render_section("Open Ports", Array(store[:open_ports]).map { |entry| "#{entry[:host]}:#{entry[:port]} #{entry[:service]}" })
-        sections << render_section("Technologies", Array(store[:http_responses]).flat_map { |entry| Array(entry[:technologies]).map { |tech| "#{entry[:host]} -> #{tech}" } })
-        sections << render_section("Findings", Array(store[:findings]).map { |finding| "#{finding[:severity].to_s.upcase}: #{finding[:host]} - #{finding[:title]}" })
-        sections << render_section("Diff", JSON.pretty_generate(payload[:diff] || {})) if payload[:diff]
+        sections << render_block("Scan Overview", overview_lines(payload))
+        sections << render_block("What It Means", summary_narrative(payload))
+        sections << render_block("Recommended Next Steps", recommendations_for(payload))
+        sections << render_block("Subdomains", Array(store[:subdomains]).sort)
+        sections << render_block("Open Ports", Array(store[:open_ports]).map { |entry| "#{entry[:host]}:#{entry[:port]} #{entry[:service]} | banner=#{entry[:banner]}" })
+        sections << render_block("HTTP Exposure", Array(store[:http_responses]).map { |entry| "#{entry[:host]} | status=#{entry[:status] || entry[:status_code]} | title=#{entry[:title]} | technologies=#{Array(entry[:technologies]).join(', ')}" })
+        sections << render_block("Findings", Array(store[:findings]).map { |finding| "#{finding[:severity].to_s.upcase}: #{finding[:host]} - #{finding[:title]}\n  Why it matters: #{finding[:description]}\n  Recommendation: #{finding[:remediation]}" })
+        sections << render_block("JavaScript Endpoints", Array(payload.dig(:js_endpoints, :endpoints_found)))
+        sections << render_block("SPA Endpoints", Array(store[:spa_endpoints]).map { |entry| "#{entry[:method]} #{entry[:url]} (from #{entry[:discovered_from]})" })
+        sections << render_block("DNS Records", Array(store[:dns]).map { |entry| "#{entry[:host]} #{entry[:type]} #{entry[:value]}" })
+        sections << render_block("Correlations", Array(payload[:correlations]).map { |entry| JSON.generate(entry) })
+        sections << render_block("Change Summary", [payload[:change_summary].to_s, JSON.pretty_generate(payload[:diff] || {})])
+        sections << render_block("Stored Artifacts", artifact_rows(payload).map { |name, path| "#{name}: #{path}" })
         sections.compact.join("\n\n")
       rescue StandardError
         ""
@@ -21,11 +29,29 @@ module ASRFacet
 
       private
 
-      def render_section(title, lines)
-        values = lines.is_a?(String) ? lines : Array(lines).map(&:to_s).join("\n")
-        return nil if values.to_s.strip.empty?
+      def overview_lines(payload)
+        counts = counts_for(payload[:store])
+        [
+          "Target: #{primary_target(payload[:store])}",
+          "Generated: #{payload.dig(:meta, :generated_at)}",
+          "Output root: #{payload.dig(:meta, :output_directory)}",
+          "Subdomains: #{counts[:subdomains]}",
+          "Resolved IPs: #{counts[:ips]}",
+          "Open ports: #{counts[:open_ports]}",
+          "Web responses: #{counts[:http_responses]}",
+          "Findings: #{counts[:findings]}",
+          "JavaScript endpoints: #{counts[:js_endpoints]}",
+          "SPA endpoints: #{counts[:spa_endpoints]}"
+        ]
+      rescue StandardError
+        []
+      end
 
-        "#{title}\n#{values}"
+      def render_block(title, lines)
+        values = Array(lines).map(&:to_s).reject { |line| line.strip.empty? }
+        return nil if values.empty?
+
+        ([title, "-" * title.length] + values).join("\n")
       rescue StandardError
         nil
       end

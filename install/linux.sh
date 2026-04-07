@@ -14,6 +14,9 @@ TEST_BASE="$SCRIPT_DIR/test-root"
 TEST_ROOT="$TEST_BASE/$APP_NAME"
 TEST_BIN_DIR="$TEST_BASE/bin"
 TEST_LAUNCHER="$TEST_BIN_DIR/$APP_NAME"
+USER_CONFIG_ROOT="$HOME/.asrfacet_rb"
+USER_CONFIG_PATH="$USER_CONFIG_ROOT/config.yml"
+DEFAULT_OUTPUT_ROOT="$USER_CONFIG_ROOT/output"
 MANIFEST_NAME=".asrfacet-install.json"
 MODE="${1:-install}"
 PROFILE_FILES=("$HOME/.bashrc" "$HOME/.zshrc" "$HOME/.profile")
@@ -29,26 +32,11 @@ RUNTIME_PAYLOAD=(
   "asrfacet-rb.gemspec"
 )
 
-log() {
-  printf '[%s] %s\n' "$1" "$2"
-}
-
-info() {
-  log "INFO" "$1"
-}
-
-ok() {
-  log " OK " "$1"
-}
-
-warn() {
-  log "WARN" "$1"
-}
-
-fail() {
-  log "FAIL" "$1"
-  exit 1
-}
+log() { printf '[%s] %s\n' "$1" "$2"; }
+info() { log "INFO" "$1"; }
+ok() { log " OK " "$1"; }
+warn() { log "WARN" "$1"; }
+fail() { log "FAIL" "$1"; exit 1; }
 
 run_cmd() {
   "$@"
@@ -56,6 +44,28 @@ run_cmd() {
   if [ "$code" -ne 0 ]; then
     fail "Command failed ($code): $*"
   fi
+}
+
+confirm_action() {
+  local prompt="$1"
+  local default="${2:-yes}"
+  if [ ! -t 0 ]; then
+    return 0
+  fi
+
+  local suffix="[Y/n]"
+  [ "$default" = "no" ] && suffix="[y/N]"
+  printf '%s %s ' "$prompt" "$suffix"
+  read -r answer
+  if [ -z "$answer" ]; then
+    [ "$default" = "yes" ]
+    return
+  fi
+
+  case "$(printf '%s' "$answer" | tr '[:upper:]' '[:lower:]')" in
+    y|yes) return 0 ;;
+    *) return 1 ;;
+  esac
 }
 
 ensure_command() {
@@ -74,17 +84,13 @@ ensure_bundler() {
     fail "Bundler is missing and gem is unavailable to install it."
   fi
 
+  confirm_action "Bundler is required but missing. Install it now for this user?" yes || fail "Bundler installation was declined."
   info "Bundler was not found. Attempting a user-level install."
   run_cmd gem install bundler --no-document
 }
 
-manifest_path() {
-  printf '%s/%s\n' "$1" "$MANIFEST_NAME"
-}
-
-is_managed_install() {
-  [ -f "$(manifest_path "$1")" ]
-}
+manifest_path() { printf '%s/%s\n' "$1" "$MANIFEST_NAME"; }
+is_managed_install() { [ -f "$(manifest_path "$1")" ]; }
 
 ensure_managed_or_missing() {
   if [ -e "$1" ] && ! is_managed_install "$1"; then
@@ -97,18 +103,12 @@ copy_payload() {
   local include_specs="$2"
 
   run_cmd mkdir -p "$destination_root"
-
   local entry
   for entry in "${RUNTIME_PAYLOAD[@]}"; do
-    if [ -e "$REPO_ROOT/$entry" ]; then
-      run_cmd cp -R "$REPO_ROOT/$entry" "$destination_root/"
-    fi
+    [ -e "$REPO_ROOT/$entry" ] && run_cmd cp -R "$REPO_ROOT/$entry" "$destination_root/"
   done
 
-  if [ -d "$REPO_ROOT/wordlists" ]; then
-    run_cmd cp -R "$REPO_ROOT/wordlists" "$destination_root/"
-  fi
-
+  [ -d "$REPO_ROOT/wordlists" ] && run_cmd cp -R "$REPO_ROOT/wordlists" "$destination_root/"
   if [ "$include_specs" = "yes" ] && [ -d "$REPO_ROOT/spec" ]; then
     run_cmd cp -R "$REPO_ROOT/spec" "$destination_root/"
   fi
@@ -120,6 +120,7 @@ bundle_setup() {
   local app_root="$1"
 
   ensure_bundler
+  confirm_action "Install or refresh Ruby dependencies into the ASRFacet-Rb application folder?" yes || fail "Dependency installation was declined."
   info "Installing runtime dependencies into $app_root/vendor/bundle"
   (
     cd "$app_root" || exit 1
@@ -128,9 +129,7 @@ bundle_setup() {
       bundle install
   )
   local code=$?
-  if [ "$code" -ne 0 ]; then
-    fail "bundle install failed for $app_root."
-  fi
+  [ "$code" -eq 0 ] || fail "bundle install failed for $app_root."
 }
 
 write_manifest() {
@@ -147,6 +146,17 @@ write_manifest() {
   "source_repo": "$REPO_ROOT",
   "ruby_version": "$ruby_version"
 }
+EOF
+}
+
+write_user_config() {
+  run_cmd mkdir -p "$USER_CONFIG_ROOT" "$DEFAULT_OUTPUT_ROOT"
+  cat >"$USER_CONFIG_PATH" <<EOF
+threads:
+  default: 50
+output:
+  directory: $DEFAULT_OUTPUT_ROOT
+  format: cli
 EOF
 }
 
@@ -179,44 +189,36 @@ EOF
   run_cmd chmod +x "$launcher_path"
 }
 
-ensure_path_block() {
+ensure_path_and_man_blocks() {
   run_cmd mkdir -p "$USER_BIN_DIR"
-
-  if printf '%s' ":$PATH:" | grep -Fq ":$USER_BIN_DIR:"; then
-    info "$USER_BIN_DIR is already present in the current PATH."
-  fi
-
   local marker_start="# >>> asrfacet-rb >>>"
   local marker_end="# <<< asrfacet-rb <<<"
-  local export_line='export PATH="$HOME/.local/bin:$PATH"'
   local profile
   local written="no"
 
   for profile in "${PROFILE_FILES[@]}"; do
-    if [ ! -f "$profile" ]; then
-      : >"$profile" || continue
-    fi
-
+    [ -f "$profile" ] || : >"$profile" || continue
     if grep -Fq "$marker_start" "$profile" 2>/dev/null; then
       continue
     fi
 
     {
       printf '\n%s\n' "$marker_start"
-      printf '%s\n' "$export_line"
+      printf '%s\n' 'export PATH="$HOME/.local/bin:$PATH"'
+      printf '%s\n' "export MANPATH=\"$INSTALL_ROOT/man:\${MANPATH:-}\""
       printf '%s\n' "$marker_end"
     } >>"$profile" || continue
     written="yes"
   done
 
   if [ "$written" = "yes" ]; then
-    ok "Added $USER_BIN_DIR to common shell profiles."
+    ok "Added PATH and MANPATH updates to common shell profiles."
   else
-    info "Shell profile entries were already present."
+    info "Shell profile updates were already present."
   fi
 }
 
-remove_path_block() {
+remove_profile_block() {
   local marker_start="# >>> asrfacet-rb >>>"
   local marker_end="# <<< asrfacet-rb <<<"
   local profile
@@ -238,11 +240,23 @@ smoke_test() {
   ok "Launcher smoke test passed."
 }
 
+show_install_summary() {
+  local install_mode="$1"
+  local app_root="$2"
+  local launcher_path="$3"
+  ok "ASRFacet-Rb $install_mode completed successfully."
+  info "Installed application: $app_root"
+  info "Launcher path: $launcher_path"
+  info "Stored reports root: $DEFAULT_OUTPUT_ROOT"
+  info "Man page path: $app_root/man"
+  info "Reload your shell or run: export PATH=\"$USER_BIN_DIR:\$PATH\" && export MANPATH=\"$app_root/man:\${MANPATH:-}\""
+}
+
 deploy_install() {
   local target_root="$1"
   local launcher_path="$2"
   local install_mode="$3"
-  local add_to_path="$4"
+  local add_to_profile="$4"
   local include_specs="$5"
   local parent_dir
   local stage_root
@@ -250,7 +264,6 @@ deploy_install() {
   local backup_root
 
   ensure_managed_or_missing "$target_root"
-
   parent_dir="$(dirname "$target_root")"
   stage_root="$parent_dir/.${APP_NAME}-staging-$$"
   stage_app="$stage_root/$APP_NAME"
@@ -264,10 +277,7 @@ deploy_install() {
   bundle_setup "$stage_app"
   write_manifest "$stage_app" "$install_mode"
 
-  if [ -d "$target_root" ]; then
-    run_cmd mv "$target_root" "$backup_root"
-  fi
-
+  [ -d "$target_root" ] && run_cmd mv "$target_root" "$backup_root"
   if ! mv "$stage_app" "$target_root"; then
     [ -d "$backup_root" ] && mv "$backup_root" "$target_root"
     fail "Unable to move the staged install into place."
@@ -279,59 +289,40 @@ deploy_install() {
     fail "Unable to create the launcher at $launcher_path."
   fi
 
-  if [ "$add_to_path" = "yes" ]; then
-    ensure_path_block
+  if [ "$add_to_profile" = "yes" ]; then
+    ensure_path_and_man_blocks
+    write_user_config
   fi
 
-  if ! smoke_test "$launcher_path"; then
-    rm -rf "$target_root"
-    [ -d "$backup_root" ] && mv "$backup_root" "$target_root"
-    fail "Smoke test failed after deployment."
-  fi
-
+  smoke_test "$launcher_path"
   rm -rf "$stage_root" "$backup_root"
-  ok "ASRFacet-Rb $install_mode completed successfully."
+  show_install_summary "$install_mode" "$target_root" "$launcher_path"
 }
 
 uninstall_system() {
   if [ -d "$INSTALL_ROOT" ]; then
-    if ! is_managed_install "$INSTALL_ROOT"; then
-      fail "Refusing to remove $INSTALL_ROOT because it is not marked as managed by this installer."
-    fi
+    is_managed_install "$INSTALL_ROOT" || fail "Refusing to remove $INSTALL_ROOT because it is not marked as managed by this installer."
     run_cmd rm -rf "$INSTALL_ROOT"
     ok "Removed $INSTALL_ROOT"
   else
     warn "No managed installation was found at $INSTALL_ROOT."
   fi
 
-  if [ -f "$SYSTEM_LAUNCHER" ]; then
-    run_cmd rm -f "$SYSTEM_LAUNCHER"
-    ok "Removed launcher $SYSTEM_LAUNCHER"
-  fi
-
-  remove_path_block
+  [ -f "$SYSTEM_LAUNCHER" ] && run_cmd rm -f "$SYSTEM_LAUNCHER" && ok "Removed launcher $SYSTEM_LAUNCHER"
+  remove_profile_block
   ok "Shell profile updates were removed."
 }
 
 case "$MODE" in
-  install)
-    deploy_install "$INSTALL_ROOT" "$SYSTEM_LAUNCHER" "install" "yes" "no"
-    ;;
+  install) deploy_install "$INSTALL_ROOT" "$SYSTEM_LAUNCHER" "install" "yes" "no" ;;
   test)
     deploy_install "$TEST_ROOT" "$TEST_LAUNCHER" "test" "no" "yes"
-    ok "Repo-local test install is ready at $TEST_ROOT"
-    info "Launcher: $TEST_LAUNCHER"
+    info "Repo-local test launcher: $TEST_LAUNCHER"
     ;;
   update)
-    if ! is_managed_install "$INSTALL_ROOT"; then
-      fail "No managed installation was found to update. Run install first."
-    fi
+    is_managed_install "$INSTALL_ROOT" || fail "No managed installation was found to update. Run install first."
     deploy_install "$INSTALL_ROOT" "$SYSTEM_LAUNCHER" "update" "yes" "no"
     ;;
-  uninstall)
-    uninstall_system
-    ;;
-  *)
-    fail "Unsupported mode '$MODE'. Use install, test, uninstall, or update."
-    ;;
+  uninstall) uninstall_system ;;
+  *) fail "Unsupported mode '$MODE'. Use install, test, uninstall, or update." ;;
 esac

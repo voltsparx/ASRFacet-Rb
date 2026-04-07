@@ -19,6 +19,9 @@ $TestBase = Join-Path $ScriptDir "test-root"
 $TestRoot = Join-Path $TestBase $AppName
 $TestBinDir = Join-Path $TestBase "bin"
 $TestLauncher = Join-Path $TestBinDir "$AppName.cmd"
+$UserConfigRoot = Join-Path $HOME ".asrfacet_rb"
+$UserConfigPath = Join-Path $UserConfigRoot "config.yml"
+$DefaultOutputRoot = Join-Path $UserConfigRoot "output"
 $ManifestName = ".asrfacet-install.json"
 $RuntimePayload = @(
   "bin",
@@ -57,35 +60,59 @@ function Write-WarningLine {
   Write-Labelled -Label "WARN" -Message $Message -Color ([ConsoleColor]::Yellow)
 }
 
-function Fail-Step {
+function Stop-Step {
   param([string]$Message)
   Write-Labelled -Label "FAIL" -Message $Message -Color ([ConsoleColor]::Red)
   exit 1
 }
 
-function Ensure-Command {
+function Read-Confirmation {
+  param(
+    [string]$Prompt,
+    [bool]$Default = $true
+  )
+
+  if (-not [Environment]::UserInteractive) {
+    return $true
+  }
+
+  $suffix = if ($Default) { "[Y/n]" } else { "[y/N]" }
+  $answer = Read-Host "$Prompt $suffix"
+  if ([string]::IsNullOrWhiteSpace($answer)) {
+    return $Default
+  }
+
+  $normalized = $answer.Trim().ToLowerInvariant()
+  return $normalized -in @("y", "yes")
+}
+
+function Confirm-CommandAvailable {
   param([string]$Name)
 
   if (-not (Get-Command $Name -ErrorAction SilentlyContinue)) {
-    Fail-Step "$Name is required but was not found in PATH."
+    Stop-Step "$Name is required but was not found in PATH."
   }
 }
 
-function Ensure-Bundler {
-  Ensure-Command -Name "ruby"
+function Install-BundlerIfMissing {
+  Confirm-CommandAvailable -Name "ruby"
 
   if (Get-Command "bundle" -ErrorAction SilentlyContinue) {
     return
   }
 
   if (-not (Get-Command "gem" -ErrorAction SilentlyContinue)) {
-    Fail-Step "Bundler is missing and the gem command is unavailable to install it."
+    Stop-Step "Bundler is missing and the gem command is unavailable to install it."
+  }
+
+  if (-not (Read-Confirmation -Prompt "Bundler is required but missing. Install it now for this user?")) {
+    Stop-Step "Bundler installation was declined. Install bundler manually and re-run this script."
   }
 
   Write-Info "Bundler was not found. Attempting a user-level bundler install."
   & gem install bundler --no-document
   if ($LASTEXITCODE -ne 0) {
-    Fail-Step "Bundler installation failed. Install bundler manually and re-run this script."
+    Stop-Step "Bundler installation failed. Install bundler manually and re-run this script."
   }
 }
 
@@ -99,11 +126,11 @@ function Test-ManagedInstall {
   Test-Path -LiteralPath (Get-ManifestPath -Root $Root)
 }
 
-function Ensure-ManagedOrMissing {
+function Confirm-ManagedInstallTarget {
   param([string]$Root)
 
   if ((Test-Path -LiteralPath $Root) -and -not (Test-ManagedInstall -Root $Root)) {
-    Fail-Step "Refusing to replace '$Root' because it is not marked as an ASRFacet-Rb managed install."
+    Stop-Step "Refusing to replace '$Root' because it is not marked as an ASRFacet-Rb managed install."
   }
 }
 
@@ -154,24 +181,28 @@ function Copy-Payload {
 function Invoke-BundleSetup {
   param([string]$AppRoot)
 
-  Ensure-Bundler
+  Install-BundlerIfMissing
+  if (-not (Read-Confirmation -Prompt "Install or refresh Ruby dependencies into the ASRFacet-Rb application folder?")) {
+    Stop-Step "Dependency installation was declined."
+  }
+
   Write-Info "Installing runtime dependencies into $AppRoot\vendor\bundle"
 
   Push-Location $AppRoot
   try {
     & bundle config set --local path vendor/bundle
     if ($LASTEXITCODE -ne 0) {
-      Fail-Step "Unable to configure bundler path for $AppRoot."
+      Stop-Step "Unable to configure bundler path for $AppRoot."
     }
 
     & bundle config set --local without development
     if ($LASTEXITCODE -ne 0) {
-      Fail-Step "Unable to configure bundler groups for $AppRoot."
+      Stop-Step "Unable to configure bundler groups for $AppRoot."
     }
 
     & bundle install
     if ($LASTEXITCODE -ne 0) {
-      Fail-Step "bundle install failed for $AppRoot."
+      Stop-Step "bundle install failed for $AppRoot."
     }
   } finally {
     Pop-Location
@@ -193,6 +224,21 @@ function Write-Manifest {
   }
 
   $manifest | ConvertTo-Json | Set-Content -LiteralPath (Get-ManifestPath -Root $AppRoot) -Encoding UTF8
+}
+
+function Write-UserConfig {
+  param([string]$OutputRoot)
+
+  New-Item -ItemType Directory -Path $UserConfigRoot -Force | Out-Null
+  New-Item -ItemType Directory -Path $OutputRoot -Force | Out-Null
+
+  @"
+threads:
+  default: 50
+output:
+  directory: $($OutputRoot -replace '\\', '/')
+  format: cli
+"@ | Set-Content -LiteralPath $UserConfigPath -Encoding UTF8
 }
 
 function Write-Launcher {
@@ -229,7 +275,7 @@ bundle exec ruby "%APP_ROOT%\bin\asrfacet-rb" %*
   Set-Content -LiteralPath $LauncherPath -Value $content -Encoding ASCII
 }
 
-function Ensure-UserPathContains {
+function Add-UserPathEntry {
   param([string]$Directory)
 
   New-Item -ItemType Directory -Path $Directory -Force | Out-Null
@@ -281,9 +327,24 @@ function Invoke-SmokeTest {
   Write-Info "Running a launcher smoke test."
   & cmd.exe /c "`"$LauncherPath`" help" *> $null
   if ($LASTEXITCODE -ne 0) {
-    Fail-Step "Smoke test failed for $LauncherPath."
+    Stop-Step "Smoke test failed for $LauncherPath."
   }
   Write-Success "Launcher smoke test passed."
+}
+
+function Show-InstallSummary {
+  param(
+    [string]$InstallMode,
+    [string]$AppRoot,
+    [string]$LauncherPath,
+    [string]$OutputRoot
+  )
+
+  Write-Success "ASRFacet-Rb $InstallMode completed successfully."
+  Write-Info "Installed application: $AppRoot"
+  Write-Info "Launcher path: $LauncherPath"
+  Write-Info "Stored reports root: $OutputRoot"
+  Write-Info "Built-in manual command: asrfacet-rb manual"
 }
 
 function Install-Application {
@@ -295,7 +356,7 @@ function Install-Application {
     [switch]$IncludeSpecs
   )
 
-  Ensure-ManagedOrMissing -Root $TargetRoot
+  Confirm-ManagedInstallTarget -Root $TargetRoot
 
   $parent = Split-Path -Parent $TargetRoot
   $stageRoot = Join-Path $parent ".$AppName-staging-$PID"
@@ -321,14 +382,15 @@ function Install-Application {
     Write-Launcher -AppRoot $TargetRoot -LauncherPath $LauncherPath
 
     if ($AddToPath) {
-      Ensure-UserPathContains -Directory $UserBinDir
+      Add-UserPathEntry -Directory $UserBinDir
+      Write-UserConfig -OutputRoot $DefaultOutputRoot
     }
 
     Invoke-SmokeTest -LauncherPath $LauncherPath
 
     Remove-TreeSafe -PathToRemove $backupRoot
     Remove-TreeSafe -PathToRemove $stageRoot
-    Write-Success "ASRFacet-Rb $InstallMode completed successfully."
+    Show-InstallSummary -InstallMode $InstallMode -AppRoot $TargetRoot -LauncherPath $LauncherPath -OutputRoot $DefaultOutputRoot
   } catch {
     Write-WarningLine "Attempting to restore the previous installation state."
     if (Test-Path -LiteralPath $backupRoot) {
@@ -347,7 +409,7 @@ function Install-Application {
       Remove-TreeSafe -PathToRemove $backupRoot
     }
 
-    Fail-Step $_.Exception.Message
+    Stop-Step $_.Exception.Message
   }
 }
 
@@ -355,7 +417,7 @@ function Uninstall-Application {
   if (-not (Test-Path -LiteralPath $InstallRoot)) {
     Write-WarningLine "No managed installation was found at $InstallRoot."
   } elseif (-not (Test-ManagedInstall -Root $InstallRoot)) {
-    Fail-Step "Refusing to remove $InstallRoot because it is not marked as managed by this installer."
+    Stop-Step "Refusing to remove $InstallRoot because it is not marked as managed by this installer."
   } else {
     Remove-TreeSafe -PathToRemove $InstallRoot
     Write-Success "Removed $InstallRoot"
@@ -376,12 +438,11 @@ switch ($Mode) {
   }
   "test" {
     Install-Application -TargetRoot $TestRoot -LauncherPath $TestLauncher -InstallMode "test" -IncludeSpecs
-    Write-Success "Repo-local test install is ready at $TestRoot"
-    Write-Info "Launcher: $TestLauncher"
+    Write-Info "Repo-local test launcher: $TestLauncher"
   }
   "update" {
     if (-not (Test-ManagedInstall -Root $InstallRoot)) {
-      Fail-Step "No managed installation was found to update. Run install first."
+      Stop-Step "No managed installation was found to update. Run install first."
     }
 
     Install-Application -TargetRoot $InstallRoot -LauncherPath $SystemLauncher -InstallMode "update" -AddToPath
@@ -390,6 +451,6 @@ switch ($Mode) {
     Uninstall-Application
   }
   default {
-    Fail-Step "Unsupported mode: $Mode"
+    Stop-Step "Unsupported mode: $Mode"
   }
 }

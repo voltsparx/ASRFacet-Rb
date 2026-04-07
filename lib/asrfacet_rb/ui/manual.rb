@@ -116,13 +116,15 @@ module ASRFacet
           title: "OUTPUTS",
           body: [
             "cli",
-            "  Terminal-friendly tables and summaries for live triage.",
+            "  Terminal-friendly tables, live progress notes, and human-readable summaries for live triage.",
             "json",
             "  Machine-readable output for automation and downstream tooling.",
             "html",
-            "  Offline report with findings, top targets, graph relationships, and JavaScript endpoint coverage.",
+            "  Offline report with findings, top targets, graph relationships, JavaScript coverage, tables, charts, explanations, and recommendations.",
             "txt",
-            "  Lightweight plain-text export."
+            "  Detailed plain-text export with summary, findings, explanations, recommendations, and stored artifact paths.",
+            "Automatic report bundle",
+            "  Every run also stores CLI, TXT, HTML, and JSON reports under ~/.asrfacet_rb/output/reports/<target>/<timestamp>/ for later review."
           ]
         },
         "files" => {
@@ -138,8 +140,12 @@ module ASRFacet
             "  Per-target scan memory used for monitoring and delta analysis.",
             "wordlists/",
             "  Bundled seed lists for subdomains, ports, and common web paths.",
-            "output/streams/",
+            "~/.asrfacet_rb/output/",
+            "  Default report root for stored report bundles and JSONL event streams when no user override is configured.",
+            "~/.asrfacet_rb/output/streams/",
             "  JSON-Lines event stream written during scans for recovery, auditing, and stateful recon workflows.",
+            "~/.asrfacet_rb/output/reports/",
+            "  Automatically stored CLI, TXT, HTML, and JSON reports grouped by target and timestamp.",
             "man/asrfacet-rb.1",
             "  Manual page source for `man asrfacet-rb` on systems where the man page is installed or the repository man directory is on MANPATH."
           ]

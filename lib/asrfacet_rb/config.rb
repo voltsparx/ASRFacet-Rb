@@ -22,7 +22,7 @@ module ASRFacet
         "paths" => "wordlists/paths_common.txt"
       },
       "output" => {
-        "directory" => "output",
+        "directory" => "~/.asrfacet_rb/output",
         "format" => "cli"
       },
       "http" => {

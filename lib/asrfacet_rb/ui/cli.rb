@@ -1,5 +1,7 @@
-# Part of ASRFacet-Rb — authorized testing only
+# Part of ASRFacet-Rb - authorized testing only
+require "fileutils"
 require "thor"
+require "time"
 
 module ASRFacet
   module UI
@@ -55,7 +57,13 @@ module ASRFacet
         result = if options[:passive_only]
                    passive_payload(domain)
                  else
-                   ASRFacet::Pipeline.new(domain, build_options.merge(stage_callback: method(:announce_stage))).run
+                   ASRFacet::Pipeline.new(
+                     domain,
+                     build_options.merge(
+                       stage_callback: method(:announce_stage),
+                       event_callback: method(:announce_event)
+                     )
+                   ).run
                  end
         output_results(result, domain)
       rescue StandardError => e
@@ -74,10 +82,12 @@ module ASRFacet
       method_option :ports, aliases: "-p", type: :string, desc: "Port range"
       def ports(host)
         store = ASRFacet::ResultStore.new
+        ASRFacet::Core::ThreadSafe.print_status("Starting focused port discovery against #{host}") if options[:verbose]
         ASRFacet::Engines::PortEngine.new.scan(host, options[:ports] || "top100", workers: options[:threads]).each do |entry|
           store.add(:open_ports, entry)
+          announce_event(:open_port, entry.merge(host: host)) if options[:verbose]
         end
-        output_results({ store: store, top_assets: [] }, host)
+        output_results({ store: store, top_assets: [], summary: store.summary }, host)
       rescue StandardError => e
         ASRFacet::Core::ThreadSafe.print_error(e.message)
       end
@@ -85,15 +95,19 @@ module ASRFacet
       desc "dns DOMAIN", "Run DNS collection only"
       def dns(domain)
         store = ASRFacet::ResultStore.new
+        ASRFacet::Core::ThreadSafe.print_status("Collecting DNS records for #{domain}") if options[:verbose]
         dns_result = ASRFacet::Engines::DnsEngine.new.run(domain)
         dns_result[:data].each do |record_type, values|
           next if %i[wildcard wildcard_ips zone_transfer].include?(record_type)
 
-          Array(values).each { |value| store.add(:dns, { host: domain, type: record_type, value: value }) }
+          Array(values).each do |value|
+            store.add(:dns, { host: domain, type: record_type, value: value })
+            announce_event(:dns_record, { host: domain, type: record_type, value: value }) if options[:verbose]
+          end
         end
         Array(dns_result[:data][:a]).each { |ip| store.add(:ips, ip) }
         Array(dns_result[:data][:aaaa]).each { |ip| store.add(:ips, ip) }
-        output_results({ store: store, top_assets: [] }, domain)
+        output_results({ store: store, top_assets: [], summary: store.summary }, domain)
       rescue StandardError => e
         ASRFacet::Core::ThreadSafe.print_error(e.message)
       end
@@ -157,10 +171,41 @@ module ASRFacet
 
       private
 
-      def announce_stage(index, name)
+      def announce_stage(index, name, phase = :start, snapshot = {})
         return unless options[:verbose]
 
-        ASRFacet::Core::ThreadSafe.print_status("Stage #{index}: #{name}")
+        if phase.to_sym == :start
+          ASRFacet::Core::ThreadSafe.print_status("Stage #{index}/8 starting: #{name}")
+        else
+          ASRFacet::Core::ThreadSafe.print_good(
+            "Stage #{index}/8 complete: #{name} | hosts=#{snapshot[:subdomains].to_i} ips=#{snapshot[:ips].to_i} ports=#{snapshot[:open_ports].to_i} web=#{snapshot[:http_responses].to_i} findings=#{snapshot[:findings].to_i}"
+          )
+        end
+      rescue StandardError
+        nil
+      end
+
+      def announce_event(event_type, data)
+        return unless options[:verbose]
+
+        entry = symbolize_keys(data)
+        case event_type.to_sym
+        when :subdomain
+          ASRFacet::Core::ThreadSafe.print_good("Discovered host: #{entry[:host]}") unless entry[:host].to_s.empty?
+        when :open_port
+          ASRFacet::Core::ThreadSafe.print_good("Open port #{entry[:port]}/tcp on #{entry[:host]} #{entry[:service]}".strip)
+        when :http_response
+          status = entry[:status] || entry[:status_code]
+          ASRFacet::Core::ThreadSafe.print_status("HTTP #{status} #{entry[:url] || entry[:host]}".strip)
+        when :finding
+          ASRFacet::Core::ThreadSafe.print_warning("Finding #{entry[:severity].to_s.upcase}: #{entry[:host]} - #{entry[:title]}")
+        when :dns_record
+          if %i[a aaaa cname mx ns].include?(entry[:type].to_sym)
+            ASRFacet::Core::ThreadSafe.print_status("DNS #{entry[:type].to_s.upcase}: #{entry[:host]} -> #{entry[:value]}")
+          end
+        when :error
+          ASRFacet::Core::ThreadSafe.print_warning("Engine note: #{entry[:engine]} - #{entry[:reason]}")
+        end
       rescue StandardError
         nil
       end
@@ -190,29 +235,49 @@ module ASRFacet
       end
 
       def passive_payload(domain)
+        ASRFacet::Core::ThreadSafe.print_status("Starting passive discovery for #{domain}") if options[:verbose]
         store = ASRFacet::ResultStore.new
         result = ASRFacet::Passive::Runner.new(domain, build_options[:api_keys]).run
         store.add(:subdomains, domain)
-        result[:subdomains].each { |subdomain| store.add(:subdomains, subdomain) }
+        result[:subdomains].each do |subdomain|
+          store.add(:subdomains, subdomain)
+          announce_event(:subdomain, { host: subdomain }) if options[:verbose]
+        end
         result[:errors].each { |error| store.add(:passive_errors, error) }
-        { store: store, top_assets: [] }
+        { store: store, top_assets: [], summary: store.summary }
       rescue StandardError
-        { store: ASRFacet::ResultStore.new, top_assets: [] }
+        { store: ASRFacet::ResultStore.new, top_assets: [], summary: {} }
       end
 
       def output_results(result, domain)
         payload = normalize_payload(result)
-        payload[:top_assets] = Array(payload[:top_assets]).first(top_limit) if formatter_key == "cli"
-        formatter = formatter_for
+        payload[:top_assets] = Array(payload[:top_assets]).first(top_limit)
+        payload[:meta] = report_metadata(domain, payload)
+        payload[:artifacts] = build_artifact_manifest(domain, payload[:meta][:generated_at], payload)
+        save_report_bundle(payload)
 
-        if options[:output].to_s.empty?
-          puts(formatter.format(payload))
-        else
-          formatter.save(payload, options[:output])
-          ASRFacet::Core::ThreadSafe.print_good("Saved report to #{options[:output]}")
+        render_to_screen(payload)
+
+        unless options[:output].to_s.empty?
+          formatter_for(formatter_key).save(payload, options[:output])
+          ASRFacet::Core::ThreadSafe.print_good("Saved requested #{formatter_key.upcase} report to #{options[:output]}")
         end
 
-        print_monitoring(payload, domain) if formatter_key == "cli" && options[:monitor]
+        print_monitoring(payload, domain) if options[:monitor]
+        print_artifact_summary(payload[:artifacts])
+      rescue StandardError => e
+        ASRFacet::Core::ThreadSafe.print_error(e.message)
+      end
+
+      def render_to_screen(payload)
+        if formatter_key == "cli" || interactive_terminal?
+          puts(formatter_for("cli").format(payload))
+          if formatter_key != "cli"
+            ASRFacet::Core::ThreadSafe.print_status("Detailed #{formatter_key.upcase} output was written to the stored report bundle.")
+          end
+        else
+          puts(formatter_for(formatter_key).format(payload))
+        end
       rescue StandardError => e
         ASRFacet::Core::ThreadSafe.print_error(e.message)
       end
@@ -227,8 +292,8 @@ module ASRFacet
         { store: ASRFacet::ResultStore.new, top_assets: [] }
       end
 
-      def formatter_for
-        case formatter_key
+      def formatter_for(key = formatter_key)
+        case key.to_s.downcase
         when "json" then ASRFacet::Output::JsonFormatter.new
         when "html" then ASRFacet::Output::HtmlFormatter.new
         when "txt" then ASRFacet::Output::TxtFormatter.new
@@ -259,6 +324,101 @@ module ASRFacet
         ASRFacet::Core::ThreadSafe.puts(tracker.format_cli(diff))
       rescue StandardError
         nil
+      end
+
+      def report_metadata(domain, payload)
+        target = domain.to_s
+        output_root = resolve_output_directory
+        summary = payload[:summary]
+        summary = payload[:store].summary if summary.nil? && payload[:store].respond_to?(:summary)
+        {
+          target: target,
+          generated_at: Time.now.utc.iso8601,
+          output_directory: output_root,
+          stream_path: payload[:stream_path].to_s,
+          summary: symbolize_keys(summary || {}),
+          output_note: "Reports are automatically stored under the ASRFacet-Rb output directory for later review."
+        }
+      rescue StandardError
+        { target: domain.to_s, generated_at: Time.now.utc.iso8601, output_directory: resolve_output_directory }
+      end
+
+      def build_artifact_manifest(domain, generated_at, payload)
+        safe_target = safe_name(domain)
+        stamp = generated_at.to_s.gsub(":", "-")
+        report_dir = File.join(resolve_output_directory, "reports", safe_target, stamp)
+        {
+          report_directory: report_dir,
+          cli_report: File.join(report_dir, "report.cli.txt"),
+          txt_report: File.join(report_dir, "report.txt"),
+          html_report: File.join(report_dir, "report.html"),
+          json_report: File.join(report_dir, "report.json"),
+          stream_report: payload[:stream_path].to_s
+        }
+      rescue StandardError
+        {}
+      end
+
+      def save_report_bundle(payload)
+        artifacts = symbolize_keys(payload[:artifacts] || {})
+        report_dir = artifacts[:report_directory].to_s
+        return if report_dir.empty?
+
+        FileUtils.mkdir_p(report_dir)
+        formatter_for("cli").save(payload, artifacts[:cli_report])
+        formatter_for("txt").save(payload, artifacts[:txt_report])
+        formatter_for("html").save(payload, artifacts[:html_report])
+        formatter_for("json").save(payload, artifacts[:json_report])
+      rescue StandardError
+        nil
+      end
+
+      def print_artifact_summary(artifacts)
+        paths = symbolize_keys(artifacts || {})
+        return if paths.empty?
+
+        ASRFacet::Core::ThreadSafe.print_good("Stored reports in #{paths[:report_directory]}")
+        ASRFacet::Core::ThreadSafe.puts("  CLI:  #{paths[:cli_report]}") unless paths[:cli_report].to_s.empty?
+        ASRFacet::Core::ThreadSafe.puts("  TXT:  #{paths[:txt_report]}") unless paths[:txt_report].to_s.empty?
+        ASRFacet::Core::ThreadSafe.puts("  HTML: #{paths[:html_report]}") unless paths[:html_report].to_s.empty?
+        ASRFacet::Core::ThreadSafe.puts("  JSON: #{paths[:json_report]}") unless paths[:json_report].to_s.empty?
+        ASRFacet::Core::ThreadSafe.puts("  JSONL stream: #{paths[:stream_report]}") unless paths[:stream_report].to_s.empty?
+      rescue StandardError
+        nil
+      end
+
+      def resolve_output_directory
+        File.expand_path((ASRFacet::Config.fetch("output", "directory") || "~/.asrfacet_rb/output").to_s)
+      rescue StandardError
+        File.expand_path("~/.asrfacet_rb/output")
+      end
+
+      def safe_name(value)
+        cleaned = value.to_s.downcase.gsub(/[^a-z0-9.\-_]+/, "_")
+        cleaned.empty? ? "scan" : cleaned.tr(".", "_")
+      rescue StandardError
+        "scan"
+      end
+
+      def interactive_terminal?
+        $stdout.tty?
+      rescue StandardError
+        false
+      end
+
+      def symbolize_keys(value)
+        case value
+        when Hash
+          value.each_with_object({}) do |(key, nested), memo|
+            memo[key.to_sym] = symbolize_keys(nested)
+          end
+        when Array
+          value.map { |entry| symbolize_keys(entry) }
+        else
+          value
+        end
+      rescue StandardError
+        {}
       end
     end
   end
