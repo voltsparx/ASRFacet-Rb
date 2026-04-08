@@ -123,10 +123,15 @@ copy_payload() {
   done
 
   [ -d "$REPO_ROOT/wordlists" ] && run_cmd cp -R "$REPO_ROOT/wordlists" "$destination_root/"
+  if [ -d "$REPO_ROOT/docs/images" ]; then
+    run_cmd mkdir -p "$destination_root/docs"
+    run_cmd cp -R "$REPO_ROOT/docs/images" "$destination_root/docs/"
+  fi
   if [ "$include_specs" = "yes" ] && [ -d "$REPO_ROOT/spec" ]; then
     run_cmd cp -R "$REPO_ROOT/spec" "$destination_root/"
   fi
 
+  run_cmd find "$destination_root" -type f -name 'README.md' ! -path "$destination_root/README.md" -delete
   run_cmd mkdir -p "$destination_root/output" "$destination_root/tmp" "$destination_root/vendor"
 }
 

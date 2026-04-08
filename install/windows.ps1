@@ -181,10 +181,24 @@ function Copy-Payload {
     Copy-Item -LiteralPath $wordlists -Destination $DestinationRoot -Recurse -Force
   }
 
+  $docsImages = Join-Path $RepoRoot "docs\images"
+  if (Test-Path -LiteralPath $docsImages) {
+    $docsRoot = Join-Path $DestinationRoot "docs"
+    New-Item -ItemType Directory -Path $docsRoot -Force | Out-Null
+    Copy-Item -LiteralPath $docsImages -Destination $docsRoot -Recurse -Force
+  }
+
   if ($IncludeSpecs) {
     $specDir = Join-Path $RepoRoot "spec"
     if (Test-Path -LiteralPath $specDir) {
       Copy-Item -LiteralPath $specDir -Destination $DestinationRoot -Recurse -Force
+    }
+  }
+
+  $rootReadme = Join-Path $DestinationRoot "README.md"
+  Get-ChildItem -Path $DestinationRoot -Recurse -File -Filter "README.md" -ErrorAction SilentlyContinue | ForEach-Object {
+    if ($_.FullName -ine $rootReadme) {
+      Remove-Item -LiteralPath $_.FullName -Force -ErrorAction Stop
     }
   }
 
