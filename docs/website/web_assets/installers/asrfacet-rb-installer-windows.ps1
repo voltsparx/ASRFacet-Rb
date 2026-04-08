@@ -76,6 +76,7 @@ function Get-RequiredPaths {
       "lib",
       "man",
       "wordlists",
+      "docs/images",
       "Gemfile",
       "Gemfile.lock",
       "asrfacet-rb.gemspec",

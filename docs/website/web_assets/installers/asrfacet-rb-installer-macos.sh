@@ -56,6 +56,7 @@ required_paths_for_mode() {
         "lib"
         "man"
         "wordlists"
+        "docs/images"
         "Gemfile"
         "Gemfile.lock"
         "asrfacet-rb.gemspec"

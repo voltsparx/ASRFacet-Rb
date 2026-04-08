@@ -13,7 +13,9 @@ delegate to the maintained lifecycle scripts under `install/`:
 
 To reduce bloat, website installers use sparse checkout and download only
 required runtime paths for the selected mode. `README.md` and `LICENSE` are
-included with the installed framework bundle.
+included with the installed framework bundle, and only `docs/images` is kept
+from the docs tree. During installation, nested `README.md` files are removed
+from subdirectories so only the root `README.md` remains.
 
 ## Files
 

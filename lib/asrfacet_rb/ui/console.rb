@@ -310,11 +310,11 @@ module ASRFacet
       end
 
       def prompt
-        base = PROMPT_NAME.colorize(ASRFacet::Colors.terminal(:primary))
+        base = "asrfrb".colorize(ASRFacet::Colors.terminal(:primary))
         arrow = ">".colorize(ASRFacet::Colors.terminal(:warning))
         "#{base} #{arrow} "
       rescue StandardError
-        "asrfacet-rb > "
+        "asrfrb > "
       end
 
       def clear_screen

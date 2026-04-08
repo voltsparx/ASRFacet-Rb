@@ -73,7 +73,26 @@
       Ruby 3.2 or newer is required. Check with <code>ruby --version</code> and <code>bundle --version</code> before installing.
     </div>
 
-    <div class="sec-head">Development Install</div>
+    <div class="sec-head">Installation Paths</div>
+    <div class="install-grid">
+      <article class="install-card">
+        <div class="install-card-title">Repo Development</div>
+        <p>Use this when developing ASRFacet-Rb locally and running full validation from source.</p>
+        <a class="install-card-link" href="#install-dev">View development steps</a>
+      </article>
+      <article class="install-card">
+        <div class="install-card-title">System Install Scripts</div>
+        <p>Use platform scripts from the repo to install the framework as a real system tool with launchers.</p>
+        <a class="install-card-link" href="#install-system">View system install commands</a>
+      </article>
+      <article class="install-card">
+        <div class="install-card-title">Website Download Installers</div>
+        <p>Download standalone installers from the website that fetch required files and run lifecycle mode.</p>
+        <a class="install-card-link" href="#web-installers">View website installer downloads</a>
+      </article>
+    </div>
+
+    <div id="install-dev" class="sec-head">Development Install</div>
     <div class="code-wrap">
       <div class="code-header"><div class="code-dot"></div><div class="code-dot"></div><div class="code-dot"></div><span class="code-lang">shell</span></div>
       <div class="code-body">
@@ -92,7 +111,7 @@
       </div>
     </div>
 
-    <div class="sec-head">System Installers</div>
+    <div id="install-system" class="sec-head">System Installers</div>
     <div class="prose">
       <p>The installers build a real application folder, create launchers on your user PATH, and keep user data outside the app folder so reinstalling does not wipe reports or saved session state.</p>
     </div>
@@ -123,7 +142,7 @@
 
     <div id="web-installers" class="sec-head">Website Download Installers</div>
     <div class="prose">
-      <p>If you are starting from the docs website directly, download one installer below. Each installer fetches only required framework files into a temporary folder (sparse checkout), then runs the same maintained lifecycle scripts used by repository installs.</p>
+      <p>If you are starting from the docs website directly, download one installer below. Each installer fetches only required framework files into a temporary folder (sparse checkout), keeps root <code>README.md</code> and <code>LICENSE</code>, includes only <code>docs/images</code> from docs, then runs the same maintained lifecycle scripts used by repository installs.</p>
       <p><a href="web_assets/installers/README.md" target="_blank">Open installer usage guide</a> for modes, flags, and troubleshooting notes.</p>
     </div>
 
