@@ -7,6 +7,10 @@ on:
     paths:
       - "docs/website/**"
       - ".github/workflows/pages.yml"
+  pull_request:
+    paths:
+      - "docs/website/**"
+      - ".github/workflows/pages.yml"
   workflow_dispatch:
 
 permissions:
@@ -41,6 +45,7 @@ jobs:
         run: |
           node --check docs/website/app.js
           test -f docs/website/index.html
+          test -f docs/website/download.html
           test -f docs/website/styles.css
           test -f docs/website/web_assets/media/favicon.ico
           test -f docs/website/web_assets/media/asrfacet-rb-site-preview.png
@@ -61,6 +66,20 @@ jobs:
             grep -q 'styles.css?v=' "${page}"
             grep -q 'app.js?v=' "${page}"
           done
+
+      - name: Validate download center wiring
+        shell: bash
+        run: |
+          grep -q 'data-page="download.html"' docs/website/download.html
+          grep -q 'id="download-home"' docs/website/download.html
+          grep -q 'id="download-scripts"' docs/website/download.html
+          grep -q 'id="download-usage"' docs/website/download.html
+          grep -q 'id="download-paths"' docs/website/download.html
+          grep -q 'web_assets/installers/asrfacet-rb-installer-linux.sh' docs/website/download.html
+          grep -q 'web_assets/installers/asrfacet-rb-installer-macos.sh' docs/website/download.html
+          grep -q 'web_assets/installers/asrfacet-rb-installer-windows.ps1' docs/website/download.html
+          grep -q 'web_assets/installers/asrfacet-rb-installer-windows.cmd' docs/website/download.html
+          grep -q '"download.html": { title: "Download Center"' docs/website/app.js
 
       - name: Upload static site artifact
         uses: actions/upload-pages-artifact@v3
