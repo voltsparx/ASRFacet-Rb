@@ -155,6 +155,9 @@ code {
   gap: 6px;
   z-index: 1200;
 }
+.topbar-contact-popover[hidden] {
+  display: none !important;
+}
 .topbar-contact-popover span {
   display: block;
   font-family: var(--mono);
