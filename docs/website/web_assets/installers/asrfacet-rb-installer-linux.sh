@@ -138,7 +138,9 @@ download_repo() {
 
   if git clone --depth 1 --filter=blob:none --sparse --branch "$BRANCH" "$REPO_URL" "$repo_dir"; then
     local sparse_paths=()
-    mapfile -t sparse_paths < <(required_paths_for_mode)
+    while IFS= read -r path; do
+      sparse_paths+=("$path")
+    done < <(required_paths_for_mode)
     (
       cd "$repo_dir" || exit 1
       git sparse-checkout init --no-cone &&
