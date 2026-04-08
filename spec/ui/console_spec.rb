@@ -51,4 +51,11 @@ RSpec.describe ASRFacet::UI::Console do
     expect(explanation).to include("Explain: about")
     expect(explanation).to include("framework overview")
   end
+
+  it "uses asrfrb as the console prompt label" do
+    rendered = console.send(:prompt)
+    plain = rendered.gsub(/\e\[[\d;]*m/, "")
+
+    expect(plain).to eq("asrfrb > ")
+  end
 end
