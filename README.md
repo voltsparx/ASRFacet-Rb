@@ -7,7 +7,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/version-1.0.0-0A66C2?style=for-the-badge" alt="Version">
   <img src="https://img.shields.io/badge/ruby-%3E%3D%203.2-red?style=for-the-badge&logo=ruby&logoColor=white" alt="Ruby >= 3.2">
-  <img src="https://img.shields.io/badge/tests-51%2F51%20passing-2E8B57?style=for-the-badge" alt="Tests Passing">
+  <img src="https://img.shields.io/badge/tests-52%2F52%20passing-2E8B57?style=for-the-badge" alt="Tests Passing">
   <img src="https://img.shields.io/badge/verify-bundle%20exec%20rake%20passing-2E8B57?style=for-the-badge" alt="Rake Verify Passing"><br>
   <img src="https://img.shields.io/badge/status-stable-4C956C?style=for-the-badge" alt="Status Stable">
   <img src="https://img.shields.io/badge/license-Proprietary-8B0000?style=for-the-badge" alt="License"><br>
@@ -19,7 +19,20 @@ ASRFacet-Rb is a Ruby 3.2+ attack surface reconnaissance framework for authorize
 
 Current framework version: `1.0.0`
 
-## Documentation
+Project website: [https://voltsparx.github.io/ASRFacet-Rb/](https://voltsparx.github.io/ASRFacet-Rb/)
+
+## Start Here
+
+| Resource | Link | Purpose |
+| --- | --- | --- |
+| Website Docs | `https://voltsparx.github.io/ASRFacet-Rb/` | Multi-page guide for installation, workflow, modes, and reporting |
+| Getting Started | `docs/getting-started.md` | Local setup and first-run path |
+| Architecture | `docs/architecture.md` | Core execution model and module boundaries |
+| Web Session Guide | `docs/web-session.md` | Browser UI behavior and session workflow |
+| Lab Guide | `docs/lab.md` | Safe local validation before real authorized targets |
+| Reporting Guide | `docs/reporting.md` | Output formats, storage layout, and interpretation |
+
+## 📚 Documentation
 
 The full first-release documentation set lives in `docs/`.
 
@@ -40,13 +53,13 @@ Execution ownership stays intentionally strict: the scheduler owns orchestration
 execution helpers run work, and engines do not create their own competing
 control loops.
 
-The current README reflects the latest verified release-style test run on April 8, 2026: `bundle exec rake` completed successfully, including `51 examples, 0 failures`, CLI smoke checks, web-session smoke checks, local lab smoke checks, installer smoke checks, and a clean gem build.
+The current README reflects the latest verified release-style test run on April 8, 2026: `bundle exec rake` completed successfully, including `52 examples, 0 failures`, CLI smoke checks, web-session smoke checks, local lab smoke checks, installer smoke checks, website-installer smoke checks, and a clean gem build.
 
-## Authorized Use
+## 🛡️ Authorized Use
 
 Use ASRFacet-Rb only on systems you own or have explicit written permission to test. The framework is built to help operators stay inside scope through allow lists, exclusion lists, recon memory, and beginner-friendly explanations.
 
-## What It Does
+## 🔎 What It Does
 
 <table>
   <thead>
@@ -95,7 +108,9 @@ Use ASRFacet-Rb only on systems you own or have explicit written permission to t
   </tbody>
 </table>
 
-## Installation
+## 🛠️ Installation
+
+From source:
 
 ```bash
 bundle install
@@ -105,7 +120,7 @@ bundle exec ruby bin/asrfacet-rb about
 bundle exec ruby bin/asrfacet-rb --explain scope
 ```
 
-Cross-platform installers are also available in `install/`:
+Using cross-platform installers from `install/`:
 
 ```text
 install/windows.ps1   # install | test | uninstall | update
@@ -122,7 +137,7 @@ For local manual-page testing:
 MANPATH="$PWD/man:$MANPATH" man asrfacet-rb
 ```
 
-## Testing
+## ✅ Testing
 
 Use the Rake-based verification flow for routine checks:
 
@@ -133,6 +148,7 @@ bundle exec rake test:cli
 bundle exec rake test:web
 bundle exec rake test:lab
 bundle exec rake test:install
+bundle exec rake test:website_installers
 ```
 
 There is also a reusable script harness under `test/`:
@@ -141,7 +157,7 @@ There is also a reusable script harness under `test/`:
 ruby test/run_all.rb
 ```
 
-## Quick Start
+## 🚀 Quick Start
 
 <table>
   <thead>
@@ -200,7 +216,7 @@ ruby test/run_all.rb
   </tbody>
 </table>
 
-## Command Reference
+## 📖 Command Reference
 
 <table>
   <thead>
