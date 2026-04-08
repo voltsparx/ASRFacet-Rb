@@ -861,6 +861,7 @@ code {
   line-height: 1.85;
   padding: 20px 22px;
   overflow-x: auto;
+  white-space: pre;
   color: #ff8080;
 }
 .code-body .cm  { color: var(--txt3); }   /* comment */
@@ -871,7 +872,8 @@ code {
 .code-body .pn  {
   color: var(--txt3);
   display: inline-block;
-  width: 4ch;
+  width: 8ch;
+  min-width: 8ch;
   text-align: right;
   margin-right: 1ch;
 }   /* prompt */
@@ -1119,6 +1121,7 @@ tbody td code { white-space: nowrap; }
   border: 1px solid var(--border2);
   padding: 14px 16px;
   overflow-x: auto;
+  white-space: pre;
   line-height: 1.9;
 }
 .example-code .cm { color: var(--txt3); }
@@ -1133,6 +1136,7 @@ tbody td code { white-space: nowrap; }
   background: rgba(0,0,0,0.3);
   border: 1px solid var(--border2);
   padding: 10px 14px;
+  white-space: pre;
   line-height: 1.9;
 }
 
