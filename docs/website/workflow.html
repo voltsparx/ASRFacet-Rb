@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -7,18 +7,19 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@300;400;500;600;700&family=Orbitron:wght@400;600;700;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
+<link rel="icon" href="web_assets/favicon.ico" sizes="any">
+<link rel="shortcut icon" href="web_assets/favicon.ico" type="image/x-icon">
 </head>
 <body data-page="workflow.html" data-default-section="how">
 <header id="topbar">
   <div id="topbar-logo-wrap"><img id="topbar-logo" src="web_assets/asrfacet-rb-web.png" alt="ASRFacet-Rb"><span id="topbar-name">ASRFacet-Rb</span></div>
-  <span id="topbar-version">v1.0.0 · Workflow</span>
+  <span id="topbar-version">v1.0.0 | Workflow</span>
   <div id="topbar-links">
-    <a href="index.html">⬡ Home</a>
-    <a href="getting-started.html#quickstart">▸ Start</a>
-    <a href="mailto:voltsparx@proton.me">✉ Contact</a>
+    <a href="index.html">Home</a>
+    <a href="getting-started.html#quickstart">Start</a>
+    <a href="mailto:voltsparx@gmail.com">Contact</a>
   </div>
   <div id="topbar-actions">
-    <button id="quick-jump-trigger" class="topbar-action" type="button">Quick Jump</button>
     <button id="menu-toggle" class="topbar-action topbar-action-menu" type="button">Menu</button>
   </div>
 </header>
@@ -26,30 +27,16 @@
 <nav id="sidebar" aria-label="Documentation navigation">
   <div class="sidebar-panel-head">
     <div class="sidebar-kicker">Workflow</div>
-    <button class="sidebar-jump-btn" type="button" data-open-palette>Jump To Section</button>
+    <label class="sidebar-search" for="docs-search-input">
+      <span>Search Docs</span>
+      <input id="docs-search-input" type="search" placeholder="Try pipeline, passive, modules..." autocomplete="off">
+    </label>
+    <div id="docs-search-results" class="sidebar-search-results" aria-live="polite"></div>
     <p class="sidebar-note">This page explains how discovery, validation, mapping, and reporting fit together inside the framework.</p>
   </div>
   <div id="sidebar-nav"></div>
 </nav>
 <button id="sidebar-backdrop" type="button" aria-label="Close navigation"></button>
-
-<div id="command-palette" class="command-palette" hidden>
-  <div class="command-palette-panel" role="dialog" aria-modal="true" aria-labelledby="command-palette-title">
-    <div class="command-palette-head">
-      <div>
-        <div id="command-palette-title" class="command-palette-title">Quick Jump</div>
-        <div class="command-palette-sub">Move between pipeline concepts, CLI docs, modes, and reports.</div>
-      </div>
-      <button id="command-palette-close" class="command-palette-close" type="button" aria-label="Close quick jump">×</button>
-    </div>
-    <label class="command-palette-search">
-      <span>Search Docs</span>
-      <input id="command-palette-input" type="search" placeholder="Try pipeline, passive, modules..." autocomplete="off">
-    </label>
-    <div id="command-palette-results" class="command-palette-results"></div>
-  </div>
-</div>
-
 <main id="main">
   <section id="how" class="page-section active">
     <div class="page-hero">
@@ -135,3 +122,4 @@
 <script src="app.js"></script>
 </body>
 </html>
+

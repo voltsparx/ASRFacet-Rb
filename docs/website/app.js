@@ -40,8 +40,7 @@ const DocsData = (() => {
 const DocsState = {
   currentPage: document.body.dataset.page || "index.html",
   currentSection: document.body.dataset.defaultSection || "home",
-  navOpen: false,
-  paletteOpen: false
+  navOpen: false
 };
 
 const DocsElements = {
@@ -50,12 +49,8 @@ const DocsElements = {
   sidebarNav: document.getElementById("sidebar-nav"),
   sidebarBackdrop: document.getElementById("sidebar-backdrop"),
   menuToggle: document.getElementById("menu-toggle"),
-  palette: document.getElementById("command-palette"),
-  paletteInput: document.getElementById("command-palette-input"),
-  paletteResults: document.getElementById("command-palette-results"),
-  paletteClose: document.getElementById("command-palette-close"),
-  quickJumpTrigger: document.getElementById("quick-jump-trigger"),
-  paletteTriggers: Array.from(document.querySelectorAll("[data-open-palette]")),
+  searchInput: document.getElementById("docs-search-input"),
+  searchResults: document.getElementById("docs-search-results"),
   title: document.querySelector("title")
 };
 
@@ -206,12 +201,12 @@ const Sidebar = (() => {
   return { render, syncActive, setOpen, toggle };
 })();
 
-const Palette = (() => {
+const Search = (() => {
   function renderResults(query = "") {
     const needle = query.trim().toLowerCase();
     const results = DocsData.entries.filter((entry) => {
       if (needle.length === 0) {
-        return true;
+        return DocsData.pages[entry.page]?.title === DocsData.pages[DocsState.currentPage]?.title;
       }
 
       return [
@@ -223,15 +218,11 @@ const Palette = (() => {
     });
 
     if (results.length === 0) {
-      DocsElements.paletteResults.innerHTML = `
-        <div class="command-result-empty">
-          No matching docs pages. Try install, pipeline, console, reports, or testing.
-        </div>
-      `;
+      DocsElements.searchResults.innerHTML = '<div class="command-result-empty">No matching docs pages. Try install, pipeline, console, reports, or testing.</div>';
       return;
     }
 
-    DocsElements.paletteResults.innerHTML = results.map((entry) => `
+    DocsElements.searchResults.innerHTML = results.map((entry) => `
       <button type="button" class="command-result" data-section-id="${entry.id}">
         <span class="command-result-title">${entry.title}</span>
         <span class="command-result-meta">${DocsData.pages[entry.page]?.title || "Docs"}</span>
@@ -239,46 +230,24 @@ const Palette = (() => {
       </button>
     `).join("");
 
-    DocsElements.paletteResults.querySelectorAll(".command-result").forEach((button) => {
+    DocsElements.searchResults.querySelectorAll(".command-result").forEach((button) => {
       button.addEventListener("click", () => {
         const entry = DocsHelpers.findEntry(button.dataset.sectionId);
-        close();
         DocsHelpers.goToEntry(entry);
       });
     });
   }
 
-  function open() {
-    DocsState.paletteOpen = true;
-    DocsElements.palette.hidden = false;
-    DocsElements.body.classList.add("palette-open");
-    renderResults(DocsElements.paletteInput.value);
-    requestAnimationFrame(() => DocsElements.paletteInput.focus());
-  }
-
-  function close() {
-    DocsState.paletteOpen = false;
-    DocsElements.palette.hidden = true;
-    DocsElements.body.classList.remove("palette-open");
-  }
-
   function bind() {
-    DocsElements.paletteInput?.addEventListener("input", (event) => {
+    DocsElements.searchInput?.addEventListener("input", (event) => {
       renderResults(event.target.value);
     });
-
-    DocsElements.palette?.addEventListener("click", (event) => {
-      if (event.target === DocsElements.palette) {
-        close();
-      }
+    DocsElements.searchInput?.addEventListener("focus", () => {
+      renderResults(DocsElements.searchInput.value);
     });
-
-    DocsElements.paletteClose?.addEventListener("click", close);
-    DocsElements.quickJumpTrigger?.addEventListener("click", open);
-    DocsElements.paletteTriggers.forEach((trigger) => trigger.addEventListener("click", open));
   }
 
-  return { bind, open, close, renderResults };
+  return { bind, renderResults };
 })();
 
 const App = (() => {
@@ -297,11 +266,11 @@ const App = (() => {
     document.addEventListener("keydown", (event) => {
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
         event.preventDefault();
-        Palette.open();
+        DocsElements.searchInput?.focus();
         return;
       }
 
-      if (event.key === "/" && !DocsState.paletteOpen) {
+      if (event.key === "/") {
         const target = event.target;
         const editable =
           target instanceof HTMLElement &&
@@ -309,16 +278,16 @@ const App = (() => {
 
         if (!editable) {
           event.preventDefault();
-          Palette.open();
+          DocsElements.searchInput?.focus();
         }
         return;
       }
 
       if (event.key === "Escape") {
-        if (DocsState.paletteOpen) {
-          Palette.close();
-        } else if (DocsState.navOpen) {
+        if (DocsState.navOpen) {
           Sidebar.setOpen(false);
+        } else if (DocsElements.searchInput && document.activeElement === DocsElements.searchInput) {
+          DocsElements.searchInput.blur();
         }
       }
     });
@@ -327,8 +296,8 @@ const App = (() => {
   function init() {
     DocsHelpers.syncCurrentSection();
     Sidebar.render();
-    Palette.bind();
-    Palette.renderResults("");
+    Search.bind();
+    Search.renderResults("");
     bindGlobalEvents();
 
     if (DocsHelpers.currentHashId()) {
