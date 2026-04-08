@@ -268,7 +268,9 @@ const ContactPanel = (() => {
       toggle.setAttribute("aria-expanded", "false");
     }
     if (popover) {
+      popover.classList.remove("is-open");
       popover.hidden = true;
+      popover.setAttribute("aria-hidden", "true");
     }
     if (openContainer === container) {
       openContainer = null;
@@ -294,14 +296,18 @@ const ContactPanel = (() => {
         return;
       }
 
+      popover.classList.remove("is-open");
       popover.hidden = true;
+      popover.setAttribute("aria-hidden", "true");
       toggle.setAttribute("aria-expanded", "false");
 
       toggle.addEventListener("click", (event) => {
         event.preventDefault();
-        const shouldOpen = popover.hidden;
+        const shouldOpen = !popover.classList.contains("is-open");
         closeOpen();
+        popover.classList.toggle("is-open", shouldOpen);
         popover.hidden = !shouldOpen;
+        popover.setAttribute("aria-hidden", shouldOpen ? "false" : "true");
         toggle.setAttribute("aria-expanded", shouldOpen ? "true" : "false");
         openContainer = shouldOpen ? container : null;
       });

@@ -151,9 +151,12 @@ code {
   background: rgba(10, 1, 1, 0.97);
   box-shadow: 0 18px 42px rgba(0, 0, 0, 0.35);
   padding: 9px 10px;
-  display: grid;
+  display: none;
   gap: 6px;
   z-index: 1200;
+}
+.topbar-contact-popover.is-open {
+  display: grid;
 }
 .topbar-contact-popover[hidden] {
   display: none !important;
