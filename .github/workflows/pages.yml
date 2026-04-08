@@ -44,7 +44,8 @@ jobs:
           node --check docs/website/app.js
           test -f docs/website/index.html
           test -f docs/website/styles.css
-          test -f docs/website/web_assets/favicon.ico
+          test -f docs/website/web_assets/media/favicon.ico
+          test -f docs/website/web_assets/media/asrfacet-rb-site-preview.png
           test -f docs/website/.nojekyll
 
       - name: Upload static site artifact

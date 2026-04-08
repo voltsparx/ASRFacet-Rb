@@ -51,6 +51,8 @@ const DocsElements = {
   menuToggle: document.getElementById("menu-toggle"),
   searchInput: document.getElementById("docs-search-input"),
   searchResults: document.getElementById("docs-search-results"),
+  homeHeroLogo: document.getElementById("home-hero-logo"),
+  homeHeroEgg: document.getElementById("home-hero-egg"),
   title: document.querySelector("title")
 };
 
@@ -252,6 +254,52 @@ const Search = (() => {
 })();
 
 const App = (() => {
+  function bindHomeEasterEgg() {
+    const logo = DocsElements.homeHeroLogo;
+    if (!logo) {
+      return;
+    }
+
+    const egg = DocsElements.homeHeroEgg;
+    let eggTimer = null;
+
+    const triggerSpin = () => {
+      logo.classList.remove("egg-spin");
+      void logo.offsetWidth;
+      logo.classList.add("egg-spin");
+
+      if (!egg) {
+        return;
+      }
+
+      egg.classList.remove("show");
+      void egg.offsetWidth;
+      egg.classList.add("show");
+
+      if (eggTimer) {
+        window.clearTimeout(eggTimer);
+      }
+
+      eggTimer = window.setTimeout(() => {
+        egg.classList.remove("show");
+      }, 1500);
+    };
+
+    logo.addEventListener("click", triggerSpin);
+    logo.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        triggerSpin();
+      }
+    });
+
+    logo.addEventListener("animationend", (event) => {
+      if (event.animationName === "hero-spin-once") {
+        logo.classList.remove("egg-spin");
+      }
+    });
+  }
+
   function bindGlobalEvents() {
     DocsElements.menuToggle?.addEventListener("click", Sidebar.toggle);
     DocsElements.sidebarBackdrop?.addEventListener("click", () => Sidebar.setOpen(false));
@@ -299,6 +347,7 @@ const App = (() => {
     Sidebar.render();
     Search.bind();
     Search.renderResults("");
+    bindHomeEasterEgg();
     bindGlobalEvents();
 
     if (DocsHelpers.currentHashId()) {
