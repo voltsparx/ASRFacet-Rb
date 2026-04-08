@@ -9,6 +9,9 @@ on:
       - ".github/workflows/pages.yml"
   workflow_dispatch:
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 permissions:
   contents: read
   pages: write
@@ -30,14 +33,35 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Check whether GitHub Pages is enabled
+        id: pages_status
+        shell: bash
+        run: |
+          status_code="$(curl -sS -o /tmp/pages.json -w '%{http_code}' \
+            -H 'Accept: application/vnd.github+json' \
+            -H 'Authorization: Bearer ${{ github.token }}' \
+            "https://api.github.com/repos/${{ github.repository }}/pages")"
+
+          if [ "$status_code" = "200" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+            echo "GitHub Pages is enabled for this repository."
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "::notice title=GitHub Pages not enabled::Enable Pages in Settings -> Pages and set Source to GitHub Actions, then rerun this workflow."
+            cat /tmp/pages.json || true
+          fi
+
       - name: Configure Pages
+        if: steps.pages_status.outputs.enabled == 'true'
         uses: actions/configure-pages@v5
 
       - name: Upload static site artifact
+        if: steps.pages_status.outputs.enabled == 'true'
         uses: actions/upload-pages-artifact@v3
         with:
           path: docs/website
 
       - name: Deploy to GitHub Pages
+        if: steps.pages_status.outputs.enabled == 'true'
         id: deployment
         uses: actions/deploy-pages@v4
