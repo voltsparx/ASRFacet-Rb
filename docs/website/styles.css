@@ -21,6 +21,7 @@
   --body: 'Rajdhani', sans-serif;
   --nav-w: 270px;
   --top-h: 58px;
+  --mobile-shortcuts-h: 0px;
 }
 
 /* RESET & BASE */
@@ -198,7 +199,7 @@ code {
 /* SIDEBAR NAV */
 #sidebar {
   position: fixed;
-  top: var(--top-h); left: 0; bottom: 0;
+  top: calc(var(--top-h) + var(--mobile-shortcuts-h)); left: 0; bottom: 0;
   width: var(--nav-w);
   background: var(--bg2);
   border-right: 1px solid var(--border);
@@ -349,7 +350,7 @@ code {
 
 #sidebar-backdrop {
   position: fixed;
-  inset: var(--top-h) 0 0 0;
+  inset: calc(var(--top-h) + var(--mobile-shortcuts-h)) 0 0 0;
   background: rgba(0, 0, 0, 0.46);
   border: 0;
   opacity: 0;
@@ -401,9 +402,13 @@ code {
 /* MAIN CONTENT */
 #main {
   margin-left: var(--nav-w);
-  margin-top: var(--top-h);
+  margin-top: calc(var(--top-h) + var(--mobile-shortcuts-h));
   padding: 0 52px 80px 52px;
   max-width: 1100px;
+}
+
+#mobile-shortcuts {
+  display: none;
 }
 
 /* PAGE SECTIONS */
@@ -1153,6 +1158,10 @@ tbody td code { white-space: nowrap; }
 }
 
 @media (max-width: 620px) {
+  :root {
+    --top-h: 52px;
+    --mobile-shortcuts-h: 42px;
+  }
   #topbar {
     min-height: 52px;
     height: 52px;
@@ -1169,6 +1178,43 @@ tbody td code { white-space: nowrap; }
     padding: 6px 9px;
     font-size: 0.68rem;
     min-height: 30px;
+  }
+  #mobile-shortcuts {
+    position: fixed;
+    top: var(--top-h);
+    left: 0;
+    right: 0;
+    height: var(--mobile-shortcuts-h);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 0 10px;
+    background: rgba(8, 1, 1, 0.96);
+    border-bottom: 1px solid var(--border2);
+    z-index: 995;
+  }
+  #mobile-shortcuts a {
+    flex: 1 1 0;
+    min-width: 0;
+    text-align: center;
+    font-family: var(--mono);
+    font-size: 0.6rem;
+    letter-spacing: 0.06em;
+    color: var(--txt2);
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    background: rgba(255, 26, 26, 0.05);
+    padding: 6px 6px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  #mobile-shortcuts a:hover {
+    color: var(--r0);
+    border-color: var(--r1);
+    background: rgba(255, 26, 26, 0.12);
+    text-decoration: none;
   }
   .sidebar-panel-head {
     margin: 0 10px 14px;

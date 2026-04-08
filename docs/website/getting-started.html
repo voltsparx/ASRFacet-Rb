@@ -42,7 +42,11 @@
     <button id="menu-toggle" class="topbar-action topbar-action-menu" type="button">Menu</button>
   </div>
 </header>
-
+<div id="mobile-shortcuts" aria-label="Mobile shortcuts">
+  <a href="index.html">Home</a>
+  <a href="project.html#author">Author &amp; License</a>
+  <a href="https://raw.githubusercontent.com/voltsparx/ASRFacet-Rb/main/LICENSE" target="_blank">License</a>
+</div>
 <nav id="sidebar" aria-label="Documentation navigation">
   <div class="sidebar-panel-head">
     <div class="sidebar-kicker">Start Here</div>
@@ -116,6 +120,50 @@
         </tbody>
       </table>
     </div>
+
+    <div id="web-installers" class="sec-head">Website Download Installers</div>
+    <div class="prose">
+      <p>If you are starting from the docs website directly, download one installer below. Each installer downloads the repository into a temporary folder and then runs the same maintained lifecycle scripts used by repository installs.</p>
+      <p><a href="web_assets/installers/README.md" target="_blank">Open installer usage guide</a> for modes, flags, and troubleshooting notes.</p>
+    </div>
+
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Platform</th><th>Download</th><th>Start Command</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>Linux</td>
+            <td><a href="web_assets/installers/asrfacet-rb-installer-linux.sh" download>asrfacet-rb-installer-linux.sh</a></td>
+            <td><code>bash asrfacet-rb-installer-linux.sh install</code></td>
+          </tr>
+          <tr>
+            <td>macOS</td>
+            <td><a href="web_assets/installers/asrfacet-rb-installer-macos.sh" download>asrfacet-rb-installer-macos.sh</a></td>
+            <td><code>bash asrfacet-rb-installer-macos.sh install</code></td>
+          </tr>
+          <tr>
+            <td>Windows</td>
+            <td><a href="web_assets/installers/asrfacet-rb-installer-windows.ps1" download>asrfacet-rb-installer-windows.ps1</a> or <a href="web_assets/installers/asrfacet-rb-installer-windows.cmd" download>asrfacet-rb-installer-windows.cmd</a></td>
+            <td><code>.\asrfacet-rb-installer-windows.ps1 install</code></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="code-wrap">
+      <div class="code-header"><div class="code-dot"></div><div class="code-dot"></div><div class="code-dot"></div><span class="code-lang">installer modes</span></div>
+      <div class="code-body">
+<span class="cm"># Supports: install, test, update, uninstall</span>
+<span class="pn">$</span> bash asrfacet-rb-installer-linux.sh <span class="kw">update</span> <span class="fl">--verbose</span>
+<span class="pn">$</span> bash asrfacet-rb-installer-macos.sh <span class="kw">uninstall</span>
+<span class="pn">PS&gt;</span> .\asrfacet-rb-installer-windows.ps1 <span class="kw">install</span> <span class="fl">--yes</span>
+      </div>
+    </div>
+
+    <div class="callout callout-info">
+      <div class="callout-title">Install Paths and Data</div>
+      Website installers place the application like a real tool using the platform install scripts, while keeping operator data under <code>~/.asrfacet_rb</code>. You can still use the repository flow (<code>bundle install</code> + <code>bundle exec rake</code>) when developing locally.
+    </div>
   </section>
 
   <section id="quickstart" class="page-section active">
@@ -169,6 +217,7 @@
 <script src="app.js"></script>
 </body>
 </html>
+
 
 
 

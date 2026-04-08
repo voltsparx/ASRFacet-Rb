@@ -43,6 +43,10 @@ jobs:
           test -f docs/website/styles.css
           test -f docs/website/web_assets/media/favicon.ico
           test -f docs/website/web_assets/media/asrfacet-rb-site-preview.png
+          test -f docs/website/web_assets/installers/asrfacet-rb-installer-linux.sh
+          test -f docs/website/web_assets/installers/asrfacet-rb-installer-macos.sh
+          test -f docs/website/web_assets/installers/asrfacet-rb-installer-windows.ps1
+          test -f docs/website/web_assets/installers/asrfacet-rb-installer-windows.cmd
           test -f docs/website/.nojekyll
 
       - name: Upload static site artifact
