@@ -9,5 +9,5 @@ coverage/
 .asrfacet_rb/
 temp/
 tmp/
-output/
+/output/
 install/test-root/

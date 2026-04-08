@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Project | ASRFacet-Rb</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@300;400;500;600;700&family=Orbitron:wght@400;600;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body data-page="project.html" data-default-section="author">
+<header id="topbar">
+  <div id="topbar-logo-wrap"><img id="topbar-logo" src="web_assets/asrfacet-rb-web.png" alt="ASRFacet-Rb"><span id="topbar-name">ASRFacet-Rb</span></div>
+  <span id="topbar-version">v1.0.0 · Project</span>
+  <div id="topbar-links">
+    <a href="index.html">⬡ Home</a>
+    <a href="https://github.com/voltsparx/ASRFacet-Rb" target="_blank">⬡ GitHub</a>
+    <a href="mailto:voltsparx@proton.me">✉ Contact</a>
+  </div>
+  <div id="topbar-actions">
+    <button id="quick-jump-trigger" class="topbar-action" type="button">Quick Jump</button>
+    <button id="menu-toggle" class="topbar-action topbar-action-menu" type="button">Menu</button>
+  </div>
+</header>
+
+<nav id="sidebar" aria-label="Documentation navigation">
+  <div class="sidebar-panel-head">
+    <div class="sidebar-kicker">Project</div>
+    <button class="sidebar-jump-btn" type="button" data-open-palette>Jump To Section</button>
+    <p class="sidebar-note">Project identity, license context, and the main repository links in one short page.</p>
+  </div>
+  <div id="sidebar-nav"></div>
+</nav>
+<button id="sidebar-backdrop" type="button" aria-label="Close navigation"></button>
+
+<div id="command-palette" class="command-palette" hidden>
+  <div class="command-palette-panel" role="dialog" aria-modal="true" aria-labelledby="command-palette-title">
+    <div class="command-palette-head">
+      <div>
+        <div id="command-palette-title" class="command-palette-title">Quick Jump</div>
+        <div class="command-palette-sub">Search the docs and move anywhere from the project page.</div>
+      </div>
+      <button id="command-palette-close" class="command-palette-close" type="button" aria-label="Close quick jump">×</button>
+    </div>
+    <label class="command-palette-search">
+      <span>Search Docs</span>
+      <input id="command-palette-input" type="search" placeholder="Try project, reports, testing..." autocomplete="off">
+    </label>
+    <div id="command-palette-results" class="command-palette-results"></div>
+  </div>
+</div>
+
+<main id="main">
+  <section id="author" class="page-section active">
+    <div class="page-hero">
+      <div class="page-eyebrow">Project</div>
+      <div class="page-title">Author & License</div>
+      <div class="page-desc">ASRFacet-Rb is a serious tool, but the project still keeps a direct, personal feel instead of pretending to be a giant platform.</div>
+    </div>
+
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Field</th><th>Value</th></tr></thead>
+        <tbody>
+          <tr><td>Author</td><td>Niyor Kalita</td></tr>
+          <tr><td>Handle</td><td>voltsparx</td></tr>
+          <tr><td>Email</td><td><a href="mailto:voltsparx@proton.me">voltsparx@proton.me</a></td></tr>
+          <tr><td>Repository</td><td><a href="https://github.com/voltsparx/ASRFacet-Rb" target="_blank">github.com/voltsparx/ASRFacet-Rb</a></td></tr>
+          <tr><td>Version</td><td>1.0.0</td></tr>
+          <tr><td>License</td><td>Proprietary custom license</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout callout-warn">
+      <div class="callout-title">License Notice</div>
+      Use is limited by the repository license and the authorized-testing-only intent of the framework. Review <code>LICENSE</code> before redistribution or operational use.
+    </div>
+
+    <div class="sec-head">Where To Go Next</div>
+    <div class="overview-grid">
+      <a class="ov-card" href="getting-started.html#install"><div class="ov-icon">🚀</div><div class="ov-name">Install</div><div class="ov-desc">Set up the framework locally or through the system installers.</div></a>
+      <a class="ov-card" href="workflow.html#pipeline"><div class="ov-icon">🧭</div><div class="ov-name">Workflow</div><div class="ov-desc">Understand the staged model behind the framework.</div></a>
+      <a class="ov-card" href="reporting.html#testing"><div class="ov-icon">🧪</div><div class="ov-name">Testing</div><div class="ov-desc">Verify the framework before publishing or using larger changes.</div></a>
+    </div>
+  </section>
+</main>
+
+<footer id="site-footer">
+  <div><div class="footer-col-title">Project</div><span class="footer-copy">Repository, author, license</span></div>
+  <div><div class="footer-col-title">Docs</div><a class="footer-link" href="getting-started.html#install">Installation</a><a class="footer-link" href="cli-reference.html#commands">CLI</a></div>
+  <div><div class="footer-col-title">Modes</div><a class="footer-link" href="modes.html#console">Console</a><a class="footer-link" href="modes.html#web">Web Session</a></div>
+  <div><div class="footer-col-title">Home</div><a class="footer-link" href="index.html">Overview</a><a class="footer-link" href="reporting.html#outputs">Reports</a></div>
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>

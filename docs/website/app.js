@@ -1,43 +1,45 @@
 const DocsData = (() => {
-  const groups = [
-    { title: "Start Here", ids: ["home", "install", "quickstart", "how"] },
-    { title: "Pipeline", ids: ["pipeline", "passive", "modules"] },
-    { title: "Operators", ids: ["commands", "flags", "syntax", "console", "web", "wizard"] },
-    { title: "Practice", ids: ["lab", "examples", "testing"] },
-    { title: "Reports", ids: ["outputs", "config", "storage"] },
-    { title: "Project", ids: ["author"] }
-  ];
-
-  const hints = {
-    home: "Overview, release state, and core capability cards.",
-    install: "Bundler setup, installers, and man page entrypoints.",
-    quickstart: "Fast commands for first runs and common workflows.",
-    how: "Mental model for how the framework thinks and moves.",
-    pipeline: "Stage-by-stage orchestration and execution order.",
-    passive: "Passive sources, rate behavior, and enrichment flow.",
-    commands: "Primary command surfaces for daily usage.",
-    flags: "Global switches, tuning flags, and output controls.",
-    syntax: "Command grammar and option patterns.",
-    console: "Interactive operator shell and guided helpers.",
-    web: "Local control panel mode with saved sessions.",
-    wizard: "Preset-led onboarding for safer operator flow.",
-    lab: "Safe local practice targets before real engagements.",
-    modules: "Core framework subsystems and their roles.",
-    outputs: "CLI, TXT, HTML, JSON, and report bundle behavior.",
-    config: "Defaults, overrides, and operator configuration paths.",
-    storage: "Where sessions, memory, reports, and state live.",
-    examples: "Worked examples for common recon tasks.",
-    testing: "Rake verification, smoke checks, and release validation.",
-    author: "Author, license, contact, and repository links."
+  const pages = {
+    "index.html": { title: "Overview", short: "Home" },
+    "getting-started.html": { title: "Getting Started", short: "Start" },
+    "workflow.html": { title: "Workflow", short: "Flow" },
+    "cli-reference.html": { title: "CLI Reference", short: "CLI" },
+    "modes.html": { title: "Modes & Examples", short: "Modes" },
+    "reporting.html": { title: "Reporting & Config", short: "Reports" },
+    "project.html": { title: "Project", short: "Project" }
   };
 
-  return { groups, hints };
+  const entries = [
+    { id: "home", title: "Overview", page: "index.html", hint: "Landing page, capabilities, release status, and site map.", group: "Start Here" },
+    { id: "install", title: "Installation", page: "getting-started.html", hint: "Bundler setup, installers, aliases, and prerequisites.", group: "Start Here" },
+    { id: "quickstart", title: "Quick Start", page: "getting-started.html", hint: "First safe run, common commands, and early operator flow.", group: "Start Here" },
+    { id: "how", title: "How It Works", page: "workflow.html", hint: "Mental model for the framework and how stages feed each other.", group: "Pipeline" },
+    { id: "pipeline", title: "Scan Pipeline", page: "workflow.html", hint: "Stage-by-stage execution order and expected outputs.", group: "Pipeline" },
+    { id: "passive", title: "Passive Sources", page: "workflow.html", hint: "External passive sources, their role, and what they return.", group: "Pipeline" },
+    { id: "modules", title: "Core Modules", page: "workflow.html", hint: "High-level framework ownership and module boundaries.", group: "Pipeline" },
+    { id: "commands", title: "Commands", page: "cli-reference.html", hint: "Primary command surfaces for daily usage.", group: "Operators" },
+    { id: "flags", title: "Global Flags", page: "cli-reference.html", hint: "Cross-command switches, throttling, and output controls.", group: "Operators" },
+    { id: "syntax", title: "Syntax Guide", page: "cli-reference.html", hint: "Command grammar, examples, and operator shorthand.", group: "Operators" },
+    { id: "console", title: "Console Mode", page: "modes.html", hint: "Interactive shell with built-in docs and guided helpers.", group: "Modes" },
+    { id: "web", title: "Web Session Mode", page: "modes.html", hint: "Browser control panel, saved sessions, and UI behavior.", group: "Modes" },
+    { id: "wizard", title: "Wizard Mode", page: "modes.html", hint: "Preset-led operator onboarding and guided execution.", group: "Modes" },
+    { id: "lab", title: "Lab Mode", page: "modes.html", hint: "Safe local practice targets before touching real systems.", group: "Modes" },
+    { id: "examples", title: "Usage Examples", page: "modes.html", hint: "Common workflows and realistic command patterns.", group: "Modes" },
+    { id: "outputs", title: "Output Formats", page: "reporting.html", hint: "CLI, TXT, HTML, JSON, and what each is good for.", group: "Reports" },
+    { id: "config", title: "Configuration", page: "reporting.html", hint: "Defaults, overrides, and operator config behavior.", group: "Reports" },
+    { id: "storage", title: "Files & Storage", page: "reporting.html", hint: "Where reports, memory, sessions, and lab data live.", group: "Reports" },
+    { id: "testing", title: "Testing", page: "reporting.html", hint: "Rake verification, smoke tests, and release checks.", group: "Reports" },
+    { id: "author", title: "Project & License", page: "project.html", hint: "Author, repository, license, and publishing context.", group: "Project" }
+  ];
+
+  const groups = ["Start Here", "Pipeline", "Operators", "Modes", "Reports", "Project"];
+
+  return { pages, entries, groups };
 })();
 
 const DocsState = {
-  sections: new Map(),
-  orderedIds: [],
-  activeId: null,
+  currentPage: document.body.dataset.page || "index.html",
+  currentSection: document.body.dataset.defaultSection || "home",
   navOpen: false,
   paletteOpen: false
 };
@@ -57,114 +59,137 @@ const DocsElements = {
   title: document.querySelector("title")
 };
 
-const SectionRegistry = (() => {
-  function titleFor(section) {
-    const selectors = [".home-hero-title", ".page-title", ".footer-col-title"];
-    for (const selector of selectors) {
-      const match = section.querySelector(selector);
-      if (match && match.textContent.trim()) {
-        return match.textContent.trim();
-      }
+const DocsHelpers = (() => {
+  function hrefFor(entry) {
+    return `${entry.page}#${entry.id}`;
+  }
+
+  function normalizePage(pathname) {
+    const page = pathname.split("/").pop();
+    return page && page.length > 0 ? page : "index.html";
+  }
+
+  function findEntry(id) {
+    return DocsData.entries.find((entry) => entry.id === id);
+  }
+
+  function currentHashId() {
+    return window.location.hash.replace(/^#/, "");
+  }
+
+  function currentEntry() {
+    const hashed = currentHashId();
+    if (hashed && findEntry(hashed)) {
+      return findEntry(hashed);
     }
 
-    return section.id.replace(/^sec-/, "").replace(/-/g, " ");
+    return findEntry(DocsState.currentSection);
   }
 
-  function blurbFor(id) {
-    return DocsData.hints[id] || "Reference material for this part of the framework.";
+  function goToEntry(entry) {
+    if (!entry) {
+      return;
+    }
+
+    const targetHref = hrefFor(entry);
+    const samePage = normalizePage(window.location.pathname) === entry.page;
+
+    if (samePage) {
+      history.replaceState(null, "", `#${entry.id}`);
+      syncCurrentSection();
+      scrollToSection(entry.id);
+      Sidebar.syncActive();
+    } else {
+      window.location.href = targetHref;
+    }
   }
 
-  function collect() {
-    const sections = Array.from(document.querySelectorAll(".page-section"));
-    DocsState.sections.clear();
-    DocsState.orderedIds = [];
+  function scrollToSection(id) {
+    const target = document.getElementById(id);
+    if (!target) {
+      return;
+    }
 
-    sections.forEach((section) => {
-      const id = section.id.replace(/^sec-/, "");
-      const title = titleFor(section);
-      const entry = {
-        id,
-        title,
-        blurb: blurbFor(id),
-        element: section
-      };
-
-      DocsState.sections.set(id, entry);
-      DocsState.orderedIds.push(id);
-    });
+    const topbarHeight = document.getElementById("topbar")?.offsetHeight || 0;
+    const top = target.getBoundingClientRect().top + window.scrollY - topbarHeight - 24;
+    window.scrollTo({ top, behavior: "smooth" });
   }
 
-  function entriesForGroup(group) {
-    return group.ids
-      .map((id) => DocsState.sections.get(id))
-      .filter(Boolean);
+  function syncCurrentSection() {
+    const hashed = currentHashId();
+    DocsState.currentSection = findEntry(hashed) ? hashed : (document.body.dataset.defaultSection || "home");
+    const entry = currentEntry();
+    const page = DocsData.pages[DocsState.currentPage];
+    const pageTitle = page ? page.title : "ASRFacet-Rb";
+    document.title = entry && entry.id !== document.body.dataset.defaultSection
+      ? `${entry.title} | ${pageTitle} | ASRFacet-Rb`
+      : `${pageTitle} | ASRFacet-Rb`;
   }
 
-  function allEntries() {
-    return DocsState.orderedIds
-      .map((id) => DocsState.sections.get(id))
-      .filter(Boolean);
-  }
-
-  return { collect, entriesForGroup, allEntries };
+  return {
+    hrefFor,
+    findEntry,
+    currentEntry,
+    currentHashId,
+    goToEntry,
+    scrollToSection,
+    syncCurrentSection
+  };
 })();
 
 const Sidebar = (() => {
-  function renderNavItem(entry) {
-    const item = document.createElement("a");
-    item.href = `#${entry.id}`;
-    item.className = "nav-item";
-    item.dataset.sectionId = entry.id;
-    item.innerHTML = `
-      <span class="nav-item-main">
-        <span class="nav-label">${entry.title}</span>
-        <span class="nav-hint">${entry.blurb}</span>
-      </span>
-    `;
-
-    item.addEventListener("click", (event) => {
-      event.preventDefault();
-      Router.show(entry.id);
-    });
-
-    return item;
-  }
-
   function renderGroup(group) {
-    const items = SectionRegistry.entriesForGroup(group);
-    if (items.length === 0) {
-      return null;
+    const groupEntries = DocsData.entries.filter((entry) => entry.group === group);
+    if (groupEntries.length === 0) {
+      return "";
     }
 
-    const wrap = document.createElement("section");
-    wrap.className = "nav-group";
+    const items = groupEntries.map((entry) => {
+      const pageLabel = DocsData.pages[entry.page]?.short || "Docs";
+      return `
+        <a class="nav-item" data-section-id="${entry.id}" data-page="${entry.page}" href="${DocsHelpers.hrefFor(entry)}">
+          <span class="nav-item-main">
+            <span class="nav-label">${entry.title}</span>
+            <span class="nav-hint">${entry.hint}</span>
+          </span>
+          <span class="nav-page-tag">${pageLabel}</span>
+        </a>
+      `;
+    }).join("");
 
-    const heading = document.createElement("div");
-    heading.className = "nav-section-title";
-    heading.textContent = group.title;
-    wrap.appendChild(heading);
-
-    const list = document.createElement("div");
-    list.className = "nav-list";
-    items.forEach((entry) => list.appendChild(renderNavItem(entry)));
-    wrap.appendChild(list);
-
-    return wrap;
+    return `
+      <section class="nav-group">
+        <div class="nav-section-title">${group}</div>
+        <div class="nav-list">${items}</div>
+      </section>
+    `;
   }
 
   function render() {
-    DocsElements.sidebarNav.innerHTML = "";
-    DocsData.groups.forEach((group) => {
-      const rendered = renderGroup(group);
-      if (rendered) {
-        DocsElements.sidebarNav.appendChild(rendered);
-      }
+    DocsElements.sidebarNav.innerHTML = DocsData.groups.map(renderGroup).join("");
+
+    DocsElements.sidebarNav.querySelectorAll(".nav-item").forEach((item) => {
+      item.addEventListener("click", (event) => {
+        event.preventDefault();
+        const entry = DocsHelpers.findEntry(item.dataset.sectionId);
+        setOpen(false);
+        DocsHelpers.goToEntry(entry);
+      });
     });
+
+    syncActive();
   }
 
-  function syncActive(id) {
-    document.querySelectorAll("#sidebar .nav-item").forEach((item) => {
-      item.classList.toggle("active", item.dataset.sectionId === id);
+  function syncActive() {
+    const active = DocsHelpers.currentEntry();
+
+    DocsElements.sidebarNav.querySelectorAll(".nav-item").forEach((item) => {
+      const isActive =
+        active &&
+        item.dataset.sectionId === active.id &&
+        item.dataset.page === active.page;
+
+      item.classList.toggle("active", Boolean(isActive));
     });
   }
 
@@ -182,46 +207,44 @@ const Sidebar = (() => {
 })();
 
 const Palette = (() => {
-  function resultsFor(query) {
+  function renderResults(query = "") {
     const needle = query.trim().toLowerCase();
-    return SectionRegistry.allEntries().filter((entry) => {
+    const results = DocsData.entries.filter((entry) => {
       if (needle.length === 0) {
         return true;
       }
 
-      return [entry.title, entry.id, entry.blurb].some((value) =>
-        value.toLowerCase().includes(needle)
-      );
+      return [
+        entry.title,
+        entry.hint,
+        entry.group,
+        DocsData.pages[entry.page]?.title || ""
+      ].some((value) => value.toLowerCase().includes(needle));
     });
-  }
-
-  function renderResults(query = "") {
-    const results = resultsFor(query);
-    DocsElements.paletteResults.innerHTML = "";
 
     if (results.length === 0) {
-      const empty = document.createElement("div");
-      empty.className = "command-result-empty";
-      empty.textContent = "No matching sections. Try a command name, feature, or topic.";
-      DocsElements.paletteResults.appendChild(empty);
+      DocsElements.paletteResults.innerHTML = `
+        <div class="command-result-empty">
+          No matching docs pages. Try install, pipeline, console, reports, or testing.
+        </div>
+      `;
       return;
     }
 
-    results.forEach((entry) => {
-      const button = document.createElement("button");
-      button.type = "button";
-      button.className = "command-result";
-      button.dataset.sectionId = entry.id;
-      button.innerHTML = `
+    DocsElements.paletteResults.innerHTML = results.map((entry) => `
+      <button type="button" class="command-result" data-section-id="${entry.id}">
         <span class="command-result-title">${entry.title}</span>
-        <span class="command-result-meta">#${entry.id}</span>
-        <span class="command-result-desc">${entry.blurb}</span>
-      `;
+        <span class="command-result-meta">${DocsData.pages[entry.page]?.title || "Docs"}</span>
+        <span class="command-result-desc">${entry.hint}</span>
+      </button>
+    `).join("");
+
+    DocsElements.paletteResults.querySelectorAll(".command-result").forEach((button) => {
       button.addEventListener("click", () => {
+        const entry = DocsHelpers.findEntry(button.dataset.sectionId);
         close();
-        Router.show(entry.id);
+        DocsHelpers.goToEntry(entry);
       });
-      DocsElements.paletteResults.appendChild(button);
     });
   }
 
@@ -230,7 +253,7 @@ const Palette = (() => {
     DocsElements.palette.hidden = false;
     DocsElements.body.classList.add("palette-open");
     renderResults(DocsElements.paletteInput.value);
-    window.requestAnimationFrame(() => DocsElements.paletteInput.focus());
+    requestAnimationFrame(() => DocsElements.paletteInput.focus());
   }
 
   function close() {
@@ -240,74 +263,36 @@ const Palette = (() => {
   }
 
   function bind() {
-    DocsElements.paletteInput.addEventListener("input", (event) => {
+    DocsElements.paletteInput?.addEventListener("input", (event) => {
       renderResults(event.target.value);
     });
 
-    DocsElements.palette.addEventListener("click", (event) => {
+    DocsElements.palette?.addEventListener("click", (event) => {
       if (event.target === DocsElements.palette) {
         close();
       }
     });
 
-    DocsElements.paletteClose.addEventListener("click", close);
-    DocsElements.quickJumpTrigger.addEventListener("click", open);
-    DocsElements.paletteTriggers.forEach((trigger) => {
-      trigger.addEventListener("click", open);
-    });
+    DocsElements.paletteClose?.addEventListener("click", close);
+    DocsElements.quickJumpTrigger?.addEventListener("click", open);
+    DocsElements.paletteTriggers.forEach((trigger) => trigger.addEventListener("click", open));
   }
 
-  return { open, close, bind, renderResults };
-})();
-
-const Router = (() => {
-  function normalizedId(id) {
-    return DocsState.sections.has(id) ? id : "home";
-  }
-
-  function updateTitle(id) {
-    const section = DocsState.sections.get(id);
-    const base = "ASRFacet-Rb";
-    document.title = section && id !== "home" ? `${section.title} | ${base}` : base;
-  }
-
-  function syncSection(id) {
-    DocsState.sections.forEach((entry, key) => {
-      entry.element.classList.toggle("active", key === id);
-    });
-  }
-
-  function show(id, options = {}) {
-    const { updateHash = true } = options;
-    const targetId = normalizedId(id);
-
-    DocsState.activeId = targetId;
-    syncSection(targetId);
-    Sidebar.syncActive(targetId);
-    updateTitle(targetId);
-    Sidebar.setOpen(false);
-
-    if (updateHash && window.location.hash !== `#${targetId}`) {
-      window.history.replaceState(null, "", `#${targetId}`);
-    }
-
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }
-
-  function syncFromHash() {
-    const requested = window.location.hash.replace(/^#/, "");
-    show(requested || "home", { updateHash: false });
-  }
-
-  return { show, syncFromHash };
+  return { bind, open, close, renderResults };
 })();
 
 const App = (() => {
   function bindGlobalEvents() {
-    DocsElements.menuToggle.addEventListener("click", Sidebar.toggle);
-    DocsElements.sidebarBackdrop.addEventListener("click", () => Sidebar.setOpen(false));
+    DocsElements.menuToggle?.addEventListener("click", Sidebar.toggle);
+    DocsElements.sidebarBackdrop?.addEventListener("click", () => Sidebar.setOpen(false));
 
-    window.addEventListener("hashchange", Router.syncFromHash);
+    window.addEventListener("hashchange", () => {
+      DocsHelpers.syncCurrentSection();
+      Sidebar.syncActive();
+      if (DocsHelpers.currentHashId()) {
+        DocsHelpers.scrollToSection(DocsHelpers.currentHashId());
+      }
+    });
 
     document.addEventListener("keydown", (event) => {
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
@@ -340,18 +325,21 @@ const App = (() => {
   }
 
   function init() {
-    SectionRegistry.collect();
+    DocsHelpers.syncCurrentSection();
     Sidebar.render();
     Palette.bind();
     Palette.renderResults("");
     bindGlobalEvents();
-    Router.syncFromHash();
+
+    if (DocsHelpers.currentHashId()) {
+      setTimeout(() => DocsHelpers.scrollToSection(DocsHelpers.currentHashId()), 0);
+    }
   }
 
   return { init };
 })();
 
-window.show = (id) => Router.show(id);
+window.show = (id) => DocsHelpers.goToEntry(DocsHelpers.findEntry(id));
 window.toggleNav = () => Sidebar.toggle();
 
 App.init();

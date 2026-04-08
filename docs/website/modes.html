@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Modes & Examples | ASRFacet-Rb</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@300;400;500;600;700&family=Orbitron:wght@400;600;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body data-page="modes.html" data-default-section="console">
+<header id="topbar">
+  <div id="topbar-logo-wrap"><img id="topbar-logo" src="web_assets/asrfacet-rb-web.png" alt="ASRFacet-Rb"><span id="topbar-name">ASRFacet-Rb</span></div>
+  <span id="topbar-version">v1.0.0 · Modes & Examples</span>
+  <div id="topbar-links">
+    <a href="index.html">⬡ Home</a>
+    <a href="cli-reference.html#commands">⌨️ CLI</a>
+    <a href="mailto:voltsparx@proton.me">✉ Contact</a>
+  </div>
+  <div id="topbar-actions">
+    <button id="quick-jump-trigger" class="topbar-action" type="button">Quick Jump</button>
+    <button id="menu-toggle" class="topbar-action topbar-action-menu" type="button">Menu</button>
+  </div>
+</header>
+
+<nav id="sidebar" aria-label="Documentation navigation">
+  <div class="sidebar-panel-head">
+    <div class="sidebar-kicker">Modes</div>
+    <button class="sidebar-jump-btn" type="button" data-open-palette>Jump To Section</button>
+    <p class="sidebar-note">Console, browser control panel, wizard flow, lab mode, and example operator paths.</p>
+  </div>
+  <div id="sidebar-nav"></div>
+</nav>
+<button id="sidebar-backdrop" type="button" aria-label="Close navigation"></button>
+
+<div id="command-palette" class="command-palette" hidden>
+  <div class="command-palette-panel" role="dialog" aria-modal="true" aria-labelledby="command-palette-title">
+    <div class="command-palette-head">
+      <div>
+        <div id="command-palette-title" class="command-palette-title">Quick Jump</div>
+        <div class="command-palette-sub">Jump across modes, workflow docs, reports, and examples without getting lost.</div>
+      </div>
+      <button id="command-palette-close" class="command-palette-close" type="button" aria-label="Close quick jump">×</button>
+    </div>
+    <label class="command-palette-search">
+      <span>Search Docs</span>
+      <input id="command-palette-input" type="search" placeholder="Try web session, lab, examples..." autocomplete="off">
+    </label>
+    <div id="command-palette-results" class="command-palette-results"></div>
+  </div>
+</div>
+
+<main id="main">
+  <section id="console" class="page-section active">
+    <div class="page-hero">
+      <div class="page-eyebrow">Modes</div>
+      <div class="page-title">Console Mode</div>
+      <div class="page-desc">The console is the quickest way to make the framework feel like a real operator tool instead of a loose collection of scripts.</div>
+    </div>
+    <div class="code-wrap">
+      <div class="code-header"><div class="code-dot"></div><div class="code-dot"></div><div class="code-dot"></div><span class="code-lang">shell</span></div>
+      <div class="code-body">
+<span class="pn">$</span> asrfacet-rb <span class="fl">--console</span>
+
+<span class="cm"># Useful inside the console</span>
+<span class="kw">help</span>
+<span class="kw">about</span>
+<span class="kw">explain</span> <span class="ar">scope</span>
+<span class="kw">manual</span> <span class="ar">workflow</span>
+      </div>
+    </div>
+  </section>
+
+  <section id="web" class="page-section active">
+    <div class="page-hero">
+      <div class="page-eyebrow">Modes</div>
+      <div class="page-title">Web Session Mode</div>
+      <div class="page-desc">A local browser control panel for session-driven work, saved state, richer navigation, and report browsing.</div>
+    </div>
+    <div class="prose">
+      <p>Use web session mode when you want a fuller interface, need saved sessions, or prefer a panel layout over a terminal prompt for longer runs.</p>
+    </div>
+    <div class="code-wrap">
+      <div class="code-header"><div class="code-dot"></div><div class="code-dot"></div><div class="code-dot"></div><span class="code-lang">shell</span></div>
+      <div class="code-body">
+<span class="pn">$</span> asrfacet-rb <span class="fl">--web-session</span>
+<span class="pn">$</span> asrfacet-rb <span class="fl">--web-session</span> <span class="fl">--web-port</span> 4570
+      </div>
+    </div>
+    <div class="callout callout-info">
+      <div class="callout-title">What Changed In The Docs Site</div>
+      The website itself is now multi-page, so quick jump routes to actual files instead of trying to manage hidden sections inside one giant HTML document.
+    </div>
+  </section>
+
+  <section id="wizard" class="page-section active">
+    <div class="page-hero">
+      <div class="page-eyebrow">Modes</div>
+      <div class="page-title">Wizard Mode</div>
+      <div class="page-desc">A guided path for new operators or anyone who wants safer prompts before kicking off a scan.</div>
+    </div>
+    <div class="prose">
+      <p>The wizard is useful when you know the target and the goal but do not want to memorize every flag combination. It trades a little speed for clarity and guardrails.</p>
+    </div>
+  </section>
+
+  <section id="lab" class="page-section active">
+    <div class="page-hero">
+      <div class="page-eyebrow">Modes</div>
+      <div class="page-title">Lab Mode</div>
+      <div class="page-desc">The safe local practice target that helps you verify the tool before using it on real systems.</div>
+    </div>
+    <div class="lab-endpoints">
+      <div class="lab-ep"><span class="lab-ep-method">GET</span><span class="lab-ep-path">/app</span><span class="lab-ep-desc">single-page style surface</span></div>
+      <div class="lab-ep"><span class="lab-ep-method">GET</span><span class="lab-ep-path">/assets/app.js</span><span class="lab-ep-desc">JS endpoint mining</span></div>
+      <div class="lab-ep"><span class="lab-ep-method">GET</span><span class="lab-ep-path">/cors/profile</span><span class="lab-ep-desc">CORS example</span></div>
+      <div class="lab-ep"><span class="lab-ep-method">POST</span><span class="lab-ep-path">/api/login</span><span class="lab-ep-desc">placeholder form surface</span></div>
+    </div>
+  </section>
+
+  <section id="examples" class="page-section active">
+    <div class="page-hero">
+      <div class="page-eyebrow">Modes</div>
+      <div class="page-title">Usage Examples</div>
+      <div class="page-desc">Some realistic operator patterns that show the framework in context instead of just listing commands.</div>
+    </div>
+
+    <div class="example-block">
+      <div class="example-header"><div class="example-title">Passive First</div><span class="example-tag">Low Noise</span></div>
+      <div class="example-body">
+        <div class="example-desc">Start passive, inspect the target, then escalate only when the scope and value are clear.</div>
+        <div class="example-code"><span class="pn">$</span> asrfacet-rb <span class="kw">passive</span> <span class="ar">example.com</span><br><span class="pn">$</span> asrfacet-rb <span class="kw">scan</span> <span class="ar">example.com</span> <span class="fl">--monitor</span></div>
+      </div>
+    </div>
+
+    <div class="example-block">
+      <div class="example-header"><div class="example-title">Teach While Running</div><span class="example-tag">Learning</span></div>
+      <div class="example-body">
+        <div class="example-desc">Use the built-in explainers and manual surfaces while you work instead of opening separate notes.</div>
+        <div class="example-code"><span class="pn">$</span> asrfacet-rb <span class="kw">about</span><br><span class="pn">$</span> asrfacet-rb <span class="kw">explain</span> <span class="ar">passive</span><br><span class="pn">$</span> asrfacet-rb <span class="kw">manual</span> <span class="ar">workflow</span></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer id="site-footer">
+  <div><div class="footer-col-title">Modes</div><span class="footer-copy">Console, browser, wizard, lab</span></div>
+  <div><div class="footer-col-title">CLI</div><a class="footer-link" href="cli-reference.html#commands">Commands</a><a class="footer-link" href="cli-reference.html#flags">Flags</a></div>
+  <div><div class="footer-col-title">Reports</div><a class="footer-link" href="reporting.html#outputs">Outputs</a><a class="footer-link" href="reporting.html#testing">Testing</a></div>
+  <div><div class="footer-col-title">Home</div><a class="footer-link" href="index.html">Overview</a><a class="footer-link" href="workflow.html#pipeline">Workflow</a></div>
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>

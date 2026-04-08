@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Getting Started | ASRFacet-Rb</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@300;400;500;600;700&family=Orbitron:wght@400;600;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body data-page="getting-started.html" data-default-section="install">
+<header id="topbar">
+  <div id="topbar-logo-wrap"><img id="topbar-logo" src="web_assets/asrfacet-rb-web.png" alt="ASRFacet-Rb"><span id="topbar-name">ASRFacet-Rb</span></div>
+  <span id="topbar-version">v1.0.0 · Getting Started</span>
+  <div id="topbar-links">
+    <a href="index.html">⬡ Home</a>
+    <a href="workflow.html#pipeline">🧭 Workflow</a>
+    <a href="mailto:voltsparx@proton.me">✉ Contact</a>
+  </div>
+  <div id="topbar-actions">
+    <button id="quick-jump-trigger" class="topbar-action" type="button">Quick Jump</button>
+    <button id="menu-toggle" class="topbar-action topbar-action-menu" type="button">Menu</button>
+  </div>
+</header>
+
+<nav id="sidebar" aria-label="Documentation navigation">
+  <div class="sidebar-panel-head">
+    <div class="sidebar-kicker">Start Here</div>
+    <button class="sidebar-jump-btn" type="button" data-open-palette>Jump To Section</button>
+    <p class="sidebar-note">Install the framework, validate it, and follow a safe first-run path before touching a real authorized target.</p>
+  </div>
+  <div id="sidebar-nav"></div>
+</nav>
+<button id="sidebar-backdrop" type="button" aria-label="Close navigation"></button>
+
+<div id="command-palette" class="command-palette" hidden>
+  <div class="command-palette-panel" role="dialog" aria-modal="true" aria-labelledby="command-palette-title">
+    <div class="command-palette-head">
+      <div>
+        <div id="command-palette-title" class="command-palette-title">Quick Jump</div>
+        <div class="command-palette-sub">Search the full docs site and jump directly to any page or section.</div>
+      </div>
+      <button id="command-palette-close" class="command-palette-close" type="button" aria-label="Close quick jump">×</button>
+    </div>
+    <label class="command-palette-search">
+      <span>Search Docs</span>
+      <input id="command-palette-input" type="search" placeholder="Try install, quick start, testing..." autocomplete="off">
+    </label>
+    <div id="command-palette-results" class="command-palette-results"></div>
+  </div>
+</div>
+
+<main id="main">
+  <section id="install" class="page-section active">
+    <div class="page-hero">
+      <div class="page-eyebrow">Getting Started</div>
+      <div class="page-title">Installation</div>
+      <div class="page-desc">Use Bundler in the repo for development, or use the install scripts when you want the framework placed like a real app on your system.</div>
+    </div>
+
+    <div class="callout callout-info">
+      <div class="callout-title">Prerequisites</div>
+      Ruby 3.2 or newer is required. Check with <code>ruby --version</code> and <code>bundle --version</code> before installing.
+    </div>
+
+    <div class="sec-head">Development Install</div>
+    <div class="code-wrap">
+      <div class="code-header"><div class="code-dot"></div><div class="code-dot"></div><div class="code-dot"></div><span class="code-lang">shell</span></div>
+      <div class="code-body">
+<span class="cm"># Clone the repository</span>
+<span class="pn">$</span> git clone https://github.com/voltsparx/ASRFacet-Rb.git
+<span class="pn">$</span> cd ASRFacet-Rb
+
+<span class="cm"># Install dependencies</span>
+<span class="pn">$</span> bundle install
+
+<span class="cm"># Verify the repo end to end</span>
+<span class="pn">$</span> bundle exec rake
+
+<span class="cm"># Confirm the CLI loads cleanly</span>
+<span class="pn">$</span> bundle exec ruby bin/asrfacet-rb help
+      </div>
+    </div>
+
+    <div class="sec-head">System Installers</div>
+    <div class="prose">
+      <p>The installers build a real application folder, create launchers on your user PATH, and keep user data outside the app folder so reinstalling does not wipe reports or saved session state.</p>
+    </div>
+
+    <div class="code-wrap">
+      <div class="code-header"><div class="code-dot"></div><div class="code-dot"></div><div class="code-dot"></div><span class="code-lang">linux / macos / windows</span></div>
+      <div class="code-body">
+<span class="cm"># Linux</span>
+<span class="pn">$</span> bash install/linux.sh <span class="kw">install</span>
+
+<span class="cm"># macOS</span>
+<span class="pn">$</span> bash install/macos.sh <span class="kw">install</span>
+
+<span class="cm"># Windows PowerShell</span>
+<span class="pn">PS&gt;</span> .\install\windows.ps1 <span class="kw">install</span>
+      </div>
+    </div>
+
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Command</th><th>Purpose</th></tr></thead>
+        <tbody>
+          <tr><td><code>asrfacet-rb</code></td><td>Main system launcher</td></tr>
+          <tr><td><code>asrfrb</code></td><td>Short alias to the same installed tool</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="quickstart" class="page-section active">
+    <div class="page-hero">
+      <div class="page-eyebrow">Getting Started</div>
+      <div class="page-title">Quick Start</div>
+      <div class="page-desc">A simple first-run path that starts safe, teaches the workflow, and avoids throwing a new user straight into active scanning.</div>
+    </div>
+
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Goal</th><th>Command</th><th>Outcome</th></tr></thead>
+        <tbody>
+          <tr><td>Validate the framework</td><td><code>asrfacet-rb lab</code></td><td>Runs against the local practice target instead of a real system</td></tr>
+          <tr><td>Collect passive intel</td><td><code>asrfacet-rb passive example.com</code></td><td>Builds a low-noise picture before active probes</td></tr>
+          <tr><td>Full recon</td><td><code>asrfacet-rb scan example.com --format html</code></td><td>Generates a full report bundle</td></tr>
+          <tr><td>Browser-driven run</td><td><code>asrfacet-rb --web-session</code></td><td>Opens the local control panel</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="sec-head">Recommended First Flow</div>
+    <div class="code-wrap">
+      <div class="code-header"><div class="code-dot"></div><div class="code-dot"></div><div class="code-dot"></div><span class="code-lang">shell</span></div>
+      <div class="code-body">
+<span class="cm"># Step 1 - validate locally first</span>
+<span class="pn">$</span> asrfacet-rb <span class="kw">lab</span>
+
+<span class="cm"># Step 2 - gather passive data on the authorized target</span>
+<span class="pn">$</span> asrfacet-rb <span class="kw">passive</span> <span class="ar">example.com</span>
+
+<span class="cm"># Step 3 - run the complete workflow with a report</span>
+<span class="pn">$</span> asrfacet-rb <span class="kw">scan</span> <span class="ar">example.com</span> <span class="fl">--format</span> html
+      </div>
+    </div>
+
+    <div class="callout callout-warn">
+      <div class="callout-title">Why This Order Helps</div>
+      It confirms the framework itself, confirms your local environment, and delays active probing until the target and scope are both understood.
+    </div>
+  </section>
+</main>
+
+<footer id="site-footer">
+  <div><div class="footer-col-title">Getting Started</div><span class="footer-copy">Install, verify, and begin safely</span></div>
+  <div><div class="footer-col-title">Next</div><a class="footer-link" href="workflow.html#pipeline">Workflow</a><a class="footer-link" href="cli-reference.html#commands">CLI Reference</a></div>
+  <div><div class="footer-col-title">Modes</div><a class="footer-link" href="modes.html#web">Web Session</a><a class="footer-link" href="modes.html#lab">Lab Mode</a></div>
+  <div><div class="footer-col-title">Home</div><a class="footer-link" href="index.html">Overview</a><a class="footer-link" href="project.html#author">Project</a></div>
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>

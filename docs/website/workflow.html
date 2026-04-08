@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Workflow | ASRFacet-Rb</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@300;400;500;600;700&family=Orbitron:wght@400;600;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body data-page="workflow.html" data-default-section="how">
+<header id="topbar">
+  <div id="topbar-logo-wrap"><img id="topbar-logo" src="web_assets/asrfacet-rb-web.png" alt="ASRFacet-Rb"><span id="topbar-name">ASRFacet-Rb</span></div>
+  <span id="topbar-version">v1.0.0 · Workflow</span>
+  <div id="topbar-links">
+    <a href="index.html">⬡ Home</a>
+    <a href="getting-started.html#quickstart">▸ Start</a>
+    <a href="mailto:voltsparx@proton.me">✉ Contact</a>
+  </div>
+  <div id="topbar-actions">
+    <button id="quick-jump-trigger" class="topbar-action" type="button">Quick Jump</button>
+    <button id="menu-toggle" class="topbar-action topbar-action-menu" type="button">Menu</button>
+  </div>
+</header>
+
+<nav id="sidebar" aria-label="Documentation navigation">
+  <div class="sidebar-panel-head">
+    <div class="sidebar-kicker">Workflow</div>
+    <button class="sidebar-jump-btn" type="button" data-open-palette>Jump To Section</button>
+    <p class="sidebar-note">This page explains how discovery, validation, mapping, and reporting fit together inside the framework.</p>
+  </div>
+  <div id="sidebar-nav"></div>
+</nav>
+<button id="sidebar-backdrop" type="button" aria-label="Close navigation"></button>
+
+<div id="command-palette" class="command-palette" hidden>
+  <div class="command-palette-panel" role="dialog" aria-modal="true" aria-labelledby="command-palette-title">
+    <div class="command-palette-head">
+      <div>
+        <div id="command-palette-title" class="command-palette-title">Quick Jump</div>
+        <div class="command-palette-sub">Move between pipeline concepts, CLI docs, modes, and reports.</div>
+      </div>
+      <button id="command-palette-close" class="command-palette-close" type="button" aria-label="Close quick jump">×</button>
+    </div>
+    <label class="command-palette-search">
+      <span>Search Docs</span>
+      <input id="command-palette-input" type="search" placeholder="Try pipeline, passive, modules..." autocomplete="off">
+    </label>
+    <div id="command-palette-results" class="command-palette-results"></div>
+  </div>
+</div>
+
+<main id="main">
+  <section id="how" class="page-section active">
+    <div class="page-hero">
+      <div class="page-eyebrow">Workflow</div>
+      <div class="page-title">How It Works</div>
+      <div class="page-desc">ASRFacet-Rb is intentionally staged so one piece discovers context and the next piece validates or enriches it instead of trying to do everything at once.</div>
+    </div>
+
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Area</th><th>Purpose</th><th>Built-In Capability</th></tr></thead>
+        <tbody>
+          <tr><td>Passive Discovery</td><td>Collect known assets before touching the target</td><td>Certificate transparency, passive DNS, historical archive data</td></tr>
+          <tr><td>Asset Validation</td><td>Confirm that discovered assets are real and in scope</td><td>DNS lookups, SAN pivots, scoped busting, resolution checks</td></tr>
+          <tr><td>Service Mapping</td><td>Identify exposed network services</td><td>Threaded TCP scanning and banner collection</td></tr>
+          <tr><td>Web Recon</td><td>Map HTTP exposure and application behavior</td><td>HTTP probing, crawling, JavaScript endpoint mining</td></tr>
+          <tr><td>Monitoring</td><td>Highlight change over time</td><td>Recon memory, diffs, and change summaries</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="pipeline" class="page-section active">
+    <div class="page-hero">
+      <div class="page-eyebrow">Workflow</div>
+      <div class="page-title">Scan Pipeline</div>
+      <div class="page-desc">The full scan path is staged so operators can reason about where a finding came from and what should happen next.</div>
+    </div>
+
+    <div class="pipeline">
+      <div class="pipe-step"><div class="pipe-left"><div class="pipe-circle">01</div><div class="pipe-connector"></div></div><div class="pipe-content"><div class="pipe-stage-name">Passive Runner</div><div class="pipe-stage-sub">Collects baseline hostnames from passive providers before active traffic starts.</div><div class="pipe-output">→ Output: subdomains, passive warnings</div></div></div>
+      <div class="pipe-step"><div class="pipe-left"><div class="pipe-circle">02</div><div class="pipe-connector"></div></div><div class="pipe-content"><div class="pipe-stage-name">DNS + Certificate Discovery</div><div class="pipe-stage-sub">Validates names and expands relationships through records and certificate SANs.</div><div class="pipe-output">→ Output: IPs, records, certificate edges</div></div></div>
+      <div class="pipe-step"><div class="pipe-left"><div class="pipe-circle">03</div><div class="pipe-connector"></div></div><div class="pipe-content"><div class="pipe-stage-name">Busting & Expansion</div><div class="pipe-stage-sub">Tests candidate hosts and grows the known asset set in a controlled way.</div><div class="pipe-output">→ Output: discovered hosts, candidates</div></div></div>
+      <div class="pipe-step"><div class="pipe-left"><div class="pipe-circle">04</div><div class="pipe-connector"></div></div><div class="pipe-content"><div class="pipe-stage-name">Port & Service Mapping</div><div class="pipe-stage-sub">Looks for reachable services on discovered IPs and collects basic banners.</div><div class="pipe-output">→ Output: open ports, services, banners</div></div></div>
+      <div class="pipe-step"><div class="pipe-left"><div class="pipe-circle">05</div><div class="pipe-connector"></div></div><div class="pipe-content"><div class="pipe-stage-name">HTTP + Crawl + JS</div><div class="pipe-stage-sub">Maps application exposure, follows links, and mines probable endpoints from JavaScript.</div><div class="pipe-output">→ Output: paths, links, forms, endpoints</div></div></div>
+      <div class="pipe-step"><div class="pipe-left"><div class="pipe-circle">06</div><div class="pipe-connector"></div></div><div class="pipe-content"><div class="pipe-stage-name">Correlation + Monitoring</div><div class="pipe-stage-sub">Scores assets, highlights likely findings, and compares the run against saved memory.</div><div class="pipe-output">→ Output: findings, deltas, top assets, reports</div></div></div>
+    </div>
+  </section>
+
+  <section id="passive" class="page-section active">
+    <div class="page-hero">
+      <div class="page-eyebrow">Workflow</div>
+      <div class="page-title">Passive Sources</div>
+      <div class="page-desc">Passive mode is the safest first view of a target and a good habit even for experienced operators.</div>
+    </div>
+
+    <div class="src-grid">
+      <div class="src-card"><div class="src-name">crt.sh</div><div class="src-type">Certificate Transparency</div><span class="src-key free">No Key</span><div class="ov-desc" style="font-size:12px;color:var(--txt3);margin-top:8px">Great for SAN-derived hostnames</div></div>
+      <div class="src-card"><div class="src-name">Wayback</div><div class="src-type">Historical Archive</div><span class="src-key free">No Key</span><div class="ov-desc" style="font-size:12px;color:var(--txt3);margin-top:8px">Older hosts and archived URLs</div></div>
+      <div class="src-card"><div class="src-name">RapidDNS</div><div class="src-type">Passive DNS</div><span class="src-key free">No Key</span><div class="ov-desc" style="font-size:12px;color:var(--txt3);margin-top:8px">Simple hostname extraction</div></div>
+      <div class="src-card"><div class="src-name">Shodan</div><div class="src-type">Passive DNS</div><span class="src-key key">--shodan-key</span><div class="ov-desc" style="font-size:12px;color:var(--txt3);margin-top:8px">Optional enrichment when you have a key</div></div>
+    </div>
+  </section>
+
+  <section id="modules" class="page-section active">
+    <div class="page-hero">
+      <div class="page-eyebrow">Workflow</div>
+      <div class="page-title">Core Modules</div>
+      <div class="page-desc">Stability depends on keeping ownership tight: orchestration should not drift into engines, and storage should not drift into control flow.</div>
+    </div>
+
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Layer</th><th>Owns</th><th>Should Not Own</th></tr></thead>
+        <tbody>
+          <tr><td>Scheduler</td><td>Stage ordering, retries, admission control</td><td>Probe-specific business logic</td></tr>
+          <tr><td>Engines</td><td>Actual DNS, port, HTTP, or crawl work</td><td>Global orchestration policy</td></tr>
+          <tr><td>Correlation</td><td>Result interpretation and graph links</td><td>Competing execution loops</td></tr>
+          <tr><td>Output</td><td>Formatting and persistence</td><td>Deciding what to scan next</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</main>
+
+<footer id="site-footer">
+  <div><div class="footer-col-title">Workflow</div><span class="footer-copy">How the framework thinks and moves</span></div>
+  <div><div class="footer-col-title">Next</div><a class="footer-link" href="cli-reference.html#commands">CLI Reference</a><a class="footer-link" href="modes.html#web">Modes</a></div>
+  <div><div class="footer-col-title">Start</div><a class="footer-link" href="getting-started.html#install">Installation</a><a class="footer-link" href="getting-started.html#quickstart">Quick Start</a></div>
+  <div><div class="footer-col-title">Home</div><a class="footer-link" href="index.html">Overview</a><a class="footer-link" href="reporting.html#outputs">Reports</a></div>
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>

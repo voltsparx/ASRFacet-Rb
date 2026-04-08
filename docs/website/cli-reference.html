@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CLI Reference | ASRFacet-Rb</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@300;400;500;600;700&family=Orbitron:wght@400;600;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body data-page="cli-reference.html" data-default-section="commands">
+<header id="topbar">
+  <div id="topbar-logo-wrap"><img id="topbar-logo" src="web_assets/asrfacet-rb-web.png" alt="ASRFacet-Rb"><span id="topbar-name">ASRFacet-Rb</span></div>
+  <span id="topbar-version">v1.0.0 · CLI Reference</span>
+  <div id="topbar-links">
+    <a href="index.html">⬡ Home</a>
+    <a href="workflow.html#pipeline">🧭 Workflow</a>
+    <a href="mailto:voltsparx@proton.me">✉ Contact</a>
+  </div>
+  <div id="topbar-actions">
+    <button id="quick-jump-trigger" class="topbar-action" type="button">Quick Jump</button>
+    <button id="menu-toggle" class="topbar-action topbar-action-menu" type="button">Menu</button>
+  </div>
+</header>
+
+<nav id="sidebar" aria-label="Documentation navigation">
+  <div class="sidebar-panel-head">
+    <div class="sidebar-kicker">CLI</div>
+    <button class="sidebar-jump-btn" type="button" data-open-palette>Jump To Section</button>
+    <p class="sidebar-note">Commands, shared flags, and syntax patterns for everyday operator use.</p>
+  </div>
+  <div id="sidebar-nav"></div>
+</nav>
+<button id="sidebar-backdrop" type="button" aria-label="Close navigation"></button>
+
+<div id="command-palette" class="command-palette" hidden>
+  <div class="command-palette-panel" role="dialog" aria-modal="true" aria-labelledby="command-palette-title">
+    <div class="command-palette-head">
+      <div>
+        <div id="command-palette-title" class="command-palette-title">Quick Jump</div>
+        <div class="command-palette-sub">Search commands, flags, syntax, and neighboring docs pages.</div>
+      </div>
+      <button id="command-palette-close" class="command-palette-close" type="button" aria-label="Close quick jump">×</button>
+    </div>
+    <label class="command-palette-search">
+      <span>Search Docs</span>
+      <input id="command-palette-input" type="search" placeholder="Try scan, passive, flags, syntax..." autocomplete="off">
+    </label>
+    <div id="command-palette-results" class="command-palette-results"></div>
+  </div>
+</div>
+
+<main id="main">
+  <section id="commands" class="page-section active">
+    <div class="page-hero">
+      <div class="page-eyebrow">CLI Reference</div>
+      <div class="page-title">Commands</div>
+      <div class="page-desc">The command layout stays explicit so the user can tell what the framework is about to do before it does it.</div>
+    </div>
+
+    <div class="cmd-grid">
+      <div class="cmd-card"><div class="cmd-name">scan DOMAIN</div><div class="cmd-desc">Run the complete workflow from passive collection through findings and reports.</div></div>
+      <div class="cmd-card"><div class="cmd-name">passive DOMAIN</div><div class="cmd-desc">Use passive sources only for a lower-noise first pass.</div></div>
+      <div class="cmd-card"><div class="cmd-name">ports TARGET</div><div class="cmd-desc">Focus on service discovery without the whole web workflow.</div></div>
+      <div class="cmd-card"><div class="cmd-name">dns DOMAIN</div><div class="cmd-desc">Inspect naming and resolution data without broader probing.</div></div>
+      <div class="cmd-card"><div class="cmd-name">lab</div><div class="cmd-desc">Start the safe local practice target.</div></div>
+      <div class="cmd-card"><div class="cmd-name">about / explain / manual</div><div class="cmd-desc">Read framework guidance without leaving the terminal.</div></div>
+    </div>
+  </section>
+
+  <section id="flags" class="page-section active">
+    <div class="page-hero">
+      <div class="page-eyebrow">CLI Reference</div>
+      <div class="page-title">Global Flags</div>
+      <div class="page-desc">These switches show up across multiple commands so the CLI feels consistent instead of fragmented.</div>
+    </div>
+
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Flag</th><th>Meaning</th><th>Typical Use</th></tr></thead>
+        <tbody>
+          <tr><td><code>--threads N</code></td><td>Set worker concurrency</td><td>Control speed versus stability</td></tr>
+          <tr><td><code>--format cli|txt|html|json</code></td><td>Select the output style</td><td>Switch between operator, report, or automation views</td></tr>
+          <tr><td><code>--output PATH</code></td><td>Write reports to a specific location</td><td>Save a named artifact</td></tr>
+          <tr><td><code>--monitor</code></td><td>Compare the run against recon memory</td><td>Track change over time</td></tr>
+          <tr><td><code>--headless</code></td><td>Use browser-backed rendering where available</td><td>Handle JS-heavy targets</td></tr>
+          <tr><td><code>--web-session</code></td><td>Launch the local browser control panel</td><td>Operate through the web UI</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="syntax" class="page-section active">
+    <div class="page-hero">
+      <div class="page-eyebrow">CLI Reference</div>
+      <div class="page-title">Syntax Guide</div>
+      <div class="page-desc">The basic shape stays predictable: verb first, target second, then whatever tuning flags are needed.</div>
+    </div>
+
+    <div class="code-wrap">
+      <div class="code-header"><div class="code-dot"></div><div class="code-dot"></div><div class="code-dot"></div><span class="code-lang">shell</span></div>
+      <div class="code-body">
+<span class="cm"># General shape</span>
+<span class="pn">$</span> asrfacet-rb <span class="kw">COMMAND</span> <span class="ar">TARGET</span> [<span class="fl">--flags</span> <span class="ar">values</span>]
+
+<span class="cm"># Examples</span>
+<span class="pn">$</span> asrfacet-rb <span class="kw">scan</span> <span class="ar">example.com</span> <span class="fl">--format</span> html
+<span class="pn">$</span> asrfacet-rb <span class="kw">passive</span> <span class="ar">example.com</span> <span class="fl">--threads</span> 12
+<span class="pn">$</span> asrfacet-rb <span class="kw">ports</span> <span class="ar">api.example.com</span> <span class="fl">--ports</span> top100
+<span class="pn">$</span> asrfacet-rb <span class="kw">manual</span> <span class="ar">workflow</span>
+      </div>
+    </div>
+
+    <div class="callout callout-info">
+      <div class="callout-title">Operator Habit</div>
+      When you are unsure, start with <code>passive</code> or <code>lab</code> before escalating to <code>scan</code>.
+    </div>
+  </section>
+</main>
+
+<footer id="site-footer">
+  <div><div class="footer-col-title">CLI</div><span class="footer-copy">Commands, flags, and syntax</span></div>
+  <div><div class="footer-col-title">Modes</div><a class="footer-link" href="modes.html#console">Console</a><a class="footer-link" href="modes.html#web">Web Session</a></div>
+  <div><div class="footer-col-title">Reports</div><a class="footer-link" href="reporting.html#outputs">Output Formats</a><a class="footer-link" href="reporting.html#testing">Testing</a></div>
+  <div><div class="footer-col-title">Home</div><a class="footer-link" href="index.html">Overview</a><a class="footer-link" href="getting-started.html#quickstart">Quick Start</a></div>
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>

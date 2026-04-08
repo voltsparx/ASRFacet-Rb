@@ -269,6 +269,25 @@ code {
   font-size: 0.62rem;
   line-height: 1.45;
 }
+.nav-page-tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 10px;
+  padding: 2px 8px;
+  border: 1px solid var(--border2);
+  border-radius: 999px;
+  font-family: var(--mono);
+  font-size: 0.58rem;
+  letter-spacing: 0.06em;
+  color: var(--txt3);
+  text-transform: uppercase;
+}
+#sidebar a.nav-item.active .nav-page-tag,
+#sidebar a.nav-item:hover .nav-page-tag {
+  border-color: var(--border);
+  color: var(--r0);
+}
 
 #sidebar-backdrop {
   position: fixed;
