@@ -41,12 +41,16 @@ const DocsData = (() => {
 const DocsState = {
   currentPage: document.body.dataset.page || "index.html",
   currentSection: document.body.dataset.defaultSection || "home",
-  navOpen: false
+  navOpen: false,
+  navGroupFilter: "All",
+  searchOpen: false
 };
 
 const DocsElements = {
   body: document.body,
+  topbarSearch: document.getElementById("topbar-search"),
   sidebar: document.getElementById("sidebar"),
+  sidebarTabs: document.getElementById("sidebar-tabs"),
   sidebarNav: document.getElementById("sidebar-nav"),
   sidebarBackdrop: document.getElementById("sidebar-backdrop"),
   menuToggle: document.getElementById("menu-toggle"),
@@ -164,7 +168,9 @@ const Sidebar = (() => {
   }
 
   function render() {
-    DocsElements.sidebarNav.innerHTML = DocsData.groups.map(renderGroup).join("");
+    renderTabs();
+    const groups = DocsState.navGroupFilter === "All" ? DocsData.groups : [DocsState.navGroupFilter];
+    DocsElements.sidebarNav.innerHTML = groups.map(renderGroup).join("");
 
     DocsElements.sidebarNav.querySelectorAll(".nav-item").forEach((item) => {
       item.addEventListener("click", (event) => {
@@ -176,6 +182,36 @@ const Sidebar = (() => {
     });
 
     syncActive();
+  }
+
+  function renderTabs() {
+    if (!DocsElements.sidebarTabs) {
+      return;
+    }
+
+    const tabs = ["All", ...DocsData.groups];
+    DocsElements.sidebarTabs.innerHTML = tabs.map((group) => `
+      <button type="button" class="sidebar-tab" data-group="${group}">${group}</button>
+    `).join("");
+
+    DocsElements.sidebarTabs.querySelectorAll(".sidebar-tab").forEach((button) => {
+      button.addEventListener("click", () => {
+        DocsState.navGroupFilter = button.dataset.group || "All";
+        render();
+      });
+    });
+
+    syncTabs();
+  }
+
+  function syncTabs() {
+    if (!DocsElements.sidebarTabs) {
+      return;
+    }
+
+    DocsElements.sidebarTabs.querySelectorAll(".sidebar-tab").forEach((button) => {
+      button.classList.toggle("active", button.dataset.group === DocsState.navGroupFilter);
+    });
   }
 
   function syncActive() {
@@ -205,11 +241,23 @@ const Sidebar = (() => {
 })();
 
 const Search = (() => {
+  function setOpen(open) {
+    DocsState.searchOpen = open;
+    DocsElements.topbarSearch?.classList.toggle("open", open);
+    if (!open && DocsElements.searchResults) {
+      DocsElements.searchResults.innerHTML = "";
+    }
+  }
+
   function renderResults(query = "") {
+    if (!DocsElements.searchResults) {
+      return;
+    }
+
     const needle = query.trim().toLowerCase();
     const results = DocsData.entries.filter((entry) => {
       if (needle.length === 0) {
-        return DocsData.pages[entry.page]?.title === DocsData.pages[DocsState.currentPage]?.title;
+        return true;
       }
 
       return [
@@ -237,6 +285,8 @@ const Search = (() => {
       button.addEventListener("click", () => {
         const entry = DocsHelpers.findEntry(button.dataset.sectionId);
         Sidebar.setOpen(false);
+        setOpen(false);
+        DocsElements.searchInput?.blur();
         DocsHelpers.goToEntry(entry);
       });
     });
@@ -244,14 +294,29 @@ const Search = (() => {
 
   function bind() {
     DocsElements.searchInput?.addEventListener("input", (event) => {
+      setOpen(true);
       renderResults(event.target.value);
     });
     DocsElements.searchInput?.addEventListener("focus", () => {
+      setOpen(true);
       renderResults(DocsElements.searchInput.value);
+    });
+    DocsElements.searchInput?.addEventListener("click", () => {
+      setOpen(true);
+      renderResults(DocsElements.searchInput.value);
+    });
+    document.addEventListener("click", (event) => {
+      if (!DocsElements.topbarSearch) {
+        return;
+      }
+      if (DocsElements.topbarSearch.contains(event.target)) {
+        return;
+      }
+      setOpen(false);
     });
   }
 
-  return { bind, renderResults };
+  return { bind, renderResults, setOpen };
 })();
 
 const ContactPanel = (() => {
@@ -394,6 +459,8 @@ const App = (() => {
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
         event.preventDefault();
         DocsElements.searchInput?.focus();
+        Search.setOpen(true);
+        Search.renderResults(DocsElements.searchInput?.value || "");
         return;
       }
 
@@ -406,6 +473,8 @@ const App = (() => {
         if (!editable) {
           event.preventDefault();
           DocsElements.searchInput?.focus();
+          Search.setOpen(true);
+          Search.renderResults(DocsElements.searchInput?.value || "");
         }
         return;
       }
@@ -413,6 +482,11 @@ const App = (() => {
       if (event.key === "Escape") {
         if (document.querySelector(".topbar-contact-popover:not([hidden])")) {
           ContactPanel.closeOpen();
+          return;
+        }
+        if (DocsState.searchOpen) {
+          Search.setOpen(false);
+          DocsElements.searchInput?.blur();
           return;
         }
         if (DocsState.navOpen) {
@@ -428,7 +502,7 @@ const App = (() => {
     DocsHelpers.syncCurrentSection();
     Sidebar.render();
     Search.bind();
-    Search.renderResults("");
+    Search.setOpen(false);
     bindHomeEasterEgg();
     bindGlobalEvents();
 

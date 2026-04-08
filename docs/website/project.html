@@ -38,6 +38,10 @@
       </div>
     </div>
   </div>
+  <div id="topbar-search" class="topbar-search">
+    <input id="docs-search-input" type="search" placeholder="Quick jump docs..." autocomplete="off">
+    <div id="docs-search-results" class="topbar-search-results" aria-live="polite"></div>
+  </div>
   <div id="topbar-actions">
     <button id="menu-toggle" class="topbar-action topbar-action-menu" type="button">Menu</button>
   </div>
@@ -50,13 +54,9 @@
 <nav id="sidebar" aria-label="Documentation navigation">
   <div class="sidebar-panel-head">
     <div class="sidebar-kicker">Project</div>
-    <label class="sidebar-search" for="docs-search-input">
-      <span>Search Docs</span>
-      <input id="docs-search-input" type="search" placeholder="Try project, reports, testing..." autocomplete="off">
-    </label>
-    <div id="docs-search-results" class="sidebar-search-results" aria-live="polite"></div>
     <p class="sidebar-note">Project identity, license context, and the main repository links in one short page.</p>
   </div>
+  <div id="sidebar-tabs" class="sidebar-tabs" role="tablist" aria-label="Documentation groups"></div>
   <div id="sidebar-nav"></div>
 </nav>
 <button id="sidebar-backdrop" type="button" aria-label="Close navigation"></button>
