@@ -233,6 +233,7 @@ const Search = (() => {
     DocsElements.searchResults.querySelectorAll(".command-result").forEach((button) => {
       button.addEventListener("click", () => {
         const entry = DocsHelpers.findEntry(button.dataset.sectionId);
+        Sidebar.setOpen(false);
         DocsHelpers.goToEntry(entry);
       });
     });
