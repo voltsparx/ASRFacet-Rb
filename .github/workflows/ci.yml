@@ -7,10 +7,18 @@ on:
   pull_request:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   verify:
     name: Verify (Ruby ${{ matrix.ruby }})
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     strategy:
       fail-fast: false
       matrix:
@@ -28,5 +36,30 @@ jobs:
           ruby-version: ${{ matrix.ruby }}
           bundler-cache: true
 
+      - name: Print runtime diagnostics
+        run: |
+          ruby -v
+          bundle -v
+
       - name: Run release verification
         run: bundle exec rake
+
+      - name: Dump smoke logs on failure
+        if: failure()
+        shell: bash
+        run: |
+          if [ ! -d tmp/test ]; then
+            echo "No tmp/test directory found."
+            exit 0
+          fi
+          shopt -s nullglob
+          found=false
+          for file in tmp/test/*.log; do
+            found=true
+            echo "::group::${file}"
+            cat "${file}"
+            echo "::endgroup::"
+          done
+          if [ "${found}" = false ]; then
+            echo "No smoke log files were generated."
+          fi

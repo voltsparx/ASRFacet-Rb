@@ -22,6 +22,7 @@ jobs:
   build:
     name: Build Docs Website
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
       - name: Checkout
@@ -49,6 +50,18 @@ jobs:
           test -f docs/website/web_assets/installers/asrfacet-rb-installer-windows.cmd
           test -f docs/website/.nojekyll
 
+      - name: Validate website page wiring
+        shell: bash
+        run: |
+          shopt -s nullglob
+          pages=(docs/website/*.html)
+          [ ${#pages[@]} -gt 0 ]
+          for page in "${pages[@]}"; do
+            grep -q 'topbar-contact-popover" hidden' "${page}"
+            grep -q 'styles.css?v=' "${page}"
+            grep -q 'app.js?v=' "${page}"
+          done
+
       - name: Upload static site artifact
         uses: actions/upload-pages-artifact@v3
         with:
@@ -58,6 +71,7 @@ jobs:
     name: Deploy Docs Website
     runs-on: ubuntu-latest
     needs: build
+    timeout-minutes: 15
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
