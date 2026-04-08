@@ -2,6 +2,7 @@ const DocsData = (() => {
   const pages = {
     "index.html": { title: "Overview", short: "Home" },
     "getting-started.html": { title: "Getting Started", short: "Start" },
+    "download.html": { title: "Download Center", short: "DL" },
     "workflow.html": { title: "Workflow", short: "Flow" },
     "cli-reference.html": { title: "CLI Reference", short: "CLI" },
     "modes.html": { title: "Modes & Examples", short: "Modes" },
@@ -12,8 +13,12 @@ const DocsData = (() => {
   const entries = [
     { id: "home", title: "Overview", page: "index.html", hint: "Landing page, capabilities, release status, and site map.", group: "Start Here" },
     { id: "install", title: "Installation", page: "getting-started.html", hint: "Bundler setup, installers, aliases, and prerequisites.", group: "Start Here" },
-    { id: "web-installers", title: "Website Installers", page: "getting-started.html", hint: "Direct downloadable installers for Linux, macOS, and Windows.", group: "Start Here" },
+    { id: "web-installers", title: "Website Installers", page: "download.html", hint: "Direct downloadable installers for Linux, macOS, and Windows.", group: "Start Here" },
     { id: "quickstart", title: "Quick Start", page: "getting-started.html", hint: "First safe run, common commands, and early operator flow.", group: "Start Here" },
+    { id: "download-home", title: "Download Hub", page: "download.html", hint: "Central page for direct installer downloads and safe usage.", group: "Downloads" },
+    { id: "download-scripts", title: "Installer Scripts", page: "download.html", hint: "Download links for Linux, macOS, and Windows installer scripts.", group: "Downloads" },
+    { id: "download-usage", title: "Installer Usage", page: "download.html", hint: "Install, test, update, and uninstall lifecycle commands.", group: "Downloads" },
+    { id: "download-paths", title: "Install Paths", page: "download.html", hint: "Where the framework and persistent data are stored.", group: "Downloads" },
     { id: "how", title: "How It Works", page: "workflow.html", hint: "Mental model for the framework and how stages feed each other.", group: "Pipeline" },
     { id: "pipeline", title: "Scan Pipeline", page: "workflow.html", hint: "Stage-by-stage execution order and expected outputs.", group: "Pipeline" },
     { id: "passive", title: "Passive Sources", page: "workflow.html", hint: "External passive sources, their role, and what they return.", group: "Pipeline" },
@@ -33,7 +38,7 @@ const DocsData = (() => {
     { id: "author", title: "Project & License", page: "project.html", hint: "Author, repository, license, and publishing context.", group: "Project" }
   ];
 
-  const groups = ["Start Here", "Pipeline", "Operators", "Modes", "Reports", "Project"];
+  const groups = ["Start Here", "Downloads", "Pipeline", "Operators", "Modes", "Reports", "Project"];
 
   return { pages, entries, groups };
 })();
