@@ -20,6 +20,7 @@ scripts = %w[
   smoke_web.rb
   smoke_lab.rb
   smoke_install.rb
+  smoke_website_installers.rb
 ]
 
 announce("Standalone verification run started.")

@@ -20,6 +20,7 @@ having to remember a long set of manual commands.
 - `bundle exec rake test:web`: verify web-session startup and routes
 - `bundle exec rake test:lab`: verify the local validation lab
 - `bundle exec rake test:install`: verify the installer flow for the current platform
+- `bundle exec rake test:website_installers`: verify website-distributed installer assets and syntax checks
 
 ## Latest verified status
 
@@ -29,5 +30,5 @@ README verification notes.
 Latest verified repository result:
 
 - `bundle exec rake` passed
-- `49 examples, 0 failures`
-- CLI, web-session, lab, installer, and gem-build smoke checks all passed
+- `52 examples, 0 failures`
+- CLI, web-session, lab, installer, website-installer, and gem-build smoke checks all passed

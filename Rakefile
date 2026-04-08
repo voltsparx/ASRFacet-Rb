@@ -50,6 +50,11 @@ namespace :test do
   task :install do
     ruby_exec(File.join("test", "smoke_install.rb"))
   end
+
+  desc "Run website installer smoke tests"
+  task :website_installers do
+    ruby_exec(File.join("test", "smoke_website_installers.rb"))
+  end
 end
 
 namespace :build do
@@ -65,6 +70,6 @@ namespace :build do
 end
 
 desc "Run the full release verification pass"
-task verify: ["test:spec", "test:cli", "test:web", "test:lab", "test:install", "build:gem"]
+task verify: ["test:spec", "test:cli", "test:web", "test:lab", "test:install", "test:website_installers", "build:gem"]
 
 task default: :verify
