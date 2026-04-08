@@ -31,27 +31,7 @@ const DocsData = (() => {
     author: "Author, license, contact, and repository links."
   };
 
-  const textFixes = new Map([
-    ["â€”", "—"],
-    ["Â·", "·"],
-    ["â‰¥", ">="],
-    ["âœ‰", "✉"],
-    ["âš ", "⚠"],
-    ["â–¸", "▸"],
-    ["â¬¡", "⬡"],
-    ["â—ˆ", "◈"],
-    ["ðŸ”", "🔍"],
-    ["ðŸŒ", "🌐"],
-    ["ðŸ“¡", "📡"],
-    ["ðŸ•·ï¸", "🕷️"],
-    ["ðŸ“Š", "📊"],
-    ["ðŸ”„", "🔄"],
-    ["ðŸ§ª", "🧪"],
-    ["ðŸ–¥ï¸", "🖥️"],
-    ["ðŸ“–", "📖"]
-  ]);
-
-  return { groups, hints, textFixes };
+  return { groups, hints };
 })();
 
 const DocsState = {
@@ -76,43 +56,6 @@ const DocsElements = {
   paletteTriggers: Array.from(document.querySelectorAll("[data-open-palette]")),
   title: document.querySelector("title")
 };
-
-const TextNormalizer = (() => {
-  const blockedTags = new Set(["SCRIPT", "STYLE", "CODE", "PRE", "TEXTAREA"]);
-
-  function replaceArtifacts(text) {
-    let output = text;
-    DocsData.textFixes.forEach((replacement, source) => {
-      output = output.split(source).join(replacement);
-    });
-    return output;
-  }
-
-  function normalizeTree(root = document.body) {
-    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
-    const pending = [];
-
-    while (walker.nextNode()) {
-      const node = walker.currentNode;
-      const parent = node.parentElement;
-      if (!parent || blockedTags.has(parent.tagName)) {
-        continue;
-      }
-
-      const original = node.nodeValue;
-      const normalized = replaceArtifacts(original);
-      if (normalized !== original) {
-        pending.push([node, normalized]);
-      }
-    }
-
-    pending.forEach(([node, normalized]) => {
-      node.nodeValue = normalized;
-    });
-  }
-
-  return { normalizeTree };
-})();
 
 const SectionRegistry = (() => {
   function titleFor(section) {
@@ -397,7 +340,6 @@ const App = (() => {
   }
 
   function init() {
-    TextNormalizer.normalizeTree();
     SectionRegistry.collect();
     Sidebar.render();
     Palette.bind();

@@ -10,17 +10,17 @@
 </head>
 <body>
 
-<!-- â•â•â•â•â•â•â•â•â•â• TOP BAR â•â•â•â•â•â•â•â•â•â• -->
+<!-- TOP BAR -->
 <header id="topbar">
   <div id="topbar-logo-wrap">
     <img id="topbar-logo" src="web_assets/asrfacet-rb-web.png" alt="ASRFacet-Rb">
     <span id="topbar-name">ASRFacet-Rb</span>
   </div>
-  <span id="topbar-version">v1.0.0 Â· Ruby 3.2+ Â· Stable</span>
+  <span id="topbar-version">v1.0.0 · Ruby 3.2+ · Stable</span>
   <div id="topbar-links">
-    <a href="https://github.com/voltsparx/ASRFacet-Rb" target="_blank">â¬¡ GitHub</a>
-    <a href="https://github.com/voltsparx" target="_blank">â—ˆ Author</a>
-    <a href="mailto:voltsparx@proton.me">âœ‰ Contact</a>
+    <a href="https://github.com/voltsparx/ASRFacet-Rb" target="_blank">⬡ GitHub</a>
+    <a href="https://github.com/voltsparx" target="_blank">◈ Author</a>
+    <a href="mailto:voltsparx@proton.me">✉ Contact</a>
   </div>
   <div id="topbar-actions">
     <button id="quick-jump-trigger" class="topbar-action" type="button">Quick Jump</button>
@@ -28,7 +28,7 @@
   </div>
 </header>
 
-<!-- â•â•â•â•â•â•â•â•â•â• SIDEBAR â•â•â•â•â•â•â•â•â•â• -->
+<!-- SIDEBAR -->
 <nav id="sidebar" aria-label="Documentation navigation">
   <div class="sidebar-panel-head">
     <div class="sidebar-kicker">Docs Control</div>
@@ -56,16 +56,16 @@
   </div>
 </div>
 
-<!-- â•â•â•â•â•â•â•â•â•â• MAIN â•â•â•â•â•â•â•â•â•â• -->
+<!-- MAIN -->
 <main id="main">
 
-<!-- â”€â”€â”€â”€â”€ HOME â”€â”€â”€â”€â”€ -->
+<!-- HOME -->
 <section id="sec-home" class="page-section active">
   <div class="home-hero">
     <div>
       <div class="home-hero-eyebrow">// attack surface reconnaissance framework</div>
       <div class="home-hero-title">ASRFacet-Rb</div>
-      <div class="home-hero-sub">MODULAR Â· EVENT-DRIVEN Â· OPERATOR-FOCUSED</div>
+      <div class="home-hero-sub">MODULAR · EVENT-DRIVEN · OPERATOR-FOCUSED</div>
       <div class="home-hero-desc">
         A Ruby 3.2+ attack surface reconnaissance framework for authorized security testing.
         Combines passive discovery, recursive DNS and certificate enrichment, service mapping,
@@ -73,17 +73,17 @@
         and offline reporting in a single operator-focused workflow.
       </div>
       <div class="badge-row">
-        <span class="badge hi">â–¸ v1.0.0</span>
-        <span class="badge">Ruby â‰¥ 3.2</span>
-        <span class="badge">49 Tests Passing</span>
+        <span class="badge hi">▸ v1.0.0</span>
+        <span class="badge">Ruby >= 3.2</span>
+        <span class="badge">51 Tests Passing</span>
         <span class="badge">Rake Verify Passing</span>
         <span class="badge">Status: Stable</span>
         <span class="badge">Proprietary License</span>
       </div>
       <div class="hero-cta-row">
-        <a class="btn btn-primary" onclick="show('install')" href="#">â–¸ Get Started</a>
+        <a class="btn btn-primary" onclick="show('install')" href="#">▸ Get Started</a>
         <a class="btn btn-outline" onclick="show('commands')" href="#">$ CLI Reference</a>
-        <a class="btn btn-outline" href="https://github.com/voltsparx/ASRFacet-Rb" target="_blank">â¬¡ GitHub</a>
+        <a class="btn btn-outline" href="https://github.com/voltsparx/ASRFacet-Rb" target="_blank">⬡ GitHub</a>
       </div>
     </div>
     <img class="home-hero-logo" src="web_assets/asrfacet-rb-web.png" alt="ASRFacet-Rb Logo">
@@ -109,7 +109,7 @@
   </div>
 
   <div class="callout callout-warn">
-    <div class="callout-title">âš  Authorized Use Only</div>
+    <div class="callout-title">⚠ Authorized Use Only</div>
     Use ASRFacet-Rb only on systems you own or have explicit written permission to test.
     Built-in allow lists, exclusion lists, recon memory, and beginner-friendly explanations
     help operators stay inside authorized scope.
@@ -117,19 +117,19 @@
 
   <div class="sec-head">Core Capabilities</div>
   <div class="overview-grid">
-    <div class="ov-card"><div class="ov-icon">ðŸ”</div><div class="ov-name">Passive Discovery</div><div class="ov-desc">Aggregates subdomains from 8 passive intelligence sources â€” crt.sh, HackerTarget, Wayback, RapidDNS, AlienVault, Shodan, ThreatCrowd, BufferOver â€” before touching the target.</div></div>
-    <div class="ov-card"><div class="ov-icon">ðŸŒ</div><div class="ov-name">DNS & Cert Pivoting</div><div class="ov-desc">Recursive DNS lookups and certificate SAN pivots validate and continuously expand the discovered asset set through feedback loops.</div></div>
-    <div class="ov-card"><div class="ov-icon">ðŸ“¡</div><div class="ov-name">Service Mapping</div><div class="ov-desc">Threaded TCP port scanning with banner grabbing identifies exposed network services across all discovered IPs at configurable concurrency.</div></div>
-    <div class="ov-card"><div class="ov-icon">ðŸ•·ï¸</div><div class="ov-name">Web Recon</div><div class="ov-desc">HTTP fingerprinting, path probing, full crawl analysis, and JavaScript endpoint extraction map the complete web exposure surface.</div></div>
-    <div class="ov-card"><div class="ov-icon">ðŸ“Š</div><div class="ov-name">Scoring & Correlation</div><div class="ov-desc">Asset scoring, findings generation, and cross-host correlation highlight the highest-priority targets â€” cutting through noise in large asset sets.</div></div>
-    <div class="ov-card"><div class="ov-icon">ðŸ”„</div><div class="ov-name">Change Tracking</div><div class="ov-desc">Recon memory and intelligent diffing surface new, removed, or changed assets across repeated scans for monitoring workflows.</div></div>
-    <div class="ov-card"><div class="ov-icon">ðŸ§ª</div><div class="ov-name">Safe Lab Mode</div><div class="ov-desc">Built-in local validation lab lets you dry-run the entire pipeline against placeholder surfaces before touching any real authorized target.</div></div>
-    <div class="ov-card"><div class="ov-icon">ðŸ–¥ï¸</div><div class="ov-name">Web Control Panel</div><div class="ov-desc">Local browser UI for saved sessions, live stage-by-stage activity, and full report browsing. Persists session state across crashes and reboots.</div></div>
-    <div class="ov-card"><div class="ov-icon">ðŸ“–</div><div class="ov-name">Self-Documenting</div><div class="ov-desc">Built-in <code>explain</code>, <code>manual</code>, wizard, and console mode teach operators recon methodology while the framework runs.</div></div>
+    <div class="ov-card"><div class="ov-icon">🔍</div><div class="ov-name">Passive Discovery</div><div class="ov-desc">Aggregates subdomains from 8 passive intelligence sources — crt.sh, HackerTarget, Wayback, RapidDNS, AlienVault, Shodan, ThreatCrowd, BufferOver — before touching the target.</div></div>
+    <div class="ov-card"><div class="ov-icon">🌐</div><div class="ov-name">DNS & Cert Pivoting</div><div class="ov-desc">Recursive DNS lookups and certificate SAN pivots validate and continuously expand the discovered asset set through feedback loops.</div></div>
+    <div class="ov-card"><div class="ov-icon">📡</div><div class="ov-name">Service Mapping</div><div class="ov-desc">Threaded TCP port scanning with banner grabbing identifies exposed network services across all discovered IPs at configurable concurrency.</div></div>
+    <div class="ov-card"><div class="ov-icon">🕷️</div><div class="ov-name">Web Recon</div><div class="ov-desc">HTTP fingerprinting, path probing, full crawl analysis, and JavaScript endpoint extraction map the complete web exposure surface.</div></div>
+    <div class="ov-card"><div class="ov-icon">📊</div><div class="ov-name">Scoring & Correlation</div><div class="ov-desc">Asset scoring, findings generation, and cross-host correlation highlight the highest-priority targets — cutting through noise in large asset sets.</div></div>
+    <div class="ov-card"><div class="ov-icon">🔄</div><div class="ov-name">Change Tracking</div><div class="ov-desc">Recon memory and intelligent diffing surface new, removed, or changed assets across repeated scans for monitoring workflows.</div></div>
+    <div class="ov-card"><div class="ov-icon">🧪</div><div class="ov-name">Safe Lab Mode</div><div class="ov-desc">Built-in local validation lab lets you dry-run the entire pipeline against placeholder surfaces before touching any real authorized target.</div></div>
+    <div class="ov-card"><div class="ov-icon">🖥️</div><div class="ov-name">Web Control Panel</div><div class="ov-desc">Local browser UI for saved sessions, live stage-by-stage activity, and full report browsing. Persists session state across crashes and reboots.</div></div>
+    <div class="ov-card"><div class="ov-icon">📖</div><div class="ov-name">Self-Documenting</div><div class="ov-desc">Built-in <code>explain</code>, <code>manual</code>, wizard, and console mode teach operators recon methodology while the framework runs.</div></div>
   </div>
 </section>
 
-<!-- â”€â”€â”€â”€â”€ INSTALL â”€â”€â”€â”€â”€ -->
+<!-- INSTALL -->
 <section id="sec-install" class="page-section">
   <div class="page-hero">
     <div class="page-eyebrow">Getting Started</div>
@@ -142,7 +142,7 @@
     Ruby 3.2 or newer is required. Verify with <code>ruby --version</code> before proceeding.
   </div>
 
-  <div class="sec-head">Method 1 â€” Bundler (Development / Direct)</div>
+  <div class="sec-head">Method 1 — Bundler (Development / Direct)</div>
   <div class="code-wrap">
     <div class="code-header"><div class="code-dot"></div><div class="code-dot"></div><div class="code-dot"></div><span class="code-lang">shell</span></div>
     <div class="code-body">
@@ -163,7 +163,7 @@
     </div>
   </div>
 
-  <div class="sec-head">Method 2 â€” System Installers</div>
+  <div class="sec-head">Method 2 — System Installers</div>
   <div class="prose"><p>The installers stage ASRFacet-Rb into its own application folder, create launchers on your user <code>PATH</code>, keep dependencies inside the install directory, and support a repo-local <code>test</code> mode. After installation, both <code>asrfacet-rb</code> and <code>asrfrb</code> are available as system commands.</p></div>
 
   <div class="code-wrap">
@@ -193,7 +193,7 @@
   </div>
 </section>
 
-<!-- â”€â”€â”€â”€â”€ QUICK START â”€â”€â”€â”€â”€ -->
+<!-- QUICK START -->
 <section id="sec-quickstart" class="page-section">
   <div class="page-hero">
     <div class="page-eyebrow">Getting Started</div>
@@ -206,7 +206,7 @@
       <thead><tr><th>Goal</th><th>Command</th><th>What Happens</th></tr></thead>
       <tbody>
         <tr><td>Full recon</td><td><code>asrfacet-rb scan example.com</code></td><td>Runs the complete pipeline from passive collection through findings and scoring</td></tr>
-        <tr><td>Passive-only</td><td><code>asrfacet-rb passive example.com</code></td><td>Queries all passive sources â€” no active probing, lowest noise</td></tr>
+        <tr><td>Passive-only</td><td><code>asrfacet-rb passive example.com</code></td><td>Queries all passive sources — no active probing, lowest noise</td></tr>
         <tr><td>Port scan</td><td><code>asrfacet-rb ports api.example.com --ports top1000</code></td><td>Focused TCP service discovery without the full web workflow</td></tr>
         <tr><td>DNS inventory</td><td><code>asrfacet-rb dns example.com</code></td><td>Collects DNS records, resolution data, mail and naming inventory</td></tr>
         <tr><td>Lab mode</td><td><code>asrfacet-rb lab</code></td><td>Safe local dry-run against built-in placeholder surfaces</td></tr>
@@ -221,22 +221,22 @@
   <div class="code-wrap">
     <div class="code-header"><div class="code-dot"></div><div class="code-dot"></div><div class="code-dot"></div><span class="code-lang">shell</span></div>
     <div class="code-body">
-<span class="cm"># Step 1 â€” Validate the framework with lab mode (safe, no real targets)</span>
+<span class="cm"># Step 1 — Validate the framework with lab mode (safe, no real targets)</span>
 <span class="pn">$</span> asrfacet-rb <span class="kw">lab</span>
 
-<span class="cm"># Step 2 â€” Run a passive footprint on your authorized target</span>
+<span class="cm"># Step 2 — Run a passive footprint on your authorized target</span>
 <span class="pn">$</span> asrfacet-rb <span class="kw">passive</span> <span class="ar">yourtarget.com</span>
 
-<span class="cm"># Step 3 â€” Full scan with HTML report output</span>
+<span class="cm"># Step 3 — Full scan with HTML report output</span>
 <span class="pn">$</span> asrfacet-rb <span class="kw">scan</span> <span class="ar">yourtarget.com</span> <span class="fl">--format</span> html <span class="fl">--output</span> report.html
 
-<span class="cm"># Step 4 â€” Repeat with monitoring to track changes</span>
+<span class="cm"># Step 4 — Repeat with monitoring to track changes</span>
 <span class="pn">$</span> asrfacet-rb <span class="kw">scan</span> <span class="ar">yourtarget.com</span> <span class="fl">--monitor</span> <span class="fl">--memory</span>
     </div>
   </div>
 </section>
 
-<!-- â”€â”€â”€â”€â”€ HOW IT WORKS â”€â”€â”€â”€â”€ -->
+<!-- HOW IT WORKS -->
 <section id="sec-how" class="page-section">
   <div class="page-hero">
     <div class="page-eyebrow">Core Concepts</div>
@@ -274,7 +274,7 @@
   </div>
 </section>
 
-<!-- â”€â”€â”€â”€â”€ PIPELINE â”€â”€â”€â”€â”€ -->
+<!-- PIPELINE -->
 <section id="sec-pipeline" class="page-section">
   <div class="page-hero">
     <div class="page-eyebrow">Core Concepts</div>
@@ -283,18 +283,18 @@
   </div>
 
   <div class="pipeline">
-    <div class="pipe-step"><div class="pipe-left"><div class="pipe-circle">01</div><div class="pipe-connector"></div></div><div class="pipe-content"><div class="pipe-stage-name">Passive Runner</div><div class="pipe-stage-sub">Gathers known subdomains from all 8 external passive sources before any active probing begins. No traffic reaches the target during this stage.</div><div class="pipe-output">â†’ Output: subdomains, passive errors</div></div></div>
-    <div class="pipe-step"><div class="pipe-left"><div class="pipe-circle">02</div><div class="pipe-connector"></div></div><div class="pipe-content"><div class="pipe-stage-name">DNS + Certificate Discovery</div><div class="pipe-stage-sub">Validates assets and pivots through DNS records and certificate Subject Alternative Names (SANs) to expand the target set. Graph edges connect related assets.</div><div class="pipe-output">â†’ Output: DNS records, IPs, certificates, graph edges</div></div></div>
-    <div class="pipe-step"><div class="pipe-left"><div class="pipe-circle">03</div><div class="pipe-connector"></div></div><div class="pipe-content"><div class="pipe-stage-name">Permutation + DNS Buster</div><div class="pipe-stage-sub">Generates and actively validates candidate hostnames using bundled wordlists. Custom wordlists can be supplied with <code>--wordlist</code>.</div><div class="pipe-output">â†’ Output: candidate subdomains, discovered subdomains</div></div></div>
-    <div class="pipe-step"><div class="pipe-left"><div class="pipe-circle">04</div><div class="pipe-connector"></div></div><div class="pipe-content"><div class="pipe-stage-name">Discovery Feedback Loop</div><div class="pipe-stage-sub">Feeds newly found hosts back into DNS and certificate analysis, iteratively expanding the asset set. This is the core of ASRFacet-Rb's event-driven architecture.</div><div class="pipe-output">â†’ Output: expanded asset set</div></div></div>
-    <div class="pipe-step"><div class="pipe-left"><div class="pipe-circle">05</div><div class="pipe-connector"></div></div><div class="pipe-content"><div class="pipe-stage-name">Port Engine</div><div class="pipe-stage-sub">Identifies reachable services on all discovered IPs via threaded TCP scanning with banner grabbing. Thread count is configurable with <code>--threads</code>.</div><div class="pipe-output">â†’ Output: open ports, banners, service nodes</div></div></div>
-    <div class="pipe-step"><div class="pipe-left"><div class="pipe-circle">06</div><div class="pipe-connector"></div></div><div class="pipe-content"><div class="pipe-stage-name">HTTP + Crawl + JS + Correlation</div><div class="pipe-stage-sub">Maps web exposure, path checks, scripts, JavaScript API endpoints, and cross-host correlation patterns. Generates asset scores and top-target rankings.</div><div class="pipe-output">â†’ Output: HTTP responses, crawl data, JS endpoints, correlations, top assets</div></div></div>
-    <div class="pipe-step"><div class="pipe-left"><div class="pipe-circle">07</div><div class="pipe-connector"></div></div><div class="pipe-content"><div class="pipe-stage-name">WHOIS + ASN</div><div class="pipe-stage-sub">Adds ownership and infrastructure context to the knowledge graph. Connects domains and IPs to registrant data and autonomous system information.</div><div class="pipe-output">â†’ Output: WHOIS records, ASN data</div></div></div>
-    <div class="pipe-step"><div class="pipe-left"><div class="pipe-circle">08</div><div class="pipe-connector"></div></div><div class="pipe-content"><div class="pipe-stage-name">Vuln Hints + Monitoring</div><div class="pipe-stage-sub">Generates findings and probabilistic hints, diffs results against recon memory, and persists scan state for future monitoring runs. Change tracking activates with <code>--monitor</code>.</div><div class="pipe-output">â†’ Output: findings, change diff, probabilistic hints, memory updates</div></div></div>
+    <div class="pipe-step"><div class="pipe-left"><div class="pipe-circle">01</div><div class="pipe-connector"></div></div><div class="pipe-content"><div class="pipe-stage-name">Passive Runner</div><div class="pipe-stage-sub">Gathers known subdomains from all 8 external passive sources before any active probing begins. No traffic reaches the target during this stage.</div><div class="pipe-output">→ Output: subdomains, passive errors</div></div></div>
+    <div class="pipe-step"><div class="pipe-left"><div class="pipe-circle">02</div><div class="pipe-connector"></div></div><div class="pipe-content"><div class="pipe-stage-name">DNS + Certificate Discovery</div><div class="pipe-stage-sub">Validates assets and pivots through DNS records and certificate Subject Alternative Names (SANs) to expand the target set. Graph edges connect related assets.</div><div class="pipe-output">→ Output: DNS records, IPs, certificates, graph edges</div></div></div>
+    <div class="pipe-step"><div class="pipe-left"><div class="pipe-circle">03</div><div class="pipe-connector"></div></div><div class="pipe-content"><div class="pipe-stage-name">Permutation + DNS Buster</div><div class="pipe-stage-sub">Generates and actively validates candidate hostnames using bundled wordlists. Custom wordlists can be supplied with <code>--wordlist</code>.</div><div class="pipe-output">→ Output: candidate subdomains, discovered subdomains</div></div></div>
+    <div class="pipe-step"><div class="pipe-left"><div class="pipe-circle">04</div><div class="pipe-connector"></div></div><div class="pipe-content"><div class="pipe-stage-name">Discovery Feedback Loop</div><div class="pipe-stage-sub">Feeds newly found hosts back into DNS and certificate analysis, iteratively expanding the asset set. This is the core of ASRFacet-Rb's event-driven architecture.</div><div class="pipe-output">→ Output: expanded asset set</div></div></div>
+    <div class="pipe-step"><div class="pipe-left"><div class="pipe-circle">05</div><div class="pipe-connector"></div></div><div class="pipe-content"><div class="pipe-stage-name">Port Engine</div><div class="pipe-stage-sub">Identifies reachable services on all discovered IPs via threaded TCP scanning with banner grabbing. Thread count is configurable with <code>--threads</code>.</div><div class="pipe-output">→ Output: open ports, banners, service nodes</div></div></div>
+    <div class="pipe-step"><div class="pipe-left"><div class="pipe-circle">06</div><div class="pipe-connector"></div></div><div class="pipe-content"><div class="pipe-stage-name">HTTP + Crawl + JS + Correlation</div><div class="pipe-stage-sub">Maps web exposure, path checks, scripts, JavaScript API endpoints, and cross-host correlation patterns. Generates asset scores and top-target rankings.</div><div class="pipe-output">→ Output: HTTP responses, crawl data, JS endpoints, correlations, top assets</div></div></div>
+    <div class="pipe-step"><div class="pipe-left"><div class="pipe-circle">07</div><div class="pipe-connector"></div></div><div class="pipe-content"><div class="pipe-stage-name">WHOIS + ASN</div><div class="pipe-stage-sub">Adds ownership and infrastructure context to the knowledge graph. Connects domains and IPs to registrant data and autonomous system information.</div><div class="pipe-output">→ Output: WHOIS records, ASN data</div></div></div>
+    <div class="pipe-step"><div class="pipe-left"><div class="pipe-circle">08</div><div class="pipe-connector"></div></div><div class="pipe-content"><div class="pipe-stage-name">Vuln Hints + Monitoring</div><div class="pipe-stage-sub">Generates findings and probabilistic hints, diffs results against recon memory, and persists scan state for future monitoring runs. Change tracking activates with <code>--monitor</code>.</div><div class="pipe-output">→ Output: findings, change diff, probabilistic hints, memory updates</div></div></div>
   </div>
 </section>
 
-<!-- â”€â”€â”€â”€â”€ PASSIVE SOURCES â”€â”€â”€â”€â”€ -->
+<!-- PASSIVE SOURCES -->
 <section id="sec-passive" class="page-section">
   <div class="page-hero">
     <div class="page-eyebrow">Core Concepts</div>
@@ -332,7 +332,7 @@
   </div>
 </section>
 
-<!-- â”€â”€â”€â”€â”€ COMMANDS â”€â”€â”€â”€â”€ -->
+<!-- COMMANDS -->
 <section id="sec-commands" class="page-section">
   <div class="page-hero">
     <div class="page-eyebrow">CLI Reference</div>
@@ -357,7 +357,7 @@ asrfacet-rb <span class="kw">s</span> example.com <span class="fl">--ports</span
     <div class="cmd-card">
       <div class="cmd-name">passive</div>
       <div class="cmd-aliases">aliases: p, pa</div>
-      <div class="cmd-desc">Run passive source aggregation only. Lower-noise first pass â€” useful for scoping and initial footprinting without any active probing.</div>
+      <div class="cmd-desc">Run passive source aggregation only. Lower-noise first pass — useful for scoping and initial footprinting without any active probing.</div>
       <div class="cmd-syntax">
 asrfacet-rb <span class="kw">passive</span> <span class="ar">DOMAIN</span> [<span class="op">options</span>]<br>
 asrfacet-rb <span class="kw">passive</span> example.com<br>
@@ -381,7 +381,7 @@ asrfacet-rb <span class="kw">po</span> host.com <span class="fl">--ports</span> 
     <div class="cmd-card">
       <div class="cmd-name">dns</div>
       <div class="cmd-aliases">aliases: d, dn</div>
-      <div class="cmd-desc">Collect DNS data for a domain â€” records, resolution data, mail naming, and inventory. No port scanning or web probing.</div>
+      <div class="cmd-desc">Collect DNS data for a domain — records, resolution data, mail naming, and inventory. No port scanning or web probing.</div>
       <div class="cmd-syntax">
 asrfacet-rb <span class="kw">dns</span> <span class="ar">DOMAIN</span> [<span class="op">options</span>]<br>
 asrfacet-rb <span class="kw">dns</span> example.com<br>
@@ -393,7 +393,7 @@ asrfacet-rb <span class="kw">dn</span> example.com <span class="fl">--verbose</s
     <div class="cmd-card">
       <div class="cmd-name">lab</div>
       <div class="cmd-aliases">aliases: (none)</div>
-      <div class="cmd-desc">Launch a safe local validation lab with placeholder discovery surfaces. Validate the framework before real authorized targets â€” includes JS-heavy pages, API routes, CORS examples, and admin login forms.</div>
+      <div class="cmd-desc">Launch a safe local validation lab with placeholder discovery surfaces. Validate the framework before real authorized targets — includes JS-heavy pages, API routes, CORS examples, and admin login forms.</div>
       <div class="cmd-syntax">
 asrfacet-rb <span class="kw">lab</span><br>
 asrfacet-rb <span class="kw">lab</span> <span class="fl">--port</span> <span class="ar">9393</span>
@@ -403,7 +403,7 @@ asrfacet-rb <span class="kw">lab</span> <span class="fl">--port</span> <span cla
     <div class="cmd-card">
       <div class="cmd-name">interactive</div>
       <div class="cmd-aliases">aliases: i, int</div>
-      <div class="cmd-desc">Launch the guided workflow mode. Beginner-friendly one-shot guided execution â€” walks through options step by step and executes the selected scan.</div>
+      <div class="cmd-desc">Launch the guided workflow mode. Beginner-friendly one-shot guided execution — walks through options step by step and executes the selected scan.</div>
       <div class="cmd-syntax">
 asrfacet-rb <span class="kw">interactive</span><br>
 asrfacet-rb <span class="kw">i</span><br>
@@ -436,7 +436,7 @@ asrfacet-rb <span class="kw">--web-session</span> <span class="fl">--web-host</s
     <div class="cmd-card">
       <div class="cmd-name">explain</div>
       <div class="cmd-aliases">aliases: x, exp</div>
-      <div class="cmd-desc">Explain a workflow, flag, or concept inline. Self-documenting operator guidance â€” teaches recon methodology without leaving the terminal.</div>
+      <div class="cmd-desc">Explain a workflow, flag, or concept inline. Self-documenting operator guidance — teaches recon methodology without leaving the terminal.</div>
       <div class="cmd-syntax">
 asrfacet-rb <span class="kw">explain</span> <span class="ar">TOPIC</span><br>
 asrfacet-rb <span class="kw">explain</span> scope<br>
@@ -481,7 +481,7 @@ asrfacet-rb <span class="kw">ver</span>
   </div>
 </section>
 
-<!-- â”€â”€â”€â”€â”€ FLAGS â”€â”€â”€â”€â”€ -->
+<!-- FLAGS -->
 <section id="sec-flags" class="page-section">
   <div class="page-hero">
     <div class="page-eyebrow">CLI Reference</div>
@@ -546,7 +546,7 @@ asrfacet-rb <span class="kw">ver</span>
   </table></div>
 </section>
 
-<!-- â”€â”€â”€â”€â”€ SYNTAX â”€â”€â”€â”€â”€ -->
+<!-- SYNTAX -->
 <section id="sec-syntax" class="page-section">
   <div class="page-hero">
     <div class="page-eyebrow">CLI Reference</div>
@@ -560,10 +560,10 @@ asrfacet-rb <span class="kw">ver</span>
     <div class="code-body">
 asrfacet-rb <span class="kw">COMMAND</span> <span class="ar">[TARGET]</span> [<span class="fl">FLAGS</span>] [<span class="ar">VALUES</span>]
 
-<span class="cm"># COMMAND   â€” the action to perform (scan, passive, ports, dns, lab...)</span>
-<span class="cm"># TARGET    â€” domain name or IP address (required for scan/passive/ports/dns)</span>
-<span class="cm"># FLAGS     â€” modifiers starting with -- or - (see Global Flags)</span>
-<span class="cm"># VALUES    â€” value for the preceding flag</span>
+<span class="cm"># COMMAND   — the action to perform (scan, passive, ports, dns, lab...)</span>
+<span class="cm"># TARGET    — domain name or IP address (required for scan/passive/ports/dns)</span>
+<span class="cm"># FLAGS     — modifiers starting with -- or - (see Global Flags)</span>
+<span class="cm"># VALUES    — value for the preceding flag</span>
     </div>
   </div>
 
@@ -642,12 +642,12 @@ asrfacet-rb <span class="kw">s</span> example.com <span class="fl">-p</span> <sp
   </div>
 </section>
 
-<!-- â”€â”€â”€â”€â”€ CONSOLE â”€â”€â”€â”€â”€ -->
+<!-- CONSOLE -->
 <section id="sec-console" class="page-section">
   <div class="page-hero">
     <div class="page-eyebrow">Interfaces</div>
     <div class="page-title">Console Mode</div>
-    <div class="page-desc">The richest interface in the framework â€” designed to feel like an operator shell and teach how the framework works while you use it.</div>
+    <div class="page-desc">The richest interface in the framework — designed to feel like an operator shell and teach how the framework works while you use it.</div>
   </div>
 
   <div class="code-wrap">
@@ -676,7 +676,7 @@ asrfacet-rb <span class="kw">c</span>
   </table></div>
 </section>
 
-<!-- â”€â”€â”€â”€â”€ WEB SESSION â”€â”€â”€â”€â”€ -->
+<!-- WEB SESSION -->
 <section id="sec-web" class="page-section">
   <div class="page-hero">
     <div class="page-eyebrow">Interfaces</div>
@@ -687,7 +687,7 @@ asrfacet-rb <span class="kw">c</span>
   <div class="code-wrap">
     <div class="code-header"><div class="code-dot"></div><div class="code-dot"></div><div class="code-dot"></div><span class="code-lang">launch web session</span></div>
     <div class="code-body">
-<span class="cm"># Default â€” binds to 127.0.0.1:4567</span>
+<span class="cm"># Default — binds to 127.0.0.1:4567</span>
 asrfacet-rb <span class="kw">--web-session</span>
 
 <span class="cm"># Custom host and port</span>
@@ -705,7 +705,7 @@ asrfacet-rb <span class="kw">w</span>
   </div>
 </section>
 
-<!-- â”€â”€â”€â”€â”€ WIZARD â”€â”€â”€â”€â”€ -->
+<!-- WIZARD -->
 <section id="sec-wizard" class="page-section">
   <div class="page-hero">
     <div class="page-eyebrow">Interfaces</div>
@@ -751,7 +751,7 @@ asrfacet-rb <span class="kw">--console</span>
   </div>
 </section>
 
-<!-- â”€â”€â”€â”€â”€ LAB â”€â”€â”€â”€â”€ -->
+<!-- LAB -->
 <section id="sec-lab" class="page-section">
   <div class="page-hero">
     <div class="page-eyebrow">Interfaces</div>
@@ -783,7 +783,7 @@ asrfacet-rb <span class="kw">lab</span> <span class="fl">--port</span> <span cla
   </div>
 </section>
 
-<!-- â”€â”€â”€â”€â”€ MODULES â”€â”€â”€â”€â”€ -->
+<!-- MODULES -->
 <section id="sec-modules" class="page-section">
   <div class="page-hero">
     <div class="page-eyebrow">Reference</div>
@@ -808,7 +808,7 @@ asrfacet-rb <span class="kw">lab</span> <span class="fl">--port</span> <span cla
   </div>
 </section>
 
-<!-- â”€â”€â”€â”€â”€ OUTPUTS â”€â”€â”€â”€â”€ -->
+<!-- OUTPUTS -->
 <section id="sec-outputs" class="page-section">
   <div class="page-hero">
     <div class="page-eyebrow">Reference</div>
@@ -820,7 +820,7 @@ asrfacet-rb <span class="kw">lab</span> <span class="fl">--port</span> <span cla
     <div class="fmt-card">
       <div class="fmt-name">CLI</div>
       <div class="fmt-best">Live terminal triage</div>
-      <div class="fmt-includes">Subdomains, open ports, technologies, findings, top targets â€” formatted for the terminal.</div>
+      <div class="fmt-includes">Subdomains, open ports, technologies, findings, top targets — formatted for the terminal.</div>
     </div>
     <div class="fmt-card">
       <div class="fmt-name">JSON</div>
@@ -830,7 +830,7 @@ asrfacet-rb <span class="kw">lab</span> <span class="fl">--port</span> <span cla
     <div class="fmt-card">
       <div class="fmt-name">HTML</div>
       <div class="fmt-best">Offline report sharing</div>
-      <div class="fmt-includes">Top targets, findings, change summary, graph table, JS endpoints â€” shareable single file.</div>
+      <div class="fmt-includes">Top targets, findings, change summary, graph table, JS endpoints — shareable single file.</div>
     </div>
     <div class="fmt-card">
       <div class="fmt-name">TXT</div>
@@ -853,7 +853,7 @@ asrfacet-rb <span class="kw">scan</span> example.com <span class="fl">--format</
   <div class="prose"><p>By default, stored reports and JSONL event streams live under <code>~/.asrfacet_rb/output/</code>, so installed runs have a predictable location for reviewing historical output. The web panel can browse all stored reports directly from the browser.</p></div>
 </section>
 
-<!-- â”€â”€â”€â”€â”€ CONFIG â”€â”€â”€â”€â”€ -->
+<!-- CONFIG -->
 <section id="sec-config" class="page-section">
   <div class="page-hero">
     <div class="page-eyebrow">Reference</div>
@@ -886,12 +886,12 @@ asrfacet-rb <span class="kw">scan</span> example.com <span class="fl">--format</
   </table></div>
 </section>
 
-<!-- â”€â”€â”€â”€â”€ STORAGE â”€â”€â”€â”€â”€ -->
+<!-- STORAGE -->
 <section id="sec-storage" class="page-section">
   <div class="page-hero">
     <div class="page-eyebrow">Reference</div>
     <div class="page-title">Files & Storage</div>
-    <div class="page-desc">All user-specific data is stored under <code>~/.asrfacet_rb/</code> â€” separate from the project directory.</div>
+    <div class="page-desc">All user-specific data is stored under <code>~/.asrfacet_rb/</code> — separate from the project directory.</div>
   </div>
 
   <div class="tbl-wrap"><table>
@@ -899,7 +899,7 @@ asrfacet-rb <span class="kw">scan</span> example.com <span class="fl">--format</
     <tbody>
       <tr><td>bin/asrfacet-rb</td><td>Primary executable entry point</td></tr>
       <tr><td>config/default.yml</td><td>Project-level default configuration values</td></tr>
-      <tr><td>~/.asrfacet_rb/config.yml</td><td>User overrides â€” merged over project defaults</td></tr>
+      <tr><td>~/.asrfacet_rb/config.yml</td><td>User overrides — merged over project defaults</td></tr>
       <tr><td>~/.asrfacet_rb/memory/</td><td>Per-target recon memory and monitoring state (used by <code>--monitor</code> and <code>--memory</code>)</td></tr>
       <tr><td>~/.asrfacet_rb/web_sessions/</td><td>Saved web-session drafts and run state, persisted across crashes</td></tr>
       <tr><td>~/.asrfacet_rb/output/</td><td>Stored scan reports (HTML, JSON, TXT, CLI)</td></tr>
@@ -911,7 +911,7 @@ asrfacet-rb <span class="kw">scan</span> example.com <span class="fl">--format</
   </table></div>
 </section>
 
-<!-- â”€â”€â”€â”€â”€ EXAMPLES â”€â”€â”€â”€â”€ -->
+<!-- EXAMPLES -->
 <section id="sec-examples" class="page-section">
   <div class="page-hero">
     <div class="page-eyebrow">Examples</div>
@@ -925,7 +925,7 @@ asrfacet-rb <span class="kw">scan</span> example.com <span class="fl">--format</
       <span class="example-tag">Beginner</span>
     </div>
     <div class="example-body">
-      <div class="example-desc">The simplest complete recon run â€” all 8 stages, CLI output to terminal. Good starting point for any authorized target.</div>
+      <div class="example-desc">The simplest complete recon run — all 8 stages, CLI output to terminal. Good starting point for any authorized target.</div>
       <div class="example-code">
 <span class="cm"># Run full pipeline, print results to terminal</span>
 <span class="kw">asrfacet-rb scan</span> <span class="ar">example.com</span>
@@ -955,7 +955,7 @@ asrfacet-rb <span class="kw">scan</span> example.com <span class="fl">--format</
       <span class="example-tag">OSINT</span>
     </div>
     <div class="example-body">
-      <div class="example-desc">Zero active probing â€” pure passive intelligence gathering with Shodan enrichment. Useful for initial scoping before any engagement.</div>
+      <div class="example-desc">Zero active probing — pure passive intelligence gathering with Shodan enrichment. Useful for initial scoping before any engagement.</div>
       <div class="example-code">
 <span class="kw">asrfacet-rb passive</span> <span class="ar">example.com</span> \
   <span class="fl">--shodan-key</span> <span class="ar">YOUR_SHODAN_API_KEY</span> \
@@ -992,7 +992,7 @@ asrfacet-rb <span class="kw">scan</span> example.com <span class="fl">--format</
       <span class="example-tag">Network</span>
     </div>
     <div class="example-body">
-      <div class="example-desc">Run service mapping on a specific host or IP without the full pipeline â€” fast exposure check.</div>
+      <div class="example-desc">Run service mapping on a specific host or IP without the full pipeline — fast exposure check.</div>
       <div class="example-code">
 <span class="cm"># Specific ports on a host</span>
 <span class="kw">asrfacet-rb ports</span> <span class="ar">api.example.com</span> <span class="fl">--ports</span> <span class="ar">22,80,443,8080,8443</span>
@@ -1025,15 +1025,15 @@ asrfacet-rb <span class="kw">scan</span> example.com <span class="fl">--format</
       <span class="example-tag">First-Time</span>
     </div>
     <div class="example-body">
-      <div class="example-desc">Recommended workflow for new operators â€” validate the framework with lab mode first, then run passive-only on the real target, then escalate to full scan.</div>
+      <div class="example-desc">Recommended workflow for new operators — validate the framework with lab mode first, then run passive-only on the real target, then escalate to full scan.</div>
       <div class="example-code">
-<span class="cm"># Step 1 â€” validate framework locally (safe)</span>
+<span class="cm"># Step 1 — validate framework locally (safe)</span>
 <span class="kw">asrfacet-rb lab</span>
 
-<span class="cm"># Step 2 â€” passive footprint of authorized target</span>
+<span class="cm"># Step 2 — passive footprint of authorized target</span>
 <span class="kw">asrfacet-rb passive</span> <span class="ar">yourtarget.com</span>
 
-<span class="cm"># Step 3 â€” full scan with HTML output</span>
+<span class="cm"># Step 3 — full scan with HTML output</span>
 <span class="kw">asrfacet-rb scan</span> <span class="ar">yourtarget.com</span> <span class="fl">--format</span> <span class="ar">html</span> <span class="fl">--output</span> <span class="ar">report.html</span>
       </div>
     </div>
@@ -1065,12 +1065,12 @@ asrfacet-rb <span class="kw">scan</span> example.com <span class="fl">--format</
   </div>
 </section>
 
-<!-- â”€â”€â”€â”€â”€ TESTING â”€â”€â”€â”€â”€ -->
+<!-- TESTING -->
 <section id="sec-testing" class="page-section">
   <div class="page-hero">
     <div class="page-eyebrow">Examples</div>
     <div class="page-title">Testing</div>
-    <div class="page-desc">The Rake-based verification flow is the recommended path for confirming framework integrity. 49 examples, 0 failures on the latest verified run (April 7, 2026).</div>
+    <div class="page-desc">The Rake-based verification flow is the recommended path for confirming framework integrity. 51 examples, 0 failures on the latest verified run (April 8, 2026).</div>
   </div>
 
   <div class="code-wrap">
@@ -1098,11 +1098,11 @@ asrfacet-rb <span class="kw">scan</span> example.com <span class="fl">--format</
 
   <div class="callout callout-info">
     <div class="callout-title">Latest Verified Run</div>
-    April 7, 2026 â€” <code>bundle exec rake</code> completed successfully including 49 examples, 0 failures, CLI smoke checks, web-session smoke checks, local lab smoke checks, installer smoke checks, and a clean gem build.
+    April 8, 2026 — <code>bundle exec rake</code> completed successfully including 51 examples, 0 failures, CLI smoke checks, web-session smoke checks, local lab smoke checks, installer smoke checks, and a clean gem build.
   </div>
 </section>
 
-<!-- â”€â”€â”€â”€â”€ AUTHOR â”€â”€â”€â”€â”€ -->
+<!-- AUTHOR -->
 <section id="sec-author" class="page-section">
   <div class="page-hero">
     <div class="page-eyebrow">Project</div>
@@ -1118,8 +1118,8 @@ asrfacet-rb <span class="kw">scan</span> example.com <span class="fl">--format</
       <tr><td>Email</td><td><a href="mailto:voltsparx@proton.me">voltsparx@proton.me</a></td></tr>
       <tr><td>GitHub Profile</td><td><a href="https://github.com/voltsparx" target="_blank">github.com/voltsparx</a></td></tr>
       <tr><td>Repository</td><td><a href="https://github.com/voltsparx/ASRFacet-Rb" target="_blank">github.com/voltsparx/ASRFacet-Rb</a></td></tr>
-      <tr><td>License</td><td>Proprietary Custom License â€” see <code>LICENSE</code> in the repository</td></tr>
-      <tr><td>Language</td><td>Ruby 93.9% Â· Shell 3.7% Â· PowerShell 2.4%</td></tr>
+      <tr><td>License</td><td>Proprietary Custom License — see <code>LICENSE</code> in the repository</td></tr>
+      <tr><td>Language</td><td>Ruby 93.9% · Shell 3.7% · PowerShell 2.4%</td></tr>
       <tr><td>Framework Version</td><td>1.0.0</td></tr>
     </tbody>
   </table></div>
@@ -1132,11 +1132,11 @@ asrfacet-rb <span class="kw">scan</span> example.com <span class="fl">--format</
 
 </main>
 
-<!-- â•â•â•â•â•â•â•â•â•â• FOOTER â•â•â•â•â•â•â•â•â•â• -->
+<!-- FOOTER -->
 <footer id="site-footer">
   <div>
     <div class="footer-col-title">ASRFacet-Rb</div>
-    <span class="footer-copy">v1.0.0 Â· Ruby 3.2+ Â· Stable</span>
+    <span class="footer-copy">v1.0.0 · Ruby 3.2+ · Stable</span>
     <span class="footer-copy" style="margin-top:4px">Attack Surface Recon Framework</span>
   </div>
   <div>
