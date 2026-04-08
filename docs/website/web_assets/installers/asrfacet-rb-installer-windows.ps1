@@ -65,6 +65,32 @@ function Confirm-Requirements {
   }
 }
 
+function Get-RequiredPaths {
+  param([string]$SelectedMode)
+
+  $paths = @("install/windows.ps1")
+  if ($SelectedMode -in @("install", "update", "test")) {
+    $paths += @(
+      "bin",
+      "config",
+      "lib",
+      "man",
+      "wordlists",
+      "Gemfile",
+      "Gemfile.lock",
+      "asrfacet-rb.gemspec",
+      "README.md",
+      "LICENSE"
+    )
+
+    if ($SelectedMode -eq "test") {
+      $paths += "spec"
+    }
+  }
+
+  return $paths
+}
+
 function Invoke-Step {
   param(
     [string]$CommandName,
@@ -111,10 +137,37 @@ try {
   }
 
   $repoDir = Join-Path $WorkDir "source"
-  Invoke-Step -CommandName "Cloning ASRFacet-Rb from GitHub" -Command {
-    & git clone --depth 1 --branch $Branch $RepoUrl $repoDir
+  Invoke-Step -CommandName "Cloning required ASRFacet-Rb files from GitHub" -Command {
+    & git clone --depth 1 --filter=blob:none --sparse --branch $Branch $RepoUrl $repoDir
     if ($LASTEXITCODE -ne 0) {
       throw "git clone failed."
+    }
+
+    Push-Location $repoDir
+    try {
+      $paths = Get-RequiredPaths -SelectedMode $selectedMode
+      & git sparse-checkout init --no-cone
+      if ($LASTEXITCODE -ne 0) {
+        throw "git sparse-checkout init failed."
+      }
+
+      & git sparse-checkout set --no-cone @paths
+      if ($LASTEXITCODE -ne 0) {
+        throw "git sparse-checkout set failed."
+      }
+    } catch {
+      Pop-Location
+      Write-Warn "Sparse checkout is unavailable in this git environment. Falling back to full shallow clone."
+      Remove-Item -LiteralPath $repoDir -Recurse -Force -ErrorAction SilentlyContinue
+      & git clone --depth 1 --branch $Branch $RepoUrl $repoDir
+      if ($LASTEXITCODE -ne 0) {
+        throw "git clone fallback failed."
+      }
+      return
+    } finally {
+      if ((Get-Location).Path -eq $repoDir) {
+        Pop-Location
+      }
     }
   }
 

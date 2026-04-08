@@ -11,6 +11,10 @@ delegate to the maintained lifecycle scripts under `install/`:
 - `install/macos.sh`
 - `install/windows.ps1`
 
+To reduce bloat, website installers use sparse checkout and download only
+required runtime paths for the selected mode. `README.md` and `LICENSE` are
+included with the installed framework bundle.
+
 ## Files
 
 - `asrfacet-rb-installer-linux.sh`

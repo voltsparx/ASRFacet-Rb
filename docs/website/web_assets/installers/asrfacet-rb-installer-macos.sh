@@ -46,6 +46,29 @@ Options:
 EOF
 }
 
+required_paths_for_mode() {
+  local paths=("install/macos.sh")
+  case "$MODE" in
+    install|update|test)
+      paths+=(
+        "bin"
+        "config"
+        "lib"
+        "man"
+        "wordlists"
+        "Gemfile"
+        "Gemfile.lock"
+        "asrfacet-rb.gemspec"
+        "README.md"
+        "LICENSE"
+      )
+      [ "$MODE" = "test" ] && paths+=("spec")
+      ;;
+  esac
+
+  printf '%s\n' "${paths[@]}"
+}
+
 select_mode() {
   if [ "$NO_PROMPT" = "yes" ]; then
     MODE="install"
@@ -111,8 +134,22 @@ prepare_workspace() {
 
 download_repo() {
   local repo_dir="$WORK_DIR/source"
-  info "Downloading ASRFacet-Rb from GitHub."
-  run_cmd git clone --depth 1 --branch "$BRANCH" "$REPO_URL" "$repo_dir"
+  info "Downloading only required ASRFacet-Rb files from GitHub."
+
+  if git clone --depth 1 --filter=blob:none --sparse --branch "$BRANCH" "$REPO_URL" "$repo_dir"; then
+    local sparse_paths=()
+    mapfile -t sparse_paths < <(required_paths_for_mode)
+    (
+      cd "$repo_dir" || exit 1
+      git sparse-checkout init --no-cone &&
+        git sparse-checkout set --no-cone "${sparse_paths[@]}"
+    ) || fail "Unable to apply sparse checkout for required files."
+  else
+    warn "Sparse checkout is unavailable in this git environment. Falling back to full shallow clone."
+    run_cmd rm -rf "$repo_dir"
+    run_cmd git clone --depth 1 --branch "$BRANCH" "$REPO_URL" "$repo_dir"
+  fi
+
   printf '%s\n' "$repo_dir"
 }
 
