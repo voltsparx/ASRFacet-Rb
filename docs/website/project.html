@@ -30,7 +30,13 @@
   <div id="topbar-links">
     <a href="index.html">Home</a>
     <a href="https://github.com/voltsparx/ASRFacet-Rb" target="_blank">GitHub</a>
-    <a href="mailto:voltsparx@gmail.com">Contact</a>
+    <div class="topbar-contact">
+      <button class="topbar-contact-toggle" type="button" aria-expanded="false">Contact</button>
+      <div class="topbar-contact-popover" hidden>
+        <span>voltsparx@gmail.com</span>
+        <span>voltsparx@proton.me</span>
+      </div>
+    </div>
   </div>
   <div id="topbar-actions">
     <button id="menu-toggle" class="topbar-action topbar-action-menu" type="button">Menu</button>
@@ -64,8 +70,9 @@
         <tbody>
           <tr><td>Author</td><td>voltsparx</td></tr>
           <tr><td>Handle</td><td>voltsparx</td></tr>
+          <tr><td>GitHub Profile</td><td><a href="https://github.com/voltsparx" target="_blank">github.com/voltsparx</a></td></tr>
           <tr><td>Email</td><td><a href="mailto:voltsparx@gmail.com">voltsparx@gmail.com</a></td></tr>
-          <tr><td>Repository</td><td><a href="https://github.com/voltsparx/ASRFacet-Rb" target="_blank">github.com/voltsparx/ASRFacet-Rb</a></td></tr>
+          <tr><td>Main Repository</td><td><a href="https://github.com/voltsparx/ASRFacet-Rb" target="_blank">github.com/voltsparx/ASRFacet-Rb</a></td></tr>
           <tr><td>Version</td><td>1.0.0</td></tr>
           <tr><td>License</td><td><a href="https://raw.githubusercontent.com/voltsparx/ASRFacet-Rb/main/LICENSE" target="_blank">Proprietary custom license (raw)</a></td></tr>
         </tbody>
@@ -96,5 +103,6 @@
 <script src="app.js"></script>
 </body>
 </html>
+
 
 

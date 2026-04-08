@@ -30,7 +30,13 @@
   <div id="topbar-links">
     <a href="index.html">Home</a>
     <a href="getting-started.html#quickstart">Start</a>
-    <a href="mailto:voltsparx@gmail.com">Contact</a>
+    <div class="topbar-contact">
+      <button class="topbar-contact-toggle" type="button" aria-expanded="false">Contact</button>
+      <div class="topbar-contact-popover" hidden>
+        <span>voltsparx@gmail.com</span>
+        <span>voltsparx@proton.me</span>
+      </div>
+    </div>
   </div>
   <div id="topbar-actions">
     <button id="menu-toggle" class="topbar-action topbar-action-menu" type="button">Menu</button>
@@ -135,5 +141,6 @@
 <script src="app.js"></script>
 </body>
 </html>
+
 
 

@@ -111,9 +111,12 @@ code {
 }
 
 #topbar-links {
-  display: flex; gap: 12px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
 }
-#topbar-links a {
+#topbar-links a,
+.topbar-contact-toggle {
   font-family: var(--mono);
   font-size: 0.68rem;
   color: var(--txt3);
@@ -121,12 +124,45 @@ code {
   padding: 4px 10px;
   transition: all 0.15s;
   letter-spacing: 0.04em;
+  background: transparent;
+  line-height: 1.35;
+  cursor: pointer;
 }
-#topbar-links a:hover {
+#topbar-links a:hover,
+.topbar-contact-toggle:hover,
+.topbar-contact-toggle[aria-expanded="true"] {
   color: var(--r0);
   border-color: var(--r1);
   background: var(--glowf);
   text-decoration: none;
+}
+.topbar-contact {
+  position: relative;
+  display: inline-flex;
+}
+.topbar-contact-popover {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  min-width: 240px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: rgba(10, 1, 1, 0.97);
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.35);
+  padding: 9px 10px;
+  display: grid;
+  gap: 6px;
+  z-index: 1200;
+}
+.topbar-contact-popover span {
+  display: block;
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  color: var(--txt2);
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  padding: 6px 8px;
+  white-space: nowrap;
 }
 
 #topbar-actions {
@@ -1122,6 +1158,9 @@ tbody td code { white-space: nowrap; }
     height: 52px;
     padding: 0 10px;
     gap: 8px;
+  }
+  #topbar-logo-wrap {
+    flex-direction: row-reverse;
   }
   #topbar-logo { width: 28px; height: 28px; }
   #topbar-name { font-size: 0.78rem; letter-spacing: 0.04em; }

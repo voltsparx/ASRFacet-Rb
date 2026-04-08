@@ -253,6 +253,73 @@ const Search = (() => {
   return { bind, renderResults };
 })();
 
+const ContactPanel = (() => {
+  let openContainer = null;
+
+  function close(container) {
+    if (!container) {
+      return;
+    }
+
+    const toggle = container.querySelector(".topbar-contact-toggle");
+    const popover = container.querySelector(".topbar-contact-popover");
+    if (toggle) {
+      toggle.setAttribute("aria-expanded", "false");
+    }
+    if (popover) {
+      popover.hidden = true;
+    }
+    if (openContainer === container) {
+      openContainer = null;
+    }
+  }
+
+  function closeOpen() {
+    if (openContainer) {
+      close(openContainer);
+    }
+  }
+
+  function bind() {
+    const containers = document.querySelectorAll(".topbar-contact");
+    if (containers.length === 0) {
+      return;
+    }
+
+    containers.forEach((container) => {
+      const toggle = container.querySelector(".topbar-contact-toggle");
+      const popover = container.querySelector(".topbar-contact-popover");
+      if (!toggle || !popover) {
+        return;
+      }
+
+      popover.hidden = true;
+      toggle.setAttribute("aria-expanded", "false");
+
+      toggle.addEventListener("click", (event) => {
+        event.preventDefault();
+        const shouldOpen = popover.hidden;
+        closeOpen();
+        popover.hidden = !shouldOpen;
+        toggle.setAttribute("aria-expanded", shouldOpen ? "true" : "false");
+        openContainer = shouldOpen ? container : null;
+      });
+    });
+
+    document.addEventListener("click", (event) => {
+      if (!openContainer) {
+        return;
+      }
+      if (openContainer.contains(event.target)) {
+        return;
+      }
+      closeOpen();
+    });
+  }
+
+  return { bind, closeOpen };
+})();
+
 const App = (() => {
   function bindHomeEasterEgg() {
     const logo = DocsElements.homeHeroLogo;
@@ -301,6 +368,7 @@ const App = (() => {
   }
 
   function bindGlobalEvents() {
+    ContactPanel.bind();
     DocsElements.menuToggle?.addEventListener("click", Sidebar.toggle);
     DocsElements.sidebarBackdrop?.addEventListener("click", () => Sidebar.setOpen(false));
 
@@ -333,6 +401,10 @@ const App = (() => {
       }
 
       if (event.key === "Escape") {
+        if (document.querySelector(".topbar-contact-popover:not([hidden])")) {
+          ContactPanel.closeOpen();
+          return;
+        }
         if (DocsState.navOpen) {
           Sidebar.setOpen(false);
         } else if (DocsElements.searchInput && document.activeElement === DocsElements.searchInput) {
