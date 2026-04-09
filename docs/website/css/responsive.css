@@ -1,0 +1,179 @@
+@media (max-width: 900px) {
+  :root { --nav-w: 0px; }
+  #sidebar {
+    width: min(86vw, 320px);
+    transform: translateX(-105%);
+    transition: transform 0.25s;
+    box-shadow: 18px 0 44px rgba(0, 0, 0, 0.42);
+  }
+  #sidebar.open { transform: translateX(0); }
+  body.nav-open #sidebar-backdrop { opacity: 1; pointer-events: auto; }
+  #main { margin-left: 0; padding: 0 16px 56px; }
+  #site-footer { margin-left: 0; grid-template-columns: 1fr 1fr; padding: 24px 16px; gap: 22px; }
+  .home-hero { grid-template-columns: 1fr; }
+  .home-hero-logo { width: 90px; height: 90px; }
+  .home-hero-egg { font-size: 0.55rem; }
+  .cmd-grid { grid-template-columns: 1fr; }
+  .wizard-grid { grid-template-columns: 1fr; }
+  .mod-item { grid-template-columns: 1fr; }
+  .lab-endpoints { grid-template-columns: 1fr; }
+  .workflow-stage-arrow { display: none; }
+  .topbar-action-menu { display: inline-flex; align-items: center; justify-content: center; }
+  #topbar-links { display: none; }
+  .topbar-search {
+    margin-left: 0;
+    flex: 1 1 auto;
+    width: auto;
+    max-width: none;
+  }
+  .topbar-search-results {
+    width: min(94vw, 520px);
+  }
+  #topbar-logo-wrap { min-width: unset; border-right: none; }
+  #topbar-actions { gap: 8px; }
+  #docs-search-input { font-size: 16px; }
+  .topbar-search-results { max-height: 52vh; }
+  .command-result { padding: 12px 12px; }
+}
+
+@media (max-width: 620px) {
+  :root {
+    --top-h: 52px;
+    --mobile-shortcuts-h: 42px;
+  }
+  #topbar {
+    min-height: 52px;
+    height: 52px;
+    padding: 0 10px;
+    gap: 8px;
+  }
+  #topbar-logo-wrap {
+    flex-direction: row-reverse;
+  }
+  #topbar-logo { width: 28px; height: 28px; }
+  #topbar-name { font-size: 0.78rem; letter-spacing: 0.04em; }
+  #topbar-version { display: none; }
+  .topbar-search {
+    max-width: 180px;
+  }
+  #topbar #docs-search-input {
+    padding: 6px 8px;
+    font-size: 0.64rem;
+  }
+  .topbar-search-results {
+    top: calc(100% + 6px);
+    width: min(94vw, 360px);
+    right: -8px;
+  }
+  .topbar-action {
+    padding: 6px 9px;
+    font-size: 0.68rem;
+    min-height: 30px;
+  }
+  #mobile-shortcuts {
+    position: fixed;
+    top: var(--top-h);
+    left: 0;
+    right: 0;
+    height: var(--mobile-shortcuts-h);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 0 10px;
+    background: rgba(8, 1, 1, 0.96);
+    border-bottom: 1px solid var(--border2);
+    z-index: 995;
+  }
+  #mobile-shortcuts a {
+    flex: 1 1 0;
+    min-width: 0;
+    text-align: center;
+    font-family: var(--mono);
+    font-size: 0.6rem;
+    letter-spacing: 0.06em;
+    color: var(--txt2);
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    background: rgba(255, 26, 26, 0.05);
+    padding: 6px 6px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  #mobile-shortcuts a:hover {
+    color: var(--r0);
+    border-color: var(--r1);
+    background: rgba(255, 26, 26, 0.12);
+    text-decoration: none;
+  }
+  .sidebar-panel-head {
+    margin: 0 10px 14px;
+    padding: 12px;
+  }
+  .sidebar-search-results {
+    max-height: 40vh;
+    margin-top: 10px;
+  }
+  #main {
+    padding: 0 12px 44px;
+  }
+  .page-hero {
+    padding: 34px 0 26px;
+    margin-bottom: 28px;
+  }
+  .page-title {
+    font-size: 1.68rem;
+    line-height: 1.1;
+  }
+  .page-desc {
+    font-size: 14px;
+  }
+  .sec-head {
+    margin: 30px 0 14px;
+  }
+  .code-body,
+  .example-code,
+  .example-output {
+    font-size: 0.74rem;
+    line-height: 1.65;
+  }
+  .code-body,
+  .example-code {
+    padding: 14px 14px;
+  }
+  table {
+    font-size: 12.2px;
+  }
+  thead th,
+  tbody td {
+    padding: 8px 10px;
+  }
+  .command-result {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+  .command-result-meta {
+    justify-self: start;
+  }
+  .home-hero-title { font-size: 2.4rem; }
+  .overview-grid,
+  .src-grid,
+  .fmt-grid,
+  .stat-strip,
+  .install-grid { grid-template-columns: 1fr; }
+  .workflow-visual {
+    padding: 14px;
+  }
+  .workflow-visual-rail {
+    grid-template-columns: 1fr;
+  }
+  #site-footer { grid-template-columns: 1fr; }
+
+  .egg-toast {
+    right: 10px;
+    bottom: 10px;
+    max-width: calc(100vw - 20px);
+    font-size: 0.68rem;
+  }
+}
