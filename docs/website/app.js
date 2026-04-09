@@ -53,6 +53,8 @@ const DocsState = {
 
 const DocsElements = {
   body: document.body,
+  topbarLogo: document.getElementById("topbar-logo"),
+  topbarVersion: document.getElementById("topbar-version"),
   topbarSearch: document.getElementById("topbar-search"),
   sidebar: document.getElementById("sidebar"),
   sidebarTabs: document.getElementById("sidebar-tabs"),
@@ -63,6 +65,7 @@ const DocsElements = {
   searchResults: document.getElementById("docs-search-results"),
   homeHeroLogo: document.getElementById("home-hero-logo"),
   homeHeroEgg: document.getElementById("home-hero-egg"),
+  siteFooter: document.getElementById("site-footer"),
   title: document.querySelector("title")
 };
 
@@ -245,6 +248,204 @@ const Sidebar = (() => {
   return { render, syncActive, setOpen, toggle };
 })();
 
+const EasterEgg = (() => {
+  const toastId = "egg-toast";
+  const secretQueries = new Set([
+    "asrfrb",
+    "reconparty",
+    "upupdowndownleftrightleftrightba"
+  ]);
+
+  let logoTapCount = 0;
+  let logoTapTimer = null;
+  let footerTapCount = 0;
+  let footerTapTimer = null;
+  let longPressTimer = null;
+  let overdriveTimer = null;
+  let toastTimer = null;
+  let lastSecretQuery = "";
+
+  function ensureToast() {
+    let toast = document.getElementById(toastId);
+    if (toast) {
+      return toast;
+    }
+
+    toast = document.createElement("div");
+    toast.id = toastId;
+    toast.className = "egg-toast";
+    toast.setAttribute("aria-live", "polite");
+    DocsElements.body.appendChild(toast);
+    return toast;
+  }
+
+  function showToast(message) {
+    const toast = ensureToast();
+    toast.textContent = message;
+    toast.classList.add("show");
+
+    if (toastTimer) {
+      window.clearTimeout(toastTimer);
+    }
+
+    toastTimer = window.setTimeout(() => {
+      toast.classList.remove("show");
+    }, 2200);
+  }
+
+  function spawnConfetti(count = 20) {
+    const layer = document.createElement("div");
+    layer.className = "egg-confetti-layer";
+    DocsElements.body.appendChild(layer);
+
+    const colors = ["#ff5a5f", "#ffd166", "#7ee787", "#79c0ff", "#c297ff"];
+    const total = Math.max(8, Math.min(count, 48));
+
+    for (let i = 0; i < total; i += 1) {
+      const bit = document.createElement("span");
+      bit.className = "egg-confetti";
+      bit.style.left = `${Math.random() * 100}%`;
+      bit.style.background = colors[i % colors.length];
+      bit.style.setProperty("--egg-drift", `${(Math.random() * 180) - 90}px`);
+      bit.style.animationDuration = `${2.2 + (Math.random() * 1.8)}s`;
+      bit.style.animationDelay = `${Math.random() * 0.25}s`;
+      layer.appendChild(bit);
+    }
+
+    window.setTimeout(() => {
+      layer.remove();
+    }, 3200);
+  }
+
+  function triggerOverdrive() {
+    DocsElements.body.classList.add("egg-overdrive");
+    showToast("Recon overdrive enabled for 12 seconds");
+    spawnConfetti(24);
+
+    if (overdriveTimer) {
+      window.clearTimeout(overdriveTimer);
+    }
+    overdriveTimer = window.setTimeout(() => {
+      DocsElements.body.classList.remove("egg-overdrive");
+    }, 12000);
+  }
+
+  function toggleBlueprintMode() {
+    const enabled = DocsElements.body.classList.toggle("egg-blueprint");
+    showToast(enabled ? "Blueprint mode enabled" : "Blueprint mode disabled");
+  }
+
+  function bindLogoTapCombo() {
+    if (!DocsElements.topbarLogo) {
+      return;
+    }
+
+    DocsElements.topbarLogo.addEventListener("click", () => {
+      logoTapCount += 1;
+      if (logoTapTimer) {
+        window.clearTimeout(logoTapTimer);
+      }
+
+      logoTapTimer = window.setTimeout(() => {
+        logoTapCount = 0;
+      }, 1800);
+
+      if (logoTapCount >= 5) {
+        logoTapCount = 0;
+        triggerOverdrive();
+      }
+    });
+  }
+
+  function bindVersionLongPress() {
+    if (!DocsElements.topbarVersion) {
+      return;
+    }
+
+    const startPress = (event) => {
+      if (event.type === "mousedown" && event.button !== 0) {
+        return;
+      }
+      if (longPressTimer) {
+        window.clearTimeout(longPressTimer);
+      }
+      longPressTimer = window.setTimeout(() => {
+        toggleBlueprintMode();
+      }, 800);
+    };
+
+    const cancelPress = () => {
+      if (longPressTimer) {
+        window.clearTimeout(longPressTimer);
+        longPressTimer = null;
+      }
+    };
+
+    DocsElements.topbarVersion.addEventListener("mousedown", startPress);
+    DocsElements.topbarVersion.addEventListener("mouseup", cancelPress);
+    DocsElements.topbarVersion.addEventListener("mouseleave", cancelPress);
+    DocsElements.topbarVersion.addEventListener("touchstart", startPress, { passive: true });
+    DocsElements.topbarVersion.addEventListener("touchend", cancelPress);
+    DocsElements.topbarVersion.addEventListener("touchcancel", cancelPress);
+  }
+
+  function bindFooterTapCombo() {
+    if (!DocsElements.siteFooter) {
+      return;
+    }
+
+    DocsElements.siteFooter.addEventListener("click", (event) => {
+      const target = event.target;
+      if (!(target instanceof HTMLElement)) {
+        return;
+      }
+
+      const tapTarget = target.closest(".footer-col-title");
+      if (!tapTarget) {
+        return;
+      }
+
+      footerTapCount += 1;
+      if (footerTapTimer) {
+        window.clearTimeout(footerTapTimer);
+      }
+      footerTapTimer = window.setTimeout(() => {
+        footerTapCount = 0;
+      }, 1600);
+
+      if (footerTapCount >= 3) {
+        footerTapCount = 0;
+        showToast("Hidden trace: keep calm, recon smart");
+        spawnConfetti(16);
+      }
+    });
+  }
+
+  function onSearchInput(value = "") {
+    const normalized = value.toLowerCase().replace(/[^a-z0-9]/g, "");
+    if (!secretQueries.has(normalized)) {
+      lastSecretQuery = "";
+      return;
+    }
+
+    if (lastSecretQuery === normalized) {
+      return;
+    }
+
+    lastSecretQuery = normalized;
+    showToast("Secret query accepted");
+    spawnConfetti(28);
+  }
+
+  function bind() {
+    bindLogoTapCombo();
+    bindVersionLongPress();
+    bindFooterTapCombo();
+  }
+
+  return { bind, onSearchInput };
+})();
+
 const Search = (() => {
   function setOpen(open) {
     DocsState.searchOpen = open;
@@ -299,6 +500,7 @@ const Search = (() => {
 
   function bind() {
     DocsElements.searchInput?.addEventListener("input", (event) => {
+      EasterEgg.onSearchInput(event.target.value);
       setOpen(true);
       renderResults(event.target.value);
     });
@@ -506,6 +708,7 @@ const App = (() => {
   function init() {
     DocsHelpers.syncCurrentSection();
     Sidebar.render();
+    EasterEgg.bind();
     Search.bind();
     Search.setOpen(false);
     bindHomeEasterEgg();
