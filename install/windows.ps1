@@ -153,11 +153,58 @@ function Remove-TreeSafe {
   param([string]$PathToRemove)
 
   if ([string]::IsNullOrWhiteSpace($PathToRemove)) {
-    return
+    return $true
   }
 
-  if (Test-Path -LiteralPath $PathToRemove) {
-    Remove-Item -LiteralPath $PathToRemove -Recurse -Force -ErrorAction Stop
+  if (-not (Test-Path -LiteralPath $PathToRemove)) {
+    return $true
+  }
+
+  foreach ($attempt in 1..5) {
+    try {
+      Remove-Item -LiteralPath $PathToRemove -Recurse -Force -ErrorAction Stop
+      return $true
+    } catch {
+      if ($attempt -lt 5) {
+        Start-Sleep -Milliseconds 300
+      }
+    }
+  }
+
+  try {
+    $parent = Split-Path -Parent $PathToRemove
+    $leaf = Split-Path -Leaf $PathToRemove
+    $quarantine = Join-Path $parent (".pending-delete-{0}-{1}" -f $leaf, [guid]::NewGuid().ToString("N"))
+    Move-Item -LiteralPath $PathToRemove -Destination $quarantine -Force -ErrorAction Stop
+    Write-WarningLine "Deferred cleanup for locked path: $quarantine"
+    return $true
+  } catch {
+    Write-WarningLine "Unable to remove path immediately: $PathToRemove"
+    return $false
+  }
+}
+
+function Promote-StagedInstall {
+  param(
+    [string]$StageApp,
+    [string]$TargetRoot
+  )
+
+  foreach ($attempt in 1..5) {
+    try {
+      Move-Item -LiteralPath $StageApp -Destination $TargetRoot -Force -ErrorAction Stop
+      return
+    } catch {
+      if ($attempt -lt 5) {
+        Start-Sleep -Milliseconds 350
+      }
+    }
+  }
+
+  Write-WarningLine "Direct stage move failed, falling back to a file-level copy."
+  New-Item -ItemType Directory -Path $TargetRoot -Force | Out-Null
+  Get-ChildItem -LiteralPath $StageApp -Force -ErrorAction Stop | ForEach-Object {
+    Copy-Item -LiteralPath $_.FullName -Destination $TargetRoot -Recurse -Force -ErrorAction Stop
   }
 }
 
@@ -406,8 +453,8 @@ function Install-Application {
   $backupRoot = Join-Path $parent ".$AppName-backup-$PID"
   $restored = $false
 
-  Remove-TreeSafe -PathToRemove $stageRoot
-  Remove-TreeSafe -PathToRemove $backupRoot
+  $null = Remove-TreeSafe -PathToRemove $stageRoot
+  $null = Remove-TreeSafe -PathToRemove $backupRoot
   New-Item -ItemType Directory -Path $stageRoot -Force | Out-Null
 
   try {
@@ -420,7 +467,7 @@ function Install-Application {
       Move-Item -LiteralPath $TargetRoot -Destination $backupRoot -Force
     }
 
-    Move-Item -LiteralPath $stageApp -Destination $TargetRoot -Force
+    Promote-StagedInstall -StageApp $stageApp -TargetRoot $TargetRoot
     Write-Launchers -AppRoot $TargetRoot -LauncherPaths $LauncherPaths
 
     if ($AddToPath) {
@@ -432,14 +479,15 @@ function Install-Application {
       Invoke-SmokeTest -LauncherPath $launcherPath
     }
 
-    Remove-TreeSafe -PathToRemove $backupRoot
-    Remove-TreeSafe -PathToRemove $stageRoot
+    $null = Remove-TreeSafe -PathToRemove $backupRoot
+    $null = Remove-TreeSafe -PathToRemove $stageRoot
     Show-InstallSummary -InstallMode $InstallMode -AppRoot $TargetRoot -LauncherPaths $LauncherPaths -OutputRoot $DefaultOutputRoot
   } catch {
+    $originalError = $_.Exception.Message
     Write-WarningLine "Attempting to restore the previous installation state."
     if (Test-Path -LiteralPath $backupRoot) {
       if (Test-Path -LiteralPath $TargetRoot) {
-        Remove-TreeSafe -PathToRemove $TargetRoot
+        $null = Remove-TreeSafe -PathToRemove $TargetRoot
       }
 
       if (-not (Test-Path -LiteralPath $TargetRoot)) {
@@ -448,12 +496,12 @@ function Install-Application {
       }
     }
 
-    Remove-TreeSafe -PathToRemove $stageRoot
+    $null = Remove-TreeSafe -PathToRemove $stageRoot
     if (-not $restored) {
-      Remove-TreeSafe -PathToRemove $backupRoot
+      $null = Remove-TreeSafe -PathToRemove $backupRoot
     }
 
-    Stop-Step $_.Exception.Message
+    Stop-Step $originalError
   }
 }
 

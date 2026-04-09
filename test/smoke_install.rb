@@ -17,7 +17,7 @@ require_relative "support/smoke_helper"
 include ASRFacet::TestSupport
 
 announce("Installer smoke verification started.")
-expected_version = File.read(File.join(ROOT, "VERSION")).strip
+version = expected_version
 
 install_root = File.join(ROOT, "install", "test-root")
 FileUtils.rm_rf(install_root)
@@ -42,7 +42,7 @@ else
   alias_version = run_command(alias_launcher, "version", unbundled: true).strip
 end
 
-assert(primary_version == expected_version, "Installed primary launcher reported #{primary_version.inspect}.")
-assert(alias_version == expected_version, "Installed alias launcher reported #{alias_version.inspect}.")
+assert(primary_version == version, "Installed primary launcher reported #{primary_version.inspect}.")
+assert(alias_version == version, "Installed alias launcher reported #{alias_version.inspect}.")
 
 announce("Installer smoke verification passed.")

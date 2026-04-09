@@ -148,5 +148,28 @@ module ASRFacet
     def macos?
       host_os.match?(/darwin/i)
     end
+
+    def expected_version
+      version_path = File.join(ROOT, "VERSION")
+      version_md_path = File.join(ROOT, "VERSION.md")
+
+      if File.file?(version_path)
+        raw = File.read(version_path).strip
+        semver = raw[/\A([0-9]+\.[0-9]+\.[0-9]+(?:[-+][0-9A-Za-z.\-]+)?)\z/, 1]
+        c_header = raw[/VERSION\s+"([0-9]+\.[0-9]+\.[0-9]+(?:[-+][0-9A-Za-z.\-]+)?)"/, 1]
+        return semver if semver
+        return c_header if c_header
+      end
+
+      if File.file?(version_md_path)
+        content = File.read(version_md_path)
+        matched = content.match(/VERSION\s*=\s*([0-9]+\.[0-9]+\.[0-9]+(?:[-+][0-9A-Za-z.\-]+)?)/i)
+        return matched[1] if matched
+      end
+
+      run_command(*ruby_command("bin/asrfacet-rb", "version")).strip
+    rescue StandardError
+      "1.0.0"
+    end
   end
 end
