@@ -55,5 +55,6 @@ Windows:
 
 ```powershell
 .\asrfacet-rb-installer-windows.ps1 install --yes
+.\asrfacet-rb-installer-windows.cmd install --yes
 .\asrfacet-rb-installer-windows.cmd uninstall
 ```

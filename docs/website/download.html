@@ -125,7 +125,7 @@
             <td><a href="web_assets/installers/asrfacet-rb-installer-windows.ps1" download>Download</a></td>
           </tr>
           <tr>
-            <td>Windows (CMD launcher)</td>
+            <td>Windows (CMD)</td>
             <td><code>asrfacet-rb-installer-windows.cmd</code></td>
             <td><a href="web_assets/installers/asrfacet-rb-installer-windows.cmd" download>Download</a></td>
           </tr>
@@ -144,6 +144,9 @@
 
 <span class="cm"># Windows PowerShell</span>
 <span class="pn">PS&gt;</span> .\asrfacet-rb-installer-windows.ps1 <span class="kw">install</span>
+
+<span class="cm"># Windows Command Prompt (CMD)</span>
+<span class="pn">C:\&gt;</span> asrfacet-rb-installer-windows.cmd <span class="kw">install</span> <span class="fl">--yes</span>
       </div>
     </div>
   </section>
@@ -189,6 +192,9 @@
 
 <span class="cm"># keep temporary clone for troubleshooting</span>
 <span class="pn">PS&gt;</span> .\asrfacet-rb-installer-windows.ps1 <span class="kw">install</span> <span class="fl">-KeepTemp</span>
+
+<span class="cm"># same lifecycle via CMD</span>
+<span class="pn">C:\&gt;</span> asrfacet-rb-installer-windows.cmd <span class="kw">update</span> <span class="fl">--verbose</span>
       </div>
     </div>
   </section>
