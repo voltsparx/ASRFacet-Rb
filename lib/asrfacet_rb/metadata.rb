@@ -17,6 +17,6 @@ module ASRFacet
     EMAIL = "voltsparx@gmail.com".freeze
     PROJECT_NAME = "ASRFacet-Rb".freeze
     REPO_URL = "https://github.com/voltsparx/ASRFacet-Rb".freeze
-    RELEASE_VERSION = "1.0.0".freeze
+    RELEASE_VERSION = ASRFacet::VERSION
   end
 end

@@ -12,5 +12,9 @@
 # and conditions defined in the LICENSE file.
 
 module ASRFacet
-  VERSION = "1.0.0".freeze
+  VERSION = begin
+    File.read(File.expand_path("../../VERSION", __dir__)).strip
+  rescue StandardError
+    "1.0.0"
+  end.freeze
 end

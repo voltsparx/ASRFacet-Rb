@@ -76,6 +76,70 @@
     </div>
   </section>
 
+  <section id="samples" class="page-section active">
+    <div class="page-hero">
+      <div class="page-eyebrow">Reporting</div>
+      <div class="page-title">Sample Outputs</div>
+      <div class="page-desc">These examples show exactly what operators can expect to see after a run without needing to imagine the format.</div>
+    </div>
+
+    <div class="example-block">
+      <div class="example-header">
+        <div class="example-title">CLI Snapshot</div>
+        <div class="example-tag">human-readable</div>
+      </div>
+      <div class="example-body">
+        <div class="example-code"><span class="pn">asrfrb ></span> scan scanme.nmap.org --passive-only
+Scan Overview
+-------------
+Target: scanme.nmap.org
+Subdomains: 2
+Open ports: 0
+Findings: 0
+Recommended Next Steps
+----------------------
+Use the HTML report for richer offline triage and JSON for automation.</div>
+      </div>
+    </div>
+
+    <div class="example-block">
+      <div class="example-header">
+        <div class="example-title">JSON Snapshot</div>
+        <div class="example-tag">automation</div>
+      </div>
+      <div class="example-body">
+        <div class="example-code">{
+  "subdomains": [
+    "scanme.nmap.org",
+    "nmap.scanme.nmap.org"
+  ],
+  "generated_at": "2026-04-09T09:16:34Z",
+  "top_assets": []
+}</div>
+      </div>
+    </div>
+
+    <div class="example-block">
+      <div class="example-header">
+        <div class="example-title">Relationship Mapping Snapshot</div>
+        <div class="example-tag">correlation</div>
+      </div>
+      <div class="example-body">
+        <div class="example-code">{
+  "nodes": [
+    {"id":"scanme.nmap.org","type":"domain"},
+    {"id":"45.33.32.156","type":"ip"},
+    {"id":"scanme.nmap.org:80","type":"service"}
+  ],
+  "edges": [
+    {"from":"scanme.nmap.org","to":"45.33.32.156","relation":"resolves_to"},
+    {"from":"scanme.nmap.org:80","to":"45.33.32.156","relation":"runs_on"}
+  ]
+}</div>
+      </div>
+    </div>
+  </section>
+
   <section id="config" class="page-section active">
     <div class="page-hero">
       <div class="page-eyebrow">Reporting</div>
@@ -118,7 +182,7 @@
     <div class="page-hero">
       <div class="page-eyebrow">Reporting</div>
       <div class="page-title">Testing</div>
-      <div class="page-desc">The Rake-based verification flow is the main release gate. The current verified state is 51 examples, 0 failures.</div>
+      <div class="page-desc">The Rake-based verification flow is the main release gate. The current verified state is 53 examples, 0 failures.</div>
     </div>
 
     <div class="code-wrap">
@@ -136,7 +200,7 @@
 
     <div class="callout callout-info">
       <div class="callout-title">Current Verified Run</div>
-      April 8, 2026 — <code>bundle exec rake</code> completed successfully with CLI, web-session, lab, installer, and gem-build smoke checks.
+      April 9, 2026 — <code>bundle exec rake</code> completed successfully with CLI, web-session, lab, installer, website-installer, and gem-build smoke checks.
     </div>
   </section>
 </main>
@@ -144,7 +208,7 @@
 <footer id="site-footer">
   <div><div class="footer-col-title">Reports</div><span class="footer-copy">Outputs, config, storage, verification</span></div>
   <div><div class="footer-col-title">Modes</div><a class="footer-link" href="modes.html#web">Web Session</a><a class="footer-link" href="modes.html#lab">Lab</a></div>
-  <div><div class="footer-col-title">Workflow</div><a class="footer-link" href="workflow.html#pipeline">Pipeline</a><a class="footer-link" href="workflow.html#modules">Modules</a></div>
+  <div><div class="footer-col-title">Workflow</div><a class="footer-link" href="workflow.html#pipeline">Pipeline</a><a class="footer-link" href="reporting.html#samples">Sample Outputs</a></div>
   <div><div class="footer-col-title">Home</div><a class="footer-link" href="index.html">Overview</a><a class="footer-link" href="project.html#author">Project</a></div>
 </footer>
 

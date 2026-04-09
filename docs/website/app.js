@@ -12,6 +12,11 @@ const DocsData = (() => {
 
   const entries = [
     { id: "home", title: "Overview", page: "index.html", hint: "Landing page, capabilities, release status, and site map.", group: "Start Here" },
+    { id: "core-idea", title: "Core Idea", page: "index.html", hint: "One-line framework identity and philosophy.", group: "Start Here" },
+    { id: "how-it-works", title: "How It Works", page: "index.html", hint: "High-level pipeline flow in five blocks.", group: "Start Here" },
+    { id: "quickstart-30", title: "Quick Start (30s)", page: "index.html", hint: "Clone, install, verify, and run in five lines.", group: "Start Here" },
+    { id: "fit-check", title: "Use It / Skip It", page: "index.html", hint: "Fast fit-check for deciding when ASRFacet-Rb is the right tool.", group: "Start Here" },
+    { id: "release-signals", title: "Release Signals", page: "index.html", hint: "Version, changelog, and roadmap trust markers.", group: "Start Here" },
     { id: "install", title: "Installation", page: "getting-started.html", hint: "Bundler setup, installers, aliases, and prerequisites.", group: "Start Here" },
     { id: "web-installers", title: "Website Installers", page: "download.html", hint: "Direct downloadable installers for Linux, macOS, and Windows.", group: "Start Here" },
     { id: "quickstart", title: "Quick Start", page: "getting-started.html", hint: "First safe run, common commands, and early operator flow.", group: "Start Here" },
@@ -32,10 +37,12 @@ const DocsData = (() => {
     { id: "lab", title: "Lab Mode", page: "modes.html", hint: "Safe local practice targets before touching real systems.", group: "Modes" },
     { id: "examples", title: "Usage Examples", page: "modes.html", hint: "Common workflows and realistic command patterns.", group: "Modes" },
     { id: "outputs", title: "Output Formats", page: "reporting.html", hint: "CLI, TXT, HTML, JSON, and what each is good for.", group: "Reports" },
+    { id: "samples", title: "Sample Outputs", page: "reporting.html", hint: "See realistic CLI, JSON, and relationship output examples.", group: "Reports" },
     { id: "config", title: "Configuration", page: "reporting.html", hint: "Defaults, overrides, and operator config behavior.", group: "Reports" },
     { id: "storage", title: "Files & Storage", page: "reporting.html", hint: "Where reports, memory, sessions, and lab data live.", group: "Reports" },
     { id: "testing", title: "Testing", page: "reporting.html", hint: "Rake verification, smoke tests, and release checks.", group: "Reports" },
-    { id: "author", title: "Project & License", page: "project.html", hint: "Author, repository, license, and publishing context.", group: "Project" }
+    { id: "author", title: "Project & License", page: "project.html", hint: "Author, repository, license, and publishing context.", group: "Project" },
+    { id: "signals", title: "Versioning Signals", page: "project.html", hint: "Version, changelog, roadmap, and release trust markers.", group: "Project" }
   ];
 
   const groups = ["Start Here", "Downloads", "Pipeline", "Operators", "Modes", "Reports", "Project"];

@@ -34,7 +34,6 @@ resilience:
     threshold: 3
     cooldown: 60
 http:
-  user_agent: ASRFacet-Rb/1.0.0
   max_retries: 3
   follow_redirects: true
   max_redirects: 5

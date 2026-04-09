@@ -4,18 +4,18 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Overview | ASRFacet-Rb</title>
-<meta name="description" content="ASRFacet-Rb is a Ruby 3.2+ authorized attack surface reconnaissance framework for discovery, mapping, and reporting.">
+<meta name="description" content="ASRFacet-Rb is a pipeline-based, offline-first reconnaissance framework focused on correlation and change tracking, not one-time scans.">
 <link rel="canonical" href="https://voltsparx.github.io/ASRFacet-Rb/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="ASRFacet-Rb">
 <meta property="og:title" content="Overview | ASRFacet-Rb">
-<meta property="og:description" content="ASRFacet-Rb is a Ruby 3.2+ authorized attack surface reconnaissance framework for discovery, mapping, and reporting.">
+<meta property="og:description" content="ASRFacet-Rb is a pipeline-based, offline-first reconnaissance framework focused on correlation and change tracking, not one-time scans.">
 <meta property="og:url" content="https://voltsparx.github.io/ASRFacet-Rb/">
 <meta property="og:image" content="https://raw.githubusercontent.com/voltsparx/ASRFacet-Rb/main/docs/website/web_assets/media/asrfacet-rb-site-preview.png">
 <meta property="og:image:type" content="image/png">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Overview | ASRFacet-Rb">
-<meta name="twitter:description" content="ASRFacet-Rb is a Ruby 3.2+ authorized attack surface reconnaissance framework for discovery, mapping, and reporting.">
+<meta name="twitter:description" content="ASRFacet-Rb is a pipeline-based, offline-first reconnaissance framework focused on correlation and change tracking, not one-time scans.">
 <meta name="twitter:image" content="https://raw.githubusercontent.com/voltsparx/ASRFacet-Rb/main/docs/website/web_assets/media/asrfacet-rb-site-preview.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@300;400;500;600;700&family=Orbitron:wght@400;600;700;900&display=swap" rel="stylesheet">
@@ -68,18 +68,17 @@
   <section id="home" class="page-section active">
     <div class="home-hero">
       <div>
-        <div class="home-hero-eyebrow">// attack surface reconnaissance framework</div>
+        <div class="home-hero-eyebrow">// pipeline-first recon intelligence framework</div>
         <div class="home-hero-title">ASRFacet-Rb</div>
-        <div class="home-hero-sub">MULTI-STAGE · OPERATOR-FOCUSED · DOCUMENTATION</div>
+        <div class="home-hero-sub">PIPELINE-DRIVEN · RELATIONSHIP-AWARE · OFFLINE-FIRST</div>
         <div class="home-hero-desc">
-          ASRFacet-Rb is a Ruby 3.2+ attack surface reconnaissance framework for authorized testing.
-          It combines passive discovery, DNS and certificate enrichment, service mapping, web analysis,
-          report generation, and guided operator UX in one place.
+          ASRFacet-Rb is a reconnaissance system built for repeatable runs and change-aware intelligence.
+          It favors relationship mapping and historical tracking over one-time scanner output.
         </div>
         <div class="badge-row">
           <span class="badge hi">▸ v1.0.0</span>
           <span class="badge">Ruby &gt;= 3.2</span>
-          <span class="badge">51 Tests Passing</span>
+          <span class="badge">53 Tests Passing</span>
           <span class="badge">Bundle Exec Rake Passing</span>
           <span class="badge">Status: Stable</span>
           <span class="badge">Authorized Use Only</span>
@@ -99,8 +98,8 @@
 
     <div class="stat-strip">
       <div class="stat-item">
-        <span class="stat-num">8</span>
-        <span class="stat-label">Pipeline Stages</span>
+        <span class="stat-num">5</span>
+        <span class="stat-label">Core Pipeline Blocks</span>
       </div>
       <div class="stat-item">
         <span class="stat-num">8</span>
@@ -111,8 +110,71 @@
         <span class="stat-label">Output Formats</span>
       </div>
       <div class="stat-item">
+        <span class="stat-num">53</span>
+        <span class="stat-label">Automated Tests</span>
+      </div>
+      <div class="stat-item">
         <span class="stat-num">8</span>
         <span class="stat-label">Docs Pages</span>
+      </div>
+    </div>
+
+    <div id="core-idea" class="sec-head">Core Idea</div>
+    <div class="callout callout-info">
+      <div class="callout-title">One Line</div>
+      Recon that builds relationships and tracks changes over time, not just flat output snapshots.
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Design Choice</th><th>Why It Matters</th></tr></thead>
+        <tbody>
+          <tr><td>Pipeline Thinking</td><td>Each stage hands structured context to the next stage, so runs are easier to reason about.</td></tr>
+          <tr><td>Event-Driven Recon</td><td>New findings trigger controlled follow-up work instead of ad-hoc drift between modules.</td></tr>
+          <tr><td>Offline-First Reports</td><td>You keep usable CLI, TXT, HTML, and JSON artifacts without requiring hosted dashboards.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div id="how-it-works" class="sec-head">How It Works</div>
+    <div class="code-wrap">
+      <div class="code-header"><div class="code-dot"></div><div class="code-dot"></div><div class="code-dot"></div><span class="code-lang">pipeline</span></div>
+      <div class="code-body">
+<span class="pn">1></span> <span class="kw">Passive Discovery</span>
+<span class="pn">2></span> <span class="kw">Active Validation</span>
+<span class="pn">3></span> <span class="kw">Service + Web Mapping</span>
+<span class="pn">4></span> <span class="kw">Correlation Engine</span>
+<span class="pn">5></span> <span class="kw">Tracking Engine</span>
+      </div>
+    </div>
+
+    <div id="quickstart-30" class="sec-head">Quick Start (30 Seconds)</div>
+    <div class="code-wrap">
+      <div class="code-header"><div class="code-dot"></div><div class="code-dot"></div><div class="code-dot"></div><span class="code-lang">shell</span></div>
+      <div class="code-body">
+<span class="pn">$</span> <span class="kw">git clone</span> <span class="ar">https://github.com/voltsparx/ASRFacet-Rb.git</span>
+<span class="pn">$</span> <span class="kw">cd</span> <span class="ar">ASRFacet-Rb</span>
+<span class="pn">$</span> <span class="kw">bundle install</span>
+<span class="pn">$</span> <span class="kw">bundle exec rake</span>
+<span class="pn">$</span> <span class="kw">bundle exec ruby bin/asrfacet-rb scan example.com --passive-only</span>
+      </div>
+    </div>
+
+    <div id="fit-check" class="sec-head">Use It / Skip It</div>
+    <div class="overview-grid">
+      <div class="ov-card">
+        <div class="ov-icon">✔</div>
+        <div class="ov-name">Use It If</div>
+        <div class="ov-desc">You want repeatable recon, relationship-aware output, and historical change tracking in local artifacts.</div>
+      </div>
+      <div class="ov-card">
+        <div class="ov-icon">✘</div>
+        <div class="ov-name">Skip It If</div>
+        <div class="ov-desc">You only want quick one-time scans and do not need structured data or run-to-run intelligence.</div>
+      </div>
+      <div class="ov-card">
+        <div class="ov-icon">⚙</div>
+        <div class="ov-name">System Naming</div>
+        <div class="ov-desc">Discovery Engine, Validation Engine, Correlation Engine, and Tracking Engine keep architecture understandable.</div>
       </div>
     </div>
 
@@ -131,6 +193,18 @@
       <a class="ov-card" href="reporting.html#outputs"><div class="ov-icon">📊</div><div class="ov-name">Reporting</div><div class="ov-desc">Review output formats, storage layout, config overrides, and verification habits.</div></a>
       <a class="ov-card" href="download.html#download-home"><div class="ov-icon">⬇️</div><div class="ov-name">Download Center</div><div class="ov-desc">Download Linux, macOS, and Windows installers and run lifecycle modes from one page.</div></a>
       <a class="ov-card" href="project.html#author"><div class="ov-icon">📦</div><div class="ov-name">Project</div><div class="ov-desc">Check the repository links, licensing context, and maintainer details.</div></a>
+    </div>
+
+    <div id="release-signals" class="sec-head">Release Signals</div>
+    <div class="overview-grid">
+      <a class="ov-card" href="https://raw.githubusercontent.com/voltsparx/ASRFacet-Rb/main/VERSION" target="_blank"><div class="ov-icon">🏷️</div><div class="ov-name">VERSION</div><div class="ov-desc">Current tagged release marker for quick trust checks.</div></a>
+      <a class="ov-card" href="https://raw.githubusercontent.com/voltsparx/ASRFacet-Rb/main/CHANGELOG.md" target="_blank"><div class="ov-icon">🧾</div><div class="ov-name">CHANGELOG</div><div class="ov-desc">What changed between versions and why it matters to operators.</div></a>
+      <a class="ov-card" href="https://raw.githubusercontent.com/voltsparx/ASRFacet-Rb/main/ROADMAP.md" target="_blank"><div class="ov-icon">🗺️</div><div class="ov-name">ROADMAP</div><div class="ov-desc">Next planned stability, feature, and usability milestones.</div></a>
+    </div>
+
+    <div class="sec-head">Why Not Just One-Time Scanners</div>
+    <div class="callout callout-info">
+      Traditional scanners are excellent for fast snapshots. ASRFacet-Rb is designed for continuous, structured, and relational intelligence that operators can compare over time.
     </div>
 
     <div class="sec-head">Core Capabilities</div>
@@ -168,6 +242,8 @@
   <div>
     <div class="footer-col-title">Repository</div>
     <a class="footer-link" href="https://github.com/voltsparx/ASRFacet-Rb" target="_blank">ASRFacet-Rb on GitHub</a>
+    <a class="footer-link" href="https://raw.githubusercontent.com/voltsparx/ASRFacet-Rb/main/CHANGELOG.md" target="_blank">Changelog (Raw)</a>
+    <a class="footer-link" href="https://raw.githubusercontent.com/voltsparx/ASRFacet-Rb/main/ROADMAP.md" target="_blank">Roadmap (Raw)</a>
     <a class="footer-link" href="https://raw.githubusercontent.com/voltsparx/ASRFacet-Rb/main/LICENSE" target="_blank">Proprietary License (Raw)</a>
   </div>
 </footer>
