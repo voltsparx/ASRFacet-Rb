@@ -890,6 +890,7 @@ const App = (() => {
   }
 
   function init() {
+    DocsElements.body.classList.add("egg-clean-screen");
     DocsHelpers.syncCurrentSection();
     Sidebar.render();
     EasterEgg.bind();
