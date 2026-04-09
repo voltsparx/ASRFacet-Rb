@@ -89,7 +89,7 @@ function Get-RequiredPaths {
     }
   }
 
-  return $paths
+  return @($paths)
 }
 
 function Invoke-Step {
@@ -147,13 +147,14 @@ try {
 
     Push-Location $repoDir
     try {
-      $paths = Get-RequiredPaths -SelectedMode $selectedMode
+      $paths = [string[]](Get-RequiredPaths -SelectedMode $selectedMode)
       & git sparse-checkout init --no-cone
       if ($LASTEXITCODE -ne 0) {
         throw "git sparse-checkout init failed."
       }
 
-      & git sparse-checkout set --no-cone @paths
+      $setArgs = @("sparse-checkout", "set", "--no-cone") + $paths
+      & git @setArgs
       if ($LASTEXITCODE -ne 0) {
         throw "git sparse-checkout set failed."
       }
