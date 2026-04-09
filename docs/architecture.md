@@ -189,3 +189,6 @@ asset segments so it stays easy to maintain as pages grow.
 This keeps the docs site aligned with the same broader project principle used
 elsewhere in ASRFacet-Rb: shared state first, focused modules second, and a
 small bootstrap layer at the edge.
+
+For maintenance details and exact website asset load order, see
+`docs/website/README.md`.
