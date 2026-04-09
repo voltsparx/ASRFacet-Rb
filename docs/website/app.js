@@ -740,7 +740,6 @@ const App = (() => {
     }
 
     const egg = DocsElements.homeHeroEgg;
-    const brandWrap = logo.parentElement;
     const defaultEggText = egg ? egg.textContent : "";
     let eggTimer = null;
     let tapCount = 0;
@@ -779,7 +778,6 @@ const App = (() => {
 
     const triggerOverdriveSync = () => {
       logo.classList.add("egg-overdrive-sync");
-      brandWrap?.classList.add("egg-sync-trails");
       showEggText("over drive sync", 5200);
       EasterEgg.activateOverdrive({
         message: "over drive sync",
@@ -792,7 +790,6 @@ const App = (() => {
       }
       syncTimer = window.setTimeout(() => {
         logo.classList.remove("egg-overdrive-sync");
-        brandWrap?.classList.remove("egg-sync-trails");
       }, 6200);
     };
 
