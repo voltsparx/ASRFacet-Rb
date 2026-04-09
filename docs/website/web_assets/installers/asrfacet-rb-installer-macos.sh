@@ -47,7 +47,7 @@ EOF
 }
 
 required_paths_for_mode() {
-  local paths=("/install/macos.sh")
+  local paths=("/install")
   case "$MODE" in
     install|update|test)
       paths+=(

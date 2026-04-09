@@ -68,7 +68,7 @@ function Confirm-Requirements {
 function Get-RequiredPaths {
   param([string]$SelectedMode)
 
-  $paths = @("/install/windows.ps1")
+  $paths = @("/install")
   if ($SelectedMode -in @("install", "update", "test")) {
     $paths += @(
       "/bin",
