@@ -61,6 +61,7 @@ flowchart LR
     C --> D[Correlation Engine]
     D --> E[Tracking and Change Summary]
 ```
+![ASRFacet-Rb Framework Flow](docs/images/illustration/asrfacet-rb-framework-visual.svg)
 
 ### Stage Intent
 
@@ -120,10 +121,6 @@ Installer prompt theme:
 - `[ASRFacet-Rb][FAIL]`
 
 ## Usage Guide with Examples
-
-### Quick Cheat Sheet
-
-![ASRFacet-Rb Quick Command Cheat Sheet](docs/images/cheatsheets/quick-command-cheatsheet.svg)
 
 ### Core Commands
 
