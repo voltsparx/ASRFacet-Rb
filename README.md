@@ -1002,3 +1002,7 @@ ASRFacet-Rb uses a proprietary custom license. See `LICENSE`.
     </tr>
   </tbody>
 </table>
+
+---
+
+⭐ If you find ASRFacet-Rb useful, consider starring the repository^^
