@@ -15,72 +15,80 @@
   <a href="https://github.com/voltsparx/ASRFacet-Rb/actions/workflows/pages.yml"><img src="https://github.com/voltsparx/ASRFacet-Rb/actions/workflows/pages.yml/badge.svg" alt="Docs Website"></a>
 </p>
 
-ASRFacet-Rb is a pipeline-based reconnaissance framework for authorized testing, built to track, correlate, and evolve attack surface intelligence over time.  
-It is designed for repeatable operator workflows, not one-off scans.  
-Core idea: **recon that builds relationships, not just lists**.
+ASRFacet-Rb is a Ruby 3.2+ framework for authorized attack surface reconnaissance.  
+It is built for repeatable workflows, relationship-aware intelligence, and run-to-run change tracking, not one-off scanner output.
 
 Project website: [https://voltsparx.github.io/ASRFacet-Rb/](https://voltsparx.github.io/ASRFacet-Rb/)
 
-## Why This Exists
+## Quick Navigation
 
-Most recon tools optimize for one-time output. That creates three common problems:
+- [What It Solves](#what-it-solves)
+- [Architecture and Process Flow](#architecture-and-process-flow)
+- [Installation Guide](#installation-guide)
+- [Usage Guide with Examples](#usage-guide-with-examples)
+- [Output, Storage, and Reporting](#output-storage-and-reporting)
+- [Testing and Release Verification](#testing-and-release-verification)
+- [Troubleshooting Guide](#troubleshooting-guide)
+- [Documentation Map](#documentation-map)
 
-- Results are scattered across disconnected commands.
-- Findings are hard to compare between runs.
-- Relationships between domains, IPs, services, and changes are lost.
+## What It Solves
 
-ASRFacet-Rb addresses this with:
+Most recon tools are optimized for snapshots. That often creates:
 
-- A stage-driven pipeline.
-- Structured multi-format output.
-- Relationship-aware correlation.
-- Memory-backed change tracking.
+- Scattered results across separate tools and files
+- Weak run-to-run comparability
+- Lost relationships between hosts, IPs, ports, services, and findings
 
-## Visual Pipeline
+ASRFacet-Rb addresses this with pipeline stages, memory-backed tracking, and structured output.
 
-```text
-[ Passive Discovery ]
-        ->
-[ Active Validation ]
-        ->
-[ Service and Web Mapping ]
-        ->
-[ Correlation Engine ]
-        ->
-[ Tracking and Change Summary ]
+## Architecture and Process Flow
+
+### Execution Roles
+
+| Layer | Responsibility |
+|---|---|
+| Scheduler | Decides what runs next |
+| Engines | Execute bounded tasks |
+| Investigator | Reacts to significant findings |
+| Fusion/Store | Persists and correlates results |
+
+### Pipeline Visualization
+
+```mermaid
+flowchart LR
+    A[Passive Discovery] --> B[Active Validation]
+    B --> C[Service and Web Mapping]
+    C --> D[Correlation Engine]
+    D --> E[Tracking and Change Summary]
 ```
 
-## Engine Model
+### Stage Intent
 
-ASRFacet-Rb names its internal systems as a clear execution model:
+| Stage | Main Outcome |
+|---|---|
+| Passive Discovery | Candidate assets from low-noise sources |
+| Active Validation | Confirmed hosts, IPs, open ports, and HTTP surfaces |
+| Service/Web Mapping | Reachable application/service context |
+| Correlation Engine | Relationship mapping and prioritization |
+| Tracking Engine | Delta detection and historical visibility |
 
-- `Discovery Engine`: passive sources, DNS expansion, candidate generation.
-- `Validation Engine`: scoped DNS/port/HTTP confirmation.
-- `Correlation Engine`: graph links, scoring, and prioritization.
-- `Tracking Engine`: recon memory and run-to-run change detection.
+## Installation Guide
 
-Execution boundaries stay strict:
+### Requirements
 
-- Scheduler decides.
-- Engines execute.
-- Investigator reacts.
-- Fusion/store persists.
+- Ruby `>= 3.2`
+- Bundler
+- Explicit permission to test targets
 
-## When To Use / When Not To Use
+### Installation Paths at a Glance
 
-Use it if:
+| Path | Use Case |
+|---|---|
+| `bundle exec` from repo | Development and contribution |
+| `install/*.sh` / `install/windows.ps1` | Managed local system install |
+| Website installers (`docs/website/web_assets/installers`) | Download-first install flow |
 
-- You want repeatable recon pipelines.
-- You care about relationships between assets.
-- You need offline-capable reporting and historical tracking.
-
-Do not use it if:
-
-- You only want very fast one-command spray scans.
-- You need a fully hosted cloud GUI instead of local-first workflows.
-- You do not care about structured, reusable output.
-
-## 30-Second Quick Start
+### 30-Second Quick Start (Repo Mode)
 
 ```bash
 git clone https://github.com/voltsparx/ASRFacet-Rb.git
@@ -90,65 +98,129 @@ bundle exec rake
 bundle exec ruby bin/asrfacet-rb scan example.com --passive-only
 ```
 
-## Installation Paths
+### Managed Installer Modes
 
-Repository installers:
-
-- `install/windows.ps1`
-- `install/macos.sh`
-- `install/linux.sh`
-
-Website download installers:
-
-- `docs/website/web_assets/installers/asrfacet-rb-installer-windows.ps1`
-- `docs/website/web_assets/installers/asrfacet-rb-installer-windows.cmd`
-- `docs/website/web_assets/installers/asrfacet-rb-installer-macos.sh`
-- `docs/website/web_assets/installers/asrfacet-rb-installer-linux.sh`
+| Mode | Description |
+|---|---|
+| `install` | Install framework and launchers |
+| `test` | Repo-local smoke install |
+| `update` | Refresh managed install |
+| `uninstall` | Remove managed install and launchers |
 
 Installed command aliases:
 
 - `asrfacet-rb`
 - `asrfrb`
 
-Installer prompt theme (all platforms):
+Installer prompt theme:
 
 - `[ASRFacet-Rb][INFO]`
 - `[ASRFacet-Rb][ OK ]`
 - `[ASRFacet-Rb][WARN]`
 - `[ASRFacet-Rb][FAIL]`
 
-## Command Examples
+## Usage Guide with Examples
+
+### Quick Cheat Sheet
+
+![ASRFacet-Rb Quick Command Cheat Sheet](docs/images/cheatsheets/quick-command-cheatsheet.svg)
+
+### Core Commands
+
+| Command | Purpose | Example |
+|---|---|---|
+| `scan DOMAIN` | Full pipeline | `asrfacet-rb scan example.com` |
+| `passive DOMAIN` | Passive-only discovery | `asrfacet-rb passive example.com` |
+| `ports HOST` | Focused port validation | `asrfacet-rb ports api.example.com --ports top1000` |
+| `dns DOMAIN` | DNS-focused collection | `asrfacet-rb dns example.com` |
+| `--console` | Interactive shell mode | `asrfacet-rb --console` |
+| `--web-session` | Local web control panel | `asrfacet-rb --web-session` |
+| `about` | Framework overview | `asrfacet-rb about` |
+| `--explain TOPIC` | Built-in topic guidance | `asrfacet-rb --explain scope` |
+
+### Guided Workflow 1: Passive First
 
 ```bash
-bundle exec ruby bin/asrfacet-rb scan example.com --format html --output report.html
-bundle exec ruby bin/asrfacet-rb passive example.com --format json --output passive.json
-bundle exec ruby bin/asrfacet-rb ports api.example.com --ports top1000
-bundle exec ruby bin/asrfacet-rb dns example.com
-bundle exec ruby bin/asrfacet-rb --console
-bundle exec ruby bin/asrfacet-rb --web-session
-bundle exec ruby bin/asrfacet-rb about
-bundle exec ruby bin/asrfacet-rb --explain scope
+asrfacet-rb passive example.com --format json --output passive.json
+asrfacet-rb dns example.com
+asrfacet-rb ports example.com --ports top100
 ```
 
-## Output and Storage
+When to use: low-noise recon kickoff with manual expansion.
 
-Output formats:
+### Guided Workflow 2: Full Report Bundle
 
-- `cli`
-- `txt`
-- `html`
-- `json`
+```bash
+asrfacet-rb scan example.com --monitor --memory --format html --output report.html
+```
 
-Persistent paths:
+When to use: recurring assessments where historical deltas matter.
 
-- `~/.asrfacet_rb/output/`
-- `~/.asrfacet_rb/memory/`
-- `~/.asrfacet_rb/web_sessions/`
+### Guided Workflow 3: Web Session and Operator UX
 
-## Why Not Just Use X Tool?
+```bash
+asrfacet-rb --web-session
+```
 
-Traditional recon tools are often great at point-in-time enumeration.  
-ASRFacet-Rb is focused on **continuous, structured, and relational intelligence** with operator memory and change tracking built in.
+When to use: visual control panel flow for recon, mapping, and report access.
+
+## Output, Storage, and Reporting
+
+### Output Formats
+
+| Format | Best For |
+|---|---|
+| `cli` | Live operator feedback |
+| `txt` | Plain-text sharing |
+| `html` | Human-friendly reports with richer structure |
+| `json` | Automation and downstream tooling |
+
+### Storage Layout
+
+| Path | Data |
+|---|---|
+| `~/.asrfacet_rb/output/` | Report bundles and streams |
+| `~/.asrfacet_rb/memory/` | Recon memory and deltas |
+| `~/.asrfacet_rb/web_sessions/` | Saved web session state |
+
+### Reporting Process Visualization
+
+```mermaid
+flowchart TD
+    A[Scan Run] --> B[Result Store]
+    B --> C[CLI/TXT/HTML/JSON Formatters]
+    C --> D[Report Bundle Saved]
+    D --> E[Recon Memory Updated]
+    E --> F[Change Summary Available]
+```
+
+## Testing and Release Verification
+
+```bash
+bundle exec rake
+bundle exec rake spec
+bundle exec rake test:cli
+bundle exec rake test:web
+bundle exec rake test:lab
+bundle exec rake test:install
+bundle exec rake test:website_installers
+```
+
+Verification snapshot:
+
+- Date: `2026-04-09`
+- Result: `53 examples, 0 failures`
+- Full verify gate: `bundle exec rake` passed
+
+## Troubleshooting Guide
+
+| Symptom | Likely Cause | Quick Fix |
+|---|---|---|
+| `bundle` command missing | Bundler not installed | `gem install bundler` |
+| Installer exits on permission/path | Existing unmanaged target path | Remove/rename conflicting path or use managed location |
+| Noisy or slow run | Too many threads or broad scope | Lower `--threads`, tighten `--scope`, use passive-first flow |
+| Report confusion | Multiple formats generated | Start with `report.html` then inspect `report.json` for automation |
+| Web mode not reachable | Host/port mismatch | Start with `--web-host 127.0.0.1 --web-port 4567` and retry |
 
 ## Trust Signals
 
@@ -165,24 +237,6 @@ ASRFacet-Rb is focused on **continuous, structured, and relational intelligence*
 - [`docs/reporting.md`](/docs/reporting.md)
 - [`docs/lab.md`](/docs/lab.md)
 - [`docs/publishing.md`](/docs/publishing.md)
-
-## Test and Verify
-
-```bash
-bundle exec rake
-bundle exec rake spec
-bundle exec rake test:cli
-bundle exec rake test:web
-bundle exec rake test:lab
-bundle exec rake test:install
-bundle exec rake test:website_installers
-```
-
-Latest local verification in this repo:
-
-- Date: `2026-04-09`
-- Result: `53 examples, 0 failures`
-- Full verify gate: `bundle exec rake` passed
 
 ## Authorized Use
 
