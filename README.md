@@ -5,10 +5,14 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-1.0.0-0A66C2?style=for-the-badge" alt="Version">
-  <img src="https://img.shields.io/badge/ruby-%3E%3D%203.2-red?style=for-the-badge&logo=ruby&logoColor=white" alt="Ruby >= 3.2">
-  <img src="https://img.shields.io/badge/tests-53%2F53%20passing-2E8B57?style=for-the-badge" alt="Tests Passing">
+  <img src="https://img.shields.io/badge/tests-52%2F52%20passing-2E8B57?style=for-the-badge" alt="Tests Passing">
   <img src="https://img.shields.io/badge/verify-bundle%20exec%20rake%20passing-2E8B57?style=for-the-badge" alt="Rake Verify Passing">
+  <br>
+  <img src="https://img.shields.io/badge/status-stable-4C956C?style=for-the-badge" alt="Status Stable">
+  <img src="https://img.shields.io/badge/license-Proprietary-8B0000?style=for-the-badge" alt="License">
+  <br>
+  <a href="https://github.com/voltsparx/ASRFacet-Rb/actions/workflows/ci.yml"><img src="https://github.com/voltsparx/ASRFacet-Rb/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://github.com/voltsparx/ASRFacet-Rb/actions/workflows/pages.yml"><img src="https://github.com/voltsparx/ASRFacet-Rb/actions/workflows/pages.yml/badge.svg" alt="Docs Website"></a>
 </p>
 
 ASRFacet-Rb is a pipeline-based reconnaissance framework for authorized testing, built to track, correlate, and evolve attack surface intelligence over time.  
