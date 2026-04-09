@@ -4,6 +4,7 @@ setlocal EnableExtensions
 
 set "SCRIPT_DIR=%~dp0"
 set "SCRIPT_NAME=%~nx0"
+set "THEME=[ASRFacet-Rb]"
 set "PS_SCRIPT=%SCRIPT_DIR%asrfacet-rb-installer-windows.ps1"
 set "PS_EXE="
 set "MODE="
@@ -14,7 +15,7 @@ set "FLAG_VERBOSE="
 set "PS_ARGS="
 
 if not exist "%PS_SCRIPT%" (
-  echo [FAIL] Missing installer script: %PS_SCRIPT%
+  echo %THEME%[FAIL] Missing installer script: %PS_SCRIPT%
   exit /b 1
 )
 
@@ -54,8 +55,8 @@ if /I "%~1"=="--verbose" (
   goto :parse_args
 )
 
-echo [FAIL] Unknown argument: %~1
-echo [INFO] Run "%SCRIPT_NAME% --help" for usage.
+echo %THEME%[FAIL] Unknown argument: %~1
+echo %THEME%[INFO] Run "%SCRIPT_NAME% --help" for usage.
 exit /b 1
 
 :set_mode_install
@@ -83,7 +84,7 @@ shift
 goto :parse_args
 
 :multiple_mode
-echo [FAIL] Multiple modes provided. Use one of: install, test, update, uninstall.
+echo %THEME%[FAIL] Multiple modes provided. Use one of: install, test, update, uninstall.
 exit /b 1
 
 :args_done
@@ -100,7 +101,7 @@ if not defined PS_EXE where pwsh >nul 2>nul
 if not defined PS_EXE if not errorlevel 1 set "PS_EXE=pwsh"
 
 if not defined PS_EXE (
-  echo [FAIL] Neither powershell nor pwsh was found in PATH.
+  echo %THEME%[FAIL] Neither powershell nor pwsh was found in PATH.
   exit /b 1
 )
 
@@ -108,22 +109,22 @@ if /I "%PS_EXE%"=="powershell" goto :run_powershell
 goto :run_pwsh
 
 :run_powershell
-echo [INFO] Running installer with PowerShell.
+echo %THEME%[INFO] Running installer with PowerShell.
 powershell -NoProfile -ExecutionPolicy Bypass -File "%PS_SCRIPT%" %PS_ARGS%
 set "EXIT_CODE=%ERRORLEVEL%"
 goto :finish
 
 :run_pwsh
-echo [INFO] Running installer with PowerShell Core (pwsh).
+echo %THEME%[INFO] Running installer with PowerShell Core (pwsh).
 pwsh -NoProfile -File "%PS_SCRIPT%" %PS_ARGS%
 set "EXIT_CODE=%ERRORLEVEL%"
 goto :finish
 
 :finish
 if not "%EXIT_CODE%"=="0" (
-  echo [FAIL] Installer failed with exit code %EXIT_CODE%.
+  echo %THEME%[FAIL] Installer failed with exit code %EXIT_CODE%.
 ) else (
-  echo [ OK ] Installer completed successfully.
+  echo %THEME%[ OK ] Installer completed successfully.
 )
 exit /b %EXIT_CODE%
 

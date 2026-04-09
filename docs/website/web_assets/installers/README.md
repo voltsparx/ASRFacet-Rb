@@ -35,6 +35,15 @@ All installers support:
 
 If no mode is passed, an interactive mode chooser is shown.
 
+## Prompt Theme
+
+Installer prompts follow a shared subtle theme so terminal output feels consistent with docs and website language:
+
+- `[ASRFacet-Rb][INFO]` progress updates
+- `[ASRFacet-Rb][ OK ]` completed actions
+- `[ASRFacet-Rb][WARN]` recoverable warnings
+- `[ASRFacet-Rb][FAIL]` stopping errors
+
 ## Optional flags
 
 - `--yes` or `--no-prompt`: skip prompts where possible

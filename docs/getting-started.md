@@ -34,6 +34,13 @@ Each installer supports:
 
 They stage the framework into its own `asrfacet-rb` application directory, install dependencies into that directory, create launchers, and print the final install and report paths when complete. After installation you can invoke the framework with either `asrfacet-rb` or the shorter alias `asrfrb`.
 
+Installer prompt legend is consistent across Linux, macOS, and Windows:
+
+- `[ASRFacet-Rb][INFO]` for progress
+- `[ASRFacet-Rb][ OK ]` for successful milestones
+- `[ASRFacet-Rb][WARN]` for recoverable issues
+- `[ASRFacet-Rb][FAIL]` for stopping errors
+
 ## First Commands
 
 ```bash

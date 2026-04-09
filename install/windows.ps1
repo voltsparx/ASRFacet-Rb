@@ -23,6 +23,7 @@ Set-StrictMode -Version Latest
 
 $AppName = "asrfacet-rb"
 $AliasName = "asrfrb"
+$ThemeTag = "ASRFacet-Rb"
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $RepoRoot = Split-Path -Parent $ScriptDir
 $InstallRoot = Join-Path $env:LOCALAPPDATA "Programs\$AppName"
@@ -57,7 +58,7 @@ function Write-Labelled {
     [ConsoleColor]$Color = [ConsoleColor]::Gray
   )
 
-  Write-Host ("[{0}] {1}" -f $Label, $Message) -ForegroundColor $Color
+  Write-Host ("[{0}][{1}] {2}" -f $ThemeTag, $Label, $Message) -ForegroundColor $Color
 }
 
 function Write-Info {

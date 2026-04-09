@@ -17,6 +17,7 @@ set -o pipefail
 
 APP_NAME="asrfacet-rb"
 ALIAS_NAME="asrfrb"
+THEME_TAG="ASRFacet-Rb"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 INSTALL_ROOT="$HOME/Library/Application Support/$APP_NAME"
@@ -46,7 +47,7 @@ RUNTIME_PAYLOAD=(
   "asrfacet-rb.gemspec"
 )
 
-log() { printf '[%s] %s\n' "$1" "$2"; }
+log() { printf '[%s][%s] %s\n' "$THEME_TAG" "$1" "$2"; }
 info() { log "INFO" "$1"; }
 ok() { log " OK " "$1"; }
 warn() { log "WARN" "$1"; }

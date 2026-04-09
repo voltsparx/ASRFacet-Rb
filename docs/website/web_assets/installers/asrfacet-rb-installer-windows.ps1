@@ -17,6 +17,7 @@ Set-StrictMode -Version Latest
 $RepoUrl = "https://github.com/voltsparx/ASRFacet-Rb.git"
 $Branch = "main"
 $WorkDir = $null
+$ThemeTag = "ASRFacet-Rb"
 
 function Write-Labelled {
   param(
@@ -24,7 +25,7 @@ function Write-Labelled {
     [string]$Message,
     [ConsoleColor]$Color = [ConsoleColor]::Gray
   )
-  Write-Host ("[{0}] {1}" -f $Label, $Message) -ForegroundColor $Color
+  Write-Host ("[{0}][{1}] {2}" -f $ThemeTag, $Label, $Message) -ForegroundColor $Color
 }
 
 function Write-Info { param([string]$Message) Write-Labelled -Label "INFO" -Message $Message -Color ([ConsoleColor]::Cyan) }

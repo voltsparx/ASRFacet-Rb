@@ -110,6 +110,13 @@ Installed command aliases:
 - `asrfacet-rb`
 - `asrfrb`
 
+Installer prompt theme (all platforms):
+
+- `[ASRFacet-Rb][INFO]`
+- `[ASRFacet-Rb][ OK ]`
+- `[ASRFacet-Rb][WARN]`
+- `[ASRFacet-Rb][FAIL]`
+
 ## Command Examples
 
 ```bash

@@ -5,6 +5,7 @@ set -u
 set -o pipefail
 
 APP_NAME="asrfacet-rb"
+THEME_TAG="ASRFacet-Rb"
 REPO_URL="https://github.com/voltsparx/ASRFacet-Rb.git"
 BRANCH="main"
 TEMP_BASE="${TMPDIR:-/tmp}/${APP_NAME}-installer"
@@ -14,7 +15,7 @@ KEEP_TEMP="no"
 VERBOSE="no"
 WORK_DIR=""
 
-log() { printf '[%s] %s\n' "$1" "$2"; }
+log() { printf '[%s][%s] %s\n' "$THEME_TAG" "$1" "$2"; }
 info() { log "INFO" "$1"; }
 ok() { log " OK " "$1"; }
 warn() { log "WARN" "$1"; }
