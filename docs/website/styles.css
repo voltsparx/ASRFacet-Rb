@@ -169,6 +169,14 @@ body.egg-clean-screen::before {
   transform: translate3d(0, 0, 0) rotate(0deg);
 }
 
+.egg-confetti-ruby {
+  width: 11px;
+  height: 11px;
+  object-fit: contain;
+  border-radius: 0;
+  filter: drop-shadow(0 0 2px rgba(255, 40, 40, 0.55));
+}
+
 @keyframes egg-confetti-fall {
   to {
     transform: translate3d(var(--egg-drift, 0px), 115vh, 0) rotate(760deg);

@@ -251,6 +251,7 @@ const Sidebar = (() => {
 
 const EasterEgg = (() => {
   const toastId = "egg-toast";
+  const rubyGemAsset = "web_assets/media/ruby-gem.png";
   const secretQueries = {
     asrfrb: () => {
       showToast("Alias recognized: asrfrb");
@@ -264,7 +265,12 @@ const EasterEgg = (() => {
       activateOverdrive({ message: "Konami accepted: recon overdrive", duration: 14000, confettiCount: 30 });
     },
     overdrivesync: () => {
-      activateOverdrive({ message: "over drive sync", duration: 14000, confettiCount: 30 });
+      activateOverdrive({
+        message: "over drive sync - ribbons and ruby fall",
+        duration: 14000,
+        confettiCount: 30,
+        rubyChance: 0.3
+      });
     }
   };
 
@@ -312,7 +318,13 @@ const EasterEgg = (() => {
     }, 2200);
   }
 
-  function spawnConfetti(count = 20) {
+  function spawnConfetti(options = {}) {
+    const normalized = Number.isFinite(options)
+      ? { count: options }
+      : options;
+
+    const count = Number.isFinite(normalized.count) ? normalized.count : 20;
+    const rubyChance = Math.max(0, Math.min(1, Number.isFinite(normalized.rubyChance) ? normalized.rubyChance : 0));
     const layer = document.createElement("div");
     layer.className = "egg-confetti-layer";
     DocsElements.body.appendChild(layer);
@@ -321,13 +333,23 @@ const EasterEgg = (() => {
     const total = Math.max(8, Math.min(count, 48));
 
     for (let i = 0; i < total; i += 1) {
-      const bit = document.createElement("span");
-      bit.className = "egg-confetti";
+      const rubyDrop = Math.random() < rubyChance;
+      const bit = rubyDrop ? document.createElement("img") : document.createElement("span");
+      bit.className = rubyDrop ? "egg-confetti egg-confetti-ruby" : "egg-confetti";
       bit.style.left = `${Math.random() * 100}%`;
-      bit.style.background = colors[i % colors.length];
       bit.style.setProperty("--egg-drift", `${(Math.random() * 180) - 90}px`);
       bit.style.animationDuration = `${2.2 + (Math.random() * 1.8)}s`;
       bit.style.animationDelay = `${Math.random() * 0.25}s`;
+
+      if (rubyDrop) {
+        bit.src = rubyGemAsset;
+        bit.alt = "";
+        bit.setAttribute("aria-hidden", "true");
+        bit.setAttribute("draggable", "false");
+      } else {
+        bit.style.background = colors[i % colors.length];
+      }
+
       layer.appendChild(bit);
     }
 
@@ -340,10 +362,11 @@ const EasterEgg = (() => {
     const message = options.message || "Recon overdrive enabled for 12 seconds";
     const duration = Number.isFinite(options.duration) ? options.duration : 12000;
     const confettiCount = Number.isFinite(options.confettiCount) ? options.confettiCount : 24;
+    const rubyChance = Math.max(0, Math.min(1, Number.isFinite(options.rubyChance) ? options.rubyChance : 0));
 
     DocsElements.body.classList.add("egg-overdrive");
     showToast(message);
-    spawnConfetti(confettiCount);
+    spawnConfetti({ count: confettiCount, rubyChance });
 
     if (overdriveTimer) {
       window.clearTimeout(overdriveTimer);
@@ -778,11 +801,12 @@ const App = (() => {
 
     const triggerOverdriveSync = () => {
       logo.classList.add("egg-overdrive-sync");
-      showEggText("over drive sync", 5200);
+      showEggText("over drive sync - ribbons and ruby fall", 5200);
       EasterEgg.activateOverdrive({
-        message: "over drive sync",
+        message: "over drive sync - ribbons and ruby fall",
         duration: 14000,
-        confettiCount: 34
+        confettiCount: 34,
+        rubyChance: 0.3
       });
 
       if (syncTimer) {
