@@ -61,7 +61,6 @@ flowchart LR
     C --> D[Correlation Engine]
     D --> E[Tracking and Change Summary]
 ```
-![ASRFacet-Rb Framework Flow](docs/images/illustration/asrfacet-rb-framework-visual.svg)
 
 ### Stage Intent
 
