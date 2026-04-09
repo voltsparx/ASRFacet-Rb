@@ -54,6 +54,7 @@ const DocsState = {
 const DocsElements = {
   body: document.body,
   topbarLogo: document.getElementById("topbar-logo"),
+  topbarName: document.getElementById("topbar-name"),
   topbarVersion: document.getElementById("topbar-version"),
   topbarSearch: document.getElementById("topbar-search"),
   sidebar: document.getElementById("sidebar"),
@@ -250,18 +251,36 @@ const Sidebar = (() => {
 
 const EasterEgg = (() => {
   const toastId = "egg-toast";
-  const secretQueries = new Set([
-    "asrfrb",
-    "reconparty",
-    "upupdowndownleftrightleftrightba"
-  ]);
+  const secretQueries = {
+    asrfrb: () => {
+      showToast("Alias recognized: asrfrb");
+      spawnConfetti(20);
+    },
+    reconparty: () => {
+      showToast("Recon party mode activated");
+      spawnConfetti(26);
+    },
+    upupdowndownleftrightleftrightba: () => {
+      activateOverdrive({ message: "Konami accepted: recon overdrive", duration: 14000, confettiCount: 30 });
+    },
+    overdrivesync: () => {
+      activateOverdrive({ message: "over drive sync", duration: 14000, confettiCount: 30 });
+    }
+  };
 
   let logoTapCount = 0;
   let logoTapTimer = null;
+  let nameTapCount = 0;
+  let nameTapTimer = null;
+  let searchTapCount = 0;
+  let searchTapTimer = null;
   let footerTapCount = 0;
   let footerTapTimer = null;
   let longPressTimer = null;
+  let menuLongPressTimer = null;
   let overdriveTimer = null;
+  let ghostModeTimer = null;
+  let signalLockTimer = null;
   let toastTimer = null;
   let lastSecretQuery = "";
 
@@ -317,22 +336,56 @@ const EasterEgg = (() => {
     }, 3200);
   }
 
-  function triggerOverdrive() {
+  function activateOverdrive(options = {}) {
+    const message = options.message || "Recon overdrive enabled for 12 seconds";
+    const duration = Number.isFinite(options.duration) ? options.duration : 12000;
+    const confettiCount = Number.isFinite(options.confettiCount) ? options.confettiCount : 24;
+
     DocsElements.body.classList.add("egg-overdrive");
-    showToast("Recon overdrive enabled for 12 seconds");
-    spawnConfetti(24);
+    showToast(message);
+    spawnConfetti(confettiCount);
 
     if (overdriveTimer) {
       window.clearTimeout(overdriveTimer);
     }
     overdriveTimer = window.setTimeout(() => {
       DocsElements.body.classList.remove("egg-overdrive");
-    }, 12000);
+    }, duration);
   }
 
   function toggleBlueprintMode() {
     const enabled = DocsElements.body.classList.toggle("egg-blueprint");
     showToast(enabled ? "Blueprint mode enabled" : "Blueprint mode disabled");
+  }
+
+  function activateSignalLock(duration = 4200) {
+    DocsElements.body.classList.add("egg-signal-lock");
+    showToast("signal lock acquired");
+    spawnConfetti(14);
+
+    if (signalLockTimer) {
+      window.clearTimeout(signalLockTimer);
+    }
+    signalLockTimer = window.setTimeout(() => {
+      DocsElements.body.classList.remove("egg-signal-lock");
+    }, duration);
+  }
+
+  function activateGhostMode(duration = 10000) {
+    DocsElements.body.classList.add("egg-ghost-mode");
+    showToast("ghost mode active");
+
+    if (ghostModeTimer) {
+      window.clearTimeout(ghostModeTimer);
+    }
+    ghostModeTimer = window.setTimeout(() => {
+      DocsElements.body.classList.remove("egg-ghost-mode");
+    }, duration);
+  }
+
+  function toggleCleanScreen() {
+    const enabled = DocsElements.body.classList.toggle("egg-clean-screen");
+    showToast(enabled ? "clean screen enabled" : "clean screen disabled");
   }
 
   function bindLogoTapCombo() {
@@ -352,7 +405,28 @@ const EasterEgg = (() => {
 
       if (logoTapCount >= 5) {
         logoTapCount = 0;
-        triggerOverdrive();
+        activateOverdrive({ message: "Topbar overdrive unlocked", duration: 9000, confettiCount: 20 });
+      }
+    });
+  }
+
+  function bindNameTapCombo() {
+    if (!DocsElements.topbarName) {
+      return;
+    }
+
+    DocsElements.topbarName.addEventListener("click", () => {
+      nameTapCount += 1;
+      if (nameTapTimer) {
+        window.clearTimeout(nameTapTimer);
+      }
+      nameTapTimer = window.setTimeout(() => {
+        nameTapCount = 0;
+      }, 1600);
+
+      if (nameTapCount >= 4) {
+        nameTapCount = 0;
+        activateSignalLock();
       }
     });
   }
@@ -389,6 +463,59 @@ const EasterEgg = (() => {
     DocsElements.topbarVersion.addEventListener("touchcancel", cancelPress);
   }
 
+  function bindMenuLongPress() {
+    if (!DocsElements.menuToggle) {
+      return;
+    }
+
+    const startPress = (event) => {
+      if (event.type === "mousedown" && event.button !== 0) {
+        return;
+      }
+      if (menuLongPressTimer) {
+        window.clearTimeout(menuLongPressTimer);
+      }
+      menuLongPressTimer = window.setTimeout(() => {
+        activateGhostMode();
+      }, 900);
+    };
+
+    const cancelPress = () => {
+      if (menuLongPressTimer) {
+        window.clearTimeout(menuLongPressTimer);
+        menuLongPressTimer = null;
+      }
+    };
+
+    DocsElements.menuToggle.addEventListener("mousedown", startPress);
+    DocsElements.menuToggle.addEventListener("mouseup", cancelPress);
+    DocsElements.menuToggle.addEventListener("mouseleave", cancelPress);
+    DocsElements.menuToggle.addEventListener("touchstart", startPress, { passive: true });
+    DocsElements.menuToggle.addEventListener("touchend", cancelPress);
+    DocsElements.menuToggle.addEventListener("touchcancel", cancelPress);
+  }
+
+  function bindSearchTapCombo() {
+    if (!DocsElements.searchInput) {
+      return;
+    }
+
+    DocsElements.searchInput.addEventListener("click", () => {
+      searchTapCount += 1;
+      if (searchTapTimer) {
+        window.clearTimeout(searchTapTimer);
+      }
+      searchTapTimer = window.setTimeout(() => {
+        searchTapCount = 0;
+      }, 1500);
+
+      if (searchTapCount >= 3) {
+        searchTapCount = 0;
+        toggleCleanScreen();
+      }
+    });
+  }
+
   function bindFooterTapCombo() {
     if (!DocsElements.siteFooter) {
       return;
@@ -423,7 +550,8 @@ const EasterEgg = (() => {
 
   function onSearchInput(value = "") {
     const normalized = value.toLowerCase().replace(/[^a-z0-9]/g, "");
-    if (!secretQueries.has(normalized)) {
+    const action = secretQueries[normalized];
+    if (!action) {
       lastSecretQuery = "";
       return;
     }
@@ -433,17 +561,19 @@ const EasterEgg = (() => {
     }
 
     lastSecretQuery = normalized;
-    showToast("Secret query accepted");
-    spawnConfetti(28);
+    action();
   }
 
   function bind() {
     bindLogoTapCombo();
+    bindNameTapCombo();
     bindVersionLongPress();
+    bindMenuLongPress();
+    bindSearchTapCombo();
     bindFooterTapCombo();
   }
 
-  return { bind, onSearchInput };
+  return { bind, onSearchInput, activateOverdrive, showToast, spawnConfetti };
 })();
 
 const Search = (() => {
@@ -610,17 +740,19 @@ const App = (() => {
     }
 
     const egg = DocsElements.homeHeroEgg;
+    const brandWrap = logo.parentElement;
+    const defaultEggText = egg ? egg.textContent : "";
     let eggTimer = null;
+    let tapCount = 0;
+    let tapTimer = null;
+    let syncTimer = null;
 
-    const triggerSpin = () => {
-      logo.classList.remove("egg-spin");
-      void logo.offsetWidth;
-      logo.classList.add("egg-spin");
-
+    const showEggText = (text, duration = 1500) => {
       if (!egg) {
         return;
       }
 
+      egg.textContent = text;
       egg.classList.remove("show");
       void egg.offsetWidth;
       egg.classList.add("show");
@@ -631,14 +763,64 @@ const App = (() => {
 
       eggTimer = window.setTimeout(() => {
         egg.classList.remove("show");
-      }, 1500);
+        if (defaultEggText) {
+          egg.textContent = defaultEggText;
+        }
+      }, duration);
     };
 
-    logo.addEventListener("click", triggerSpin);
+    const triggerSpin = () => {
+      logo.classList.remove("egg-spin");
+      void logo.offsetWidth;
+      logo.classList.add("egg-spin");
+
+      showEggText(defaultEggText || "recon pulse synced", 1500);
+    };
+
+    const triggerOverdriveSync = () => {
+      logo.classList.add("egg-overdrive-sync");
+      brandWrap?.classList.add("egg-sync-trails");
+      showEggText("over drive sync", 5200);
+      EasterEgg.activateOverdrive({
+        message: "over drive sync",
+        duration: 14000,
+        confettiCount: 34
+      });
+
+      if (syncTimer) {
+        window.clearTimeout(syncTimer);
+      }
+      syncTimer = window.setTimeout(() => {
+        logo.classList.remove("egg-overdrive-sync");
+        brandWrap?.classList.remove("egg-sync-trails");
+      }, 6200);
+    };
+
+    const registerTap = () => {
+      tapCount += 1;
+      if (tapTimer) {
+        window.clearTimeout(tapTimer);
+      }
+      tapTimer = window.setTimeout(() => {
+        tapCount = 0;
+      }, 2200);
+
+      if (tapCount >= 7) {
+        tapCount = 0;
+        triggerOverdriveSync();
+      }
+    };
+
+    const activateLogo = () => {
+      triggerSpin();
+      registerTap();
+    };
+
+    logo.addEventListener("click", activateLogo);
     logo.addEventListener("keydown", (event) => {
       if (event.key === "Enter" || event.key === " ") {
         event.preventDefault();
-        triggerSpin();
+        activateLogo();
       }
     });
 
