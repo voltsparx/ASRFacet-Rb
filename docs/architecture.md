@@ -164,3 +164,28 @@ The local web UI uses:
 - `ASRFacet::Web::Server` for the local control panel
 
 Session drafts survive accidental closes, and running sessions use heartbeats so stale runs can be recovered after interruption without falsely corrupting active state.
+
+## Documentation Website Structure
+
+The static documentation site under `docs/website/` is split into smaller
+asset segments so it stays easy to maintain as pages grow.
+
+### Website CSS
+
+- `docs/website/css/core/` holds shared tokens and baseline styling.
+- `docs/website/css/layout/` holds structural layout layers such as top bar,
+  sidebar, page body, and responsive behavior.
+- `docs/website/css/components/` holds reusable feature styling such as the
+  workflow visual and documentation modules.
+
+### Website JavaScript
+
+- `docs/website/js/core/` holds shared website data, state, and helpers.
+- `docs/website/js/features/` holds isolated UI features such as search,
+  sidebar behavior, contact panel logic, easter eggs, and the workflow visual.
+- `docs/website/js/bootstrap/` holds the final page bootstrap that wires the
+  shared features together.
+
+This keeps the docs site aligned with the same broader project principle used
+elsewhere in ASRFacet-Rb: shared state first, focused modules second, and a
+small bootstrap layer at the edge.

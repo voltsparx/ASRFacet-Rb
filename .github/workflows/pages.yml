@@ -38,10 +38,26 @@ jobs:
       - name: Validate docs website shell
         shell: bash
         run: |
-          node --check docs/website/app.js
+          for file in docs/website/js/core/*.js docs/website/js/features/*.js docs/website/js/bootstrap/*.js; do
+            node --check "$file"
+          done
           test -f docs/website/index.html
           test -f docs/website/download.html
-          test -f docs/website/styles.css
+          test -f docs/website/css/core/base.css
+          test -f docs/website/css/layout/topbar.css
+          test -f docs/website/css/layout/sidebar.css
+          test -f docs/website/css/layout/content.css
+          test -f docs/website/css/layout/responsive.css
+          test -f docs/website/css/components/workflow.css
+          test -f docs/website/css/components/modules.css
+          test -f docs/website/js/core/site-data.js
+          test -f docs/website/js/core/helpers.js
+          test -f docs/website/js/features/sidebar.js
+          test -f docs/website/js/features/easter-eggs.js
+          test -f docs/website/js/features/search.js
+          test -f docs/website/js/features/contact-panel.js
+          test -f docs/website/js/features/workflow-visual.js
+          test -f docs/website/js/bootstrap/app.js
           test -f docs/website/web_assets/media/favicon.ico
           test -f docs/website/web_assets/media/asrfacet-rb-site-preview.png
           test -f docs/website/web_assets/installers/asrfacet-rb-installer-linux.sh
@@ -58,8 +74,21 @@ jobs:
           [ ${#pages[@]} -gt 0 ]
           for page in "${pages[@]}"; do
             grep -q 'topbar-contact-popover" hidden' "${page}"
-            grep -q 'styles.css?v=' "${page}"
-            grep -q 'app.js?v=' "${page}"
+            grep -q 'css/core/base.css?v=' "${page}"
+            grep -q 'css/layout/topbar.css?v=' "${page}"
+            grep -q 'css/layout/sidebar.css?v=' "${page}"
+            grep -q 'css/layout/content.css?v=' "${page}"
+            grep -q 'css/components/workflow.css?v=' "${page}"
+            grep -q 'css/components/modules.css?v=' "${page}"
+            grep -q 'css/layout/responsive.css?v=' "${page}"
+            grep -q 'js/core/site-data.js?v=' "${page}"
+            grep -q 'js/core/helpers.js?v=' "${page}"
+            grep -q 'js/features/sidebar.js?v=' "${page}"
+            grep -q 'js/features/easter-eggs.js?v=' "${page}"
+            grep -q 'js/features/search.js?v=' "${page}"
+            grep -q 'js/features/contact-panel.js?v=' "${page}"
+            grep -q 'js/features/workflow-visual.js?v=' "${page}"
+            grep -q 'js/bootstrap/app.js?v=' "${page}"
           done
 
       - name: Validate download center wiring
@@ -74,7 +103,7 @@ jobs:
           grep -q 'web_assets/installers/asrfacet-rb-installer-macos.sh' docs/website/download.html
           grep -q 'web_assets/installers/asrfacet-rb-installer-windows.ps1' docs/website/download.html
           grep -q 'web_assets/installers/asrfacet-rb-installer-windows.cmd' docs/website/download.html
-          grep -q '"download.html": { title: "Download Center"' docs/website/app.js
+          grep -q '"download.html": { title: "Download Center"' docs/website/js/core/site-data.js
 
       - name: Upload static site artifact
         uses: actions/upload-pages-artifact@v3
