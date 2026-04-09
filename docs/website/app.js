@@ -745,6 +745,27 @@ const ContactPanel = (() => {
 })();
 
 const App = (() => {
+  function trimEmptyVisualCards() {
+    const cardSelectors = [
+      ".ov-card",
+      ".install-card",
+      ".cmd-card",
+      ".src-card",
+      ".fmt-card",
+      ".wiz-card",
+      ".stat-item"
+    ];
+
+    cardSelectors.forEach((selector) => {
+      document.querySelectorAll(selector).forEach((card) => {
+        const text = (card.textContent || "").replace(/\s+/g, " ").trim();
+        if (!text) {
+          card.remove();
+        }
+      });
+    });
+  }
+
   function bindHomeEasterEgg() {
     const logo = DocsElements.homeHeroLogo;
     if (!logo) {
@@ -898,6 +919,7 @@ const App = (() => {
 
   function init() {
     DocsElements.body.classList.add("egg-clean-screen");
+    trimEmptyVisualCards();
     DocsHelpers.syncCurrentSection();
     Sidebar.render();
     EasterEgg.bind();
