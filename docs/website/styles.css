@@ -16,6 +16,13 @@
   --txt: #f5f7fa;
   --txt2: #d7dce3;
   --txt3: #aeb7c2;
+  --terminal-bg: #0a0f14;
+  --terminal-bg2: #111922;
+  --terminal-text: #e6edf3;
+  --terminal-muted: #8b949e;
+  --terminal-prompt: #7ee787;
+  --terminal-flag: #79c0ff;
+  --terminal-arg: #f2cc60;
   --mono: 'Share Tech Mono', monospace;
   --display: 'Orbitron', sans-serif;
   --body: 'Rajdhani', sans-serif;
@@ -834,14 +841,15 @@ code {
 
 /* CODE BLOCKS */
 .code-wrap {
-  background: #050000;
+  background: var(--terminal-bg);
   border: 1px solid var(--border);
   border-left: 3px solid var(--r1);
   margin-bottom: 24px;
   overflow: hidden;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.28);
 }
 .code-header {
-  background: rgba(139,0,0,0.18);
+  background: linear-gradient(180deg, rgba(255, 26, 26, 0.18), rgba(255, 26, 26, 0.05));
   padding: 8px 16px;
   display: flex; align-items: center; gap: 10px;
   border-bottom: 1px solid var(--border2);
@@ -862,23 +870,42 @@ code {
   padding: 20px 22px;
   overflow-x: auto;
   white-space: pre;
-  color: #ff8080;
+  color: var(--terminal-text);
+  font-variant-ligatures: none;
+  tab-size: 2;
+  -moz-tab-size: 2;
 }
-.code-body .cm  { color: var(--txt3); }   /* comment */
-.code-body .kw  { color: var(--r0); }     /* keyword / command */
-.code-body .fl  { color: #ff6666; }       /* flag */
-.code-body .ar  { color: #ffb0b0; }       /* arg */
-.code-body .st  { color: #ffcc99; }       /* string */
-.code-body .pn  {
-  color: var(--txt3);
+.code-body .cm  { color: var(--terminal-muted); }   /* comment */
+.code-body .kw  { color: var(--terminal-text); font-weight: 600; }     /* keyword / command */
+.code-body .fl  { color: var(--terminal-flag); }       /* flag */
+.code-body .ar  { color: var(--terminal-arg); }       /* arg */
+.code-body .st  { color: #a5d6ff; }       /* string */
+.code-body .pn,
+.example-code .pn {
+  color: var(--terminal-prompt);
   display: inline-block;
   width: 8ch;
   min-width: 8ch;
   text-align: right;
   margin-right: 1ch;
+  font-weight: 600;
 }   /* prompt */
-.code-body .sc  { color: #ff9090; }       /* section */
+.code-body .sc  { color: var(--terminal-text); }       /* section */
 .code-body .hl  { color: #ffffff; }       /* highlight */
+
+.example-code .cm {
+  color: var(--terminal-muted);
+}
+.example-code .kw {
+  color: var(--terminal-text);
+  font-weight: 600;
+}
+.example-code .fl {
+  color: var(--terminal-flag);
+}
+.example-code .ar {
+  color: var(--terminal-arg);
+}
 
 /* TABLES */
 .tbl-wrap {
@@ -1116,28 +1143,30 @@ tbody td code { white-space: nowrap; }
 .example-code {
   font-family: var(--mono);
   font-size: 0.78rem;
-  color: #ff8080;
-  background: #050000;
+  color: var(--terminal-text);
+  background: var(--terminal-bg);
   border: 1px solid var(--border2);
   padding: 14px 16px;
   overflow-x: auto;
   white-space: pre;
   line-height: 1.9;
+  font-variant-ligatures: none;
+  tab-size: 2;
+  -moz-tab-size: 2;
 }
-.example-code .cm { color: var(--txt3); }
-.example-code .kw { color: var(--r0); }
-.example-code .fl { color: #ff6666; }
-.example-code .ar { color: #ffcccc; }
 .example-output {
   margin-top: 10px;
   font-family: var(--mono);
   font-size: 0.72rem;
-  color: var(--txt3);
-  background: rgba(0,0,0,0.3);
+  color: var(--terminal-muted);
+  background: var(--terminal-bg2);
   border: 1px solid var(--border2);
   padding: 10px 14px;
   white-space: pre;
   line-height: 1.9;
+  font-variant-ligatures: none;
+  tab-size: 2;
+  -moz-tab-size: 2;
 }
 
 /* WIZARD PROFILES */
