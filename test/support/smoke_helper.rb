@@ -150,6 +150,9 @@ module ASRFacet
     end
 
     def expected_version
+      version_constant = load_version_constant
+      return version_constant if version_constant
+
       version_path = File.join(ROOT, "VERSION")
       version_md_path = File.join(ROOT, "VERSION.md")
 
@@ -170,6 +173,17 @@ module ASRFacet
       run_command(*ruby_command("bin/asrfacet-rb", "version")).strip
     rescue StandardError
       "1.0.0"
+    end
+
+    def load_version_constant
+      require File.join(ROOT, "lib", "asrfacet_rb", "version")
+      version = ASRFacet::VERSION if defined?(ASRFacet::VERSION)
+      version = version.to_s.strip
+      return version unless version.empty?
+
+      nil
+    rescue StandardError
+      nil
     end
   end
 end
