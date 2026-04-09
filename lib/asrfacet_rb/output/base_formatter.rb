@@ -153,7 +153,8 @@ module ASRFacet::Output
         recommendations << "Review the fault-isolation notes before trusting the run as complete, because one or more engines degraded or were skipped."
       end
 
-      if integrity_report(payload)[:status].to_s != "ok"
+      integrity_status = integrity_report(payload)[:status].to_s
+      if %w[warning critical].include?(integrity_status)
         recommendations << "Resolve the framework integrity findings before the next run so missing files or write-path issues do not distort results."
       end
 

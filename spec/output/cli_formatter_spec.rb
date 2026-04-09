@@ -44,4 +44,23 @@ RSpec.describe ASRFacet::Output::CliFormatter do
       expect(output).to include("Scan Overview", "Subdomains", "HTTP Exposure")
     end.not_to output(/currently set width|vertical orientation/i).to_stderr
   end
+
+  it "does not recommend integrity remediation when no integrity status is present" do
+    formatter = described_class.new
+    store = ASRFacet::ResultStore.new
+    store.add(:subdomains, "scanme.nmap.org")
+
+    payload = {
+      store: store,
+      top_assets: [],
+      summary: store.summary,
+      meta: {
+        generated_at: Time.now.utc.iso8601,
+        output_directory: "C:/tmp/asrfacet"
+      }
+    }
+
+    output = formatter.format(payload)
+    expect(output).not_to include("Resolve the framework integrity findings before the next run")
+  end
 end
