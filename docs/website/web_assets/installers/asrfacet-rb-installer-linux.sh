@@ -47,23 +47,23 @@ EOF
 }
 
 required_paths_for_mode() {
-  local paths=("install/linux.sh")
+  local paths=("/install/linux.sh")
   case "$MODE" in
     install|update|test)
       paths+=(
-        "bin"
-        "config"
-        "lib"
-        "man"
-        "wordlists"
-        "docs/images"
-        "Gemfile"
-        "Gemfile.lock"
-        "asrfacet-rb.gemspec"
-        "README.md"
-        "LICENSE"
+        "/bin"
+        "/config"
+        "/lib"
+        "/man"
+        "/wordlists"
+        "/docs/images"
+        "/Gemfile"
+        "/Gemfile.lock"
+        "/asrfacet-rb.gemspec"
+        "/README.md"
+        "/LICENSE"
       )
-      [ "$MODE" = "test" ] && paths+=("spec")
+      [ "$MODE" = "test" ] && paths+=("/spec")
       ;;
   esac
 

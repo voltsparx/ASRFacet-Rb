@@ -68,24 +68,24 @@ function Confirm-Requirements {
 function Get-RequiredPaths {
   param([string]$SelectedMode)
 
-  $paths = @("install/windows.ps1")
+  $paths = @("/install/windows.ps1")
   if ($SelectedMode -in @("install", "update", "test")) {
     $paths += @(
-      "bin",
-      "config",
-      "lib",
-      "man",
-      "wordlists",
-      "docs/images",
-      "Gemfile",
-      "Gemfile.lock",
-      "asrfacet-rb.gemspec",
-      "README.md",
-      "LICENSE"
+      "/bin",
+      "/config",
+      "/lib",
+      "/man",
+      "/wordlists",
+      "/docs/images",
+      "/Gemfile",
+      "/Gemfile.lock",
+      "/asrfacet-rb.gemspec",
+      "/README.md",
+      "/LICENSE"
     )
 
     if ($SelectedMode -eq "test") {
-      $paths += "spec"
+      $paths += "/spec"
     }
   }
 
@@ -106,8 +106,9 @@ function Invoke-Step {
 }
 
 function Get-TempWorkDir {
-  $base = Join-Path $env:TEMP "asrfacet-rb-installer"
-  $name = "run-{0}" -f ([Guid]::NewGuid().ToString("N"))
+  $tempRoot = if ([string]::IsNullOrWhiteSpace($env:LOCALAPPDATA)) { $env:TEMP } else { Join-Path $env:LOCALAPPDATA "Temp" }
+  $base = Join-Path $tempRoot "afrb"
+  $name = "r-{0}" -f ([Guid]::NewGuid().ToString("N").Substring(0, 8))
   return Join-Path $base $name
 }
 
