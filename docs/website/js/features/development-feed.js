@@ -1,7 +1,7 @@
 const DevelopmentFeed = (() => {
   const selectors = {
     repoSummary: "#dev-repo-summary",
-    profileSummary: "#dev-profile-summary",
+    chart: "#dev-commit-chart",
     releaseSummary: "#dev-release-summary",
     commits: "#dev-commits-list",
     contributors: "#dev-contributors-list",
@@ -64,30 +64,126 @@ const DevelopmentFeed = (() => {
     `;
   }
 
-  function renderProfileSummary(profile) {
-    const node = element(selectors.profileSummary);
+  function buildCommitSeries(commits, days = 5) {
+    const buckets = [];
+    const counts = new Map();
+    const today = new Date();
+
+    for (let offset = days - 1; offset >= 0; offset -= 1) {
+      const date = new Date(today);
+      date.setHours(0, 0, 0, 0);
+      date.setDate(date.getDate() - offset);
+      const key = date.toISOString().slice(0, 10);
+      buckets.push({
+        key,
+        label: date.toLocaleDateString(undefined, { weekday: "short" }),
+        fullLabel: date.toLocaleDateString(undefined, { month: "short", day: "numeric" }),
+        count: 0
+      });
+      counts.set(key, 0);
+    }
+
+    commits.forEach((commit) => {
+      const date = commit.commit?.author?.date;
+      if (!date) {
+        return;
+      }
+
+      const key = new Date(date).toISOString().slice(0, 10);
+      if (counts.has(key)) {
+        counts.set(key, counts.get(key) + 1);
+      }
+    });
+
+    return buckets.map((bucket) => ({
+      ...bucket,
+      count: counts.get(bucket.key) || 0
+    }));
+  }
+
+  function chartPath(points) {
+    return points.map((point, index) => `${index === 0 ? "M" : "L"} ${point.x} ${point.y}`).join(" ");
+  }
+
+  function renderCommitChart(commits) {
+    const node = element(selectors.chart);
     if (!node) {
       return;
     }
 
-    const name = profile.name || profile.login || DocsData.github.owner;
-    const bio = profile.bio || "Maintainer profile snapshot from GitHub.";
+    const series = buildCommitSeries(commits);
+    const width = 640;
+    const height = 240;
+    const padding = { top: 22, right: 18, bottom: 42, left: 38 };
+    const chartWidth = width - padding.left - padding.right;
+    const chartHeight = height - padding.top - padding.bottom;
+    const maxCount = Math.max(...series.map((item) => item.count), 1);
+    const stepX = series.length > 1 ? chartWidth / (series.length - 1) : chartWidth;
+    const points = series.map((item, index) => ({
+      ...item,
+      x: Number((padding.left + (stepX * index)).toFixed(2)),
+      y: Number((padding.top + chartHeight - ((item.count / maxCount) * chartHeight)).toFixed(2))
+    }));
+    const line = chartPath(points);
+    const area = `${line} L ${points[points.length - 1].x} ${padding.top + chartHeight} L ${points[0].x} ${padding.top + chartHeight} Z`;
+    const peak = series.reduce((best, item) => (item.count > best.count ? item : best), series[0]);
+    const total = series.reduce((sum, item) => sum + item.count, 0);
+    const latestCommitAt = commits[0]?.commit?.author?.date;
+    const gridSteps = Math.min(maxCount, 4);
+    const gridValues = Array.from({ length: gridSteps + 1 }, (_, index) => {
+      const value = Math.round((maxCount / Math.max(gridSteps, 1)) * index);
+      return Math.min(value, maxCount);
+    }).filter((value, index, array) => index === 0 || value !== array[index - 1]);
 
     node.innerHTML = `
-      <div class="dev-profile-head">
-        <img class="dev-avatar" src="${profile.avatar_url}" alt="${DocsHelpers.escapeHtml(name)} avatar">
-        <div>
-          <div class="dev-card-title">${DocsHelpers.escapeHtml(name)}</div>
-          <div class="dev-card-copy">${DocsHelpers.escapeHtml(bio)}</div>
+      <div class="dev-chart-summary">
+        <div class="dev-stat-grid">
+          <div class="dev-stat"><span class="dev-stat-label">Last 5 Days</span><span class="dev-stat-value">${DocsHelpers.compactNumber(total)}</span></div>
+          <div class="dev-stat"><span class="dev-stat-label">Peak Day</span><span class="dev-stat-value">${DocsHelpers.escapeHtml(peak.fullLabel)}</span></div>
+        </div>
+        <div class="dev-meta-list">
+          <div><span>Peak commits</span><strong>${DocsHelpers.compactNumber(peak.count)}</strong></div>
+          <div><span>Latest commit</span><strong>${latestCommitAt ? `${DocsHelpers.formatDate(latestCommitAt)} (${DocsHelpers.formatRelativeTime(latestCommitAt)})` : "No recent commit data"}</strong></div>
         </div>
       </div>
-      <div class="dev-stat-grid">
-        <div class="dev-stat"><span class="dev-stat-label">Followers</span><span class="dev-stat-value">${DocsHelpers.compactNumber(profile.followers)}</span></div>
-        <div class="dev-stat"><span class="dev-stat-label">Public Repos</span><span class="dev-stat-value">${DocsHelpers.compactNumber(profile.public_repos)}</span></div>
-        <div class="dev-stat"><span class="dev-stat-label">Following</span><span class="dev-stat-value">${DocsHelpers.compactNumber(profile.following)}</span></div>
-      </div>
-      <div class="dev-meta-list">
-        <div><span>Profile</span><strong><a href="${profile.html_url}" target="_blank" rel="noopener noreferrer">@${DocsHelpers.escapeHtml(profile.login)}</a></strong></div>
+      <div class="dev-chart">
+        <svg class="dev-chart-svg" viewBox="0 0 ${width} ${height}" role="img" aria-label="Commit activity graph for the last five days">
+          <defs>
+            <linearGradient id="dev-chart-fill" x1="0" x2="0" y1="0" y2="1">
+              <stop offset="0%" stop-color="#ff5252" stop-opacity="0.45"></stop>
+              <stop offset="100%" stop-color="#ff5252" stop-opacity="0.02"></stop>
+            </linearGradient>
+            <linearGradient id="dev-chart-line" x1="0" x2="1" y1="0" y2="0">
+              <stop offset="0%" stop-color="#ff8a80"></stop>
+              <stop offset="55%" stop-color="#ff5252"></stop>
+              <stop offset="100%" stop-color="#ffc1b8"></stop>
+            </linearGradient>
+          </defs>
+          ${gridValues.map((value) => {
+            const y = Number((padding.top + chartHeight - ((value / maxCount) * chartHeight)).toFixed(2));
+            return `
+              <line class="dev-chart-grid" x1="${padding.left}" y1="${y}" x2="${width - padding.right}" y2="${y}"></line>
+              <text class="dev-chart-axis dev-chart-axis-y" x="${padding.left - 10}" y="${y + 4}">${value}</text>
+            `;
+          }).join("")}
+          <path class="dev-chart-fill" d="${area}"></path>
+          <path class="dev-chart-line" d="${line}"></path>
+          ${points.map((point) => `
+            <g>
+              <circle class="dev-chart-point-glow" cx="${point.x}" cy="${point.y}" r="7"></circle>
+              <circle class="dev-chart-point" cx="${point.x}" cy="${point.y}" r="4.2"></circle>
+              <text class="dev-chart-axis dev-chart-axis-x" x="${point.x}" y="${height - 14}" text-anchor="middle">${DocsHelpers.escapeHtml(point.label)}</text>
+            </g>
+          `).join("")}
+        </svg>
+        <div class="dev-chart-labels">
+          ${series.map((item) => `
+            <div class="dev-chart-label">
+              <strong>${DocsHelpers.escapeHtml(item.fullLabel)}</strong>
+              <span>${DocsHelpers.compactNumber(item.count)} commit${item.count === 1 ? "" : "s"}</span>
+            </div>
+          `).join("")}
+        </div>
       </div>
     `;
   }
@@ -201,10 +297,9 @@ const DevelopmentFeed = (() => {
     renderLinks();
     setPulse("Fetching live GitHub development data...");
 
-    const [repoResult, profileResult, commitsResult, contributorsResult, tagsResult, releaseResult] = await Promise.allSettled([
+    const [repoResult, commitsResult, contributorsResult, tagsResult, releaseResult] = await Promise.allSettled([
       fetchJson(DocsHelpers.githubApi("")),
-      fetchJson(DocsHelpers.githubProfileApi()),
-      fetchJson(DocsHelpers.githubApi("/commits?per_page=6")),
+      fetchJson(DocsHelpers.githubApi("/commits?per_page=20")),
       fetchJson(DocsHelpers.githubApi("/contributors?per_page=6")),
       fetchJson(DocsHelpers.githubApi("/tags?per_page=5")),
       fetchJson(DocsHelpers.githubApi("/releases/latest"))
@@ -217,10 +312,6 @@ const DevelopmentFeed = (() => {
       setPulse("GitHub API data could not be loaded right now. Direct repository links are still available below.", "warn");
     }
 
-    if (profileResult.status === "fulfilled") {
-      renderProfileSummary(profileResult.value);
-    }
-
     if (repoResult.status === "fulfilled") {
       const releaseValue = releaseResult.status === "fulfilled" ? releaseResult.value : { message: "No release" };
       const tagsValue = tagsResult.status === "fulfilled" ? tagsResult.value : [];
@@ -229,6 +320,12 @@ const DevelopmentFeed = (() => {
 
     if (commitsResult.status === "fulfilled") {
       renderCommits(commitsResult.value);
+      renderCommitChart(commitsResult.value);
+    } else {
+      const chart = element(selectors.chart);
+      if (chart) {
+        chart.innerHTML = '<div class="callout callout-warn"><div class="callout-title">Commit Trend</div>The graph could not be built right now because commit data was unavailable.</div>';
+      }
     }
 
     if (contributorsResult.status === "fulfilled") {
