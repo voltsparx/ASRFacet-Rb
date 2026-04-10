@@ -1,4 +1,24 @@
 const App = (() => {
+  function enhanceChrome() {
+    const topbarLinks = document.getElementById("topbar-links");
+    if (topbarLinks && !topbarLinks.querySelector('[data-site-link="development"]')) {
+      const developmentLink = document.createElement("a");
+      developmentLink.href = "development.html#development-home";
+      developmentLink.dataset.siteLink = "development";
+      developmentLink.textContent = "Development";
+      topbarLinks.insertBefore(developmentLink, topbarLinks.firstElementChild || null);
+    }
+
+    const mobileShortcuts = document.getElementById("mobile-shortcuts");
+    if (mobileShortcuts && !mobileShortcuts.querySelector('[data-site-link="development"]')) {
+      const developmentLink = document.createElement("a");
+      developmentLink.href = "development.html#development-home";
+      developmentLink.dataset.siteLink = "development";
+      developmentLink.textContent = "Development";
+      mobileShortcuts.insertBefore(developmentLink, mobileShortcuts.children[1] || null);
+    }
+  }
+
   function trimEmptyVisualCards() {
     const cardSelectors = [
       ".ov-card",
@@ -153,6 +173,11 @@ const App = (() => {
       }
 
       if (event.key === "Escape") {
+        if (typeof RawPopup !== "undefined" && RawPopup.isOpen()) {
+          RawPopup.close();
+          return;
+        }
+
         if (document.querySelector(".topbar-contact-popover:not([hidden])")) {
           ContactPanel.closeOpen();
           return;
@@ -173,12 +198,15 @@ const App = (() => {
 
   function init() {
     DocsElements.body.classList.add("egg-clean-screen");
+    enhanceChrome();
     trimEmptyVisualCards();
     DocsHelpers.syncCurrentSection();
     Sidebar.render();
     EasterEgg.bind();
     Search.bind();
     WorkflowVisual.bind();
+    RawPopup.bind();
+    void DevelopmentFeed.bind();
     Search.setOpen(false);
     bindHomeEasterEgg();
     bindGlobalEvents();

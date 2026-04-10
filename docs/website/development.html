@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Development | ASRFacet-Rb</title>
+<meta name="description" content="Live GitHub development signals for ASRFacet-Rb, including repository activity, commits, contributors, release markers, and inline file previews.">
+<link rel="canonical" href="https://voltsparx.github.io/ASRFacet-Rb/development.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="ASRFacet-Rb">
+<meta property="og:title" content="Development | ASRFacet-Rb">
+<meta property="og:description" content="Live GitHub development signals for ASRFacet-Rb, including repository activity, commits, contributors, release markers, and inline file previews.">
+<meta property="og:url" content="https://voltsparx.github.io/ASRFacet-Rb/development.html">
+<meta property="og:image" content="https://raw.githubusercontent.com/voltsparx/ASRFacet-Rb/main/docs/website/web_assets/media/asrfacet-rb-site-preview.png">
+<meta property="og:image:type" content="image/png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Development | ASRFacet-Rb">
+<meta name="twitter:description" content="Live GitHub development signals for ASRFacet-Rb, including repository activity, commits, contributors, release markers, and inline file previews.">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/voltsparx/ASRFacet-Rb/main/docs/website/web_assets/media/asrfacet-rb-site-preview.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@300;400;500;600;700&family=Orbitron:wght@400;600;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/core/base.css?v=1.0.0">
+<link rel="stylesheet" href="css/layout/topbar.css?v=1.0.0">
+<link rel="stylesheet" href="css/layout/sidebar.css?v=1.0.0">
+<link rel="stylesheet" href="css/layout/content.css?v=1.0.0">
+<link rel="stylesheet" href="css/components/workflow.css?v=1.0.0">
+<link rel="stylesheet" href="css/components/modules.css?v=1.0.0">
+<link rel="stylesheet" href="css/components/development.css?v=1.0.0">
+<link rel="stylesheet" href="css/layout/responsive.css?v=1.0.0">
+<link rel="icon" href="web_assets/media/favicon.ico" sizes="any">
+<link rel="shortcut icon" href="web_assets/media/favicon.ico" type="image/x-icon">
+</head>
+<body data-page="development.html" data-default-section="development-home">
+<header id="topbar">
+  <div id="topbar-logo-wrap"><img id="topbar-logo" src="web_assets/media/asrfacet-rb-web.png" alt="ASRFacet-Rb"><span id="topbar-name">ASRFacet-Rb</span></div>
+  <span id="topbar-version">v1.0.0 | Development</span>
+  <div id="topbar-links">
+    <a href="index.html">Home</a>
+    <a href="https://github.com/voltsparx/ASRFacet-Rb" target="_blank">GitHub</a>
+    <div class="topbar-contact">
+      <button class="topbar-contact-toggle" type="button" aria-expanded="false">Contact</button>
+      <div class="topbar-contact-popover" hidden>
+        <span>voltsparx@gmail.com</span>
+        <span>voltsparx@proton.me</span>
+      </div>
+    </div>
+  </div>
+  <div id="topbar-search" class="topbar-search">
+    <input id="docs-search-input" type="search" placeholder="Quick jump docs..." autocomplete="off">
+    <div id="docs-search-results" class="topbar-search-results" aria-live="polite"></div>
+  </div>
+  <div id="topbar-actions">
+    <button id="menu-toggle" class="topbar-action topbar-action-menu" type="button">Menu</button>
+  </div>
+</header>
+<div id="mobile-shortcuts" aria-label="Mobile shortcuts">
+  <a href="index.html">Home</a>
+  <a href="project.html#author">Author &amp; License</a>
+  <a href="https://raw.githubusercontent.com/voltsparx/ASRFacet-Rb/main/LICENSE" target="_blank">License</a>
+</div>
+<nav id="sidebar" aria-label="Documentation navigation">
+  <div class="sidebar-panel-head">
+    <div class="sidebar-kicker">Development</div>
+    <p class="sidebar-note">Live repository data, release signals, and inline project file previews pulled from GitHub.</p>
+  </div>
+  <div id="sidebar-tabs" class="sidebar-tabs" role="tablist" aria-label="Documentation groups"></div>
+  <div id="sidebar-nav"></div>
+</nav>
+<button id="sidebar-backdrop" type="button" aria-label="Close navigation"></button>
+<main id="main">
+  <section id="development-home" class="page-section active">
+    <div class="page-hero">
+      <div class="page-eyebrow">Development</div>
+      <div class="page-title">Live Project Pulse</div>
+      <div class="page-desc">This page fetches current repository data from GitHub so anyone can see what is moving, who is contributing, and which project files define release posture.</div>
+    </div>
+
+    <div id="dev-pulse" class="callout callout-info">
+      <div class="callout-title">GitHub Pulse</div>
+      Waiting for repository data...
+    </div>
+
+    <div class="dev-grid">
+      <div class="dev-card">
+        <div class="dev-card-title">Repository Snapshot</div>
+        <div class="dev-card-copy">Stars, forks, open issues, branch defaults, and the latest push signal.</div>
+        <div id="dev-repo-summary" class="dev-meta-list"></div>
+      </div>
+      <div class="dev-card">
+        <div class="dev-card-title">Maintainer Profile</div>
+        <div class="dev-card-copy">Public GitHub profile data for the current maintainer account.</div>
+        <div id="dev-profile-summary" class="dev-meta-list"></div>
+      </div>
+      <div class="dev-card">
+        <div class="dev-card-title">Release Radar</div>
+        <div class="dev-card-copy">Fast release posture from tags, release state, and workflow entry points.</div>
+        <div id="dev-release-summary" class="dev-meta-list"></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="repo-activity" class="page-section active">
+    <div class="page-hero">
+      <div class="page-eyebrow">Development</div>
+      <div class="page-title">Repository Activity</div>
+      <div class="page-desc">Recent commits and contributor movement help visitors understand whether the project is quiet, active, or actively changing right now.</div>
+    </div>
+
+    <div class="dev-grid">
+      <div class="dev-card">
+        <div class="dev-card-title">Recent Commits</div>
+        <div class="dev-card-copy">Latest commit messages with direct links into GitHub.</div>
+        <div id="dev-commits-list" class="dev-list">
+          <div class="callout callout-info"><div class="callout-title">Commits</div>Waiting for commit history...</div>
+        </div>
+      </div>
+      <div class="dev-card">
+        <div class="dev-card-title">Contributors</div>
+        <div class="dev-card-copy">Recent public contributor data for the repository.</div>
+        <div id="dev-contributors-list" class="dev-person-grid">
+          <div class="callout callout-info"><div class="callout-title">Contributors</div>Waiting for contributor data...</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="release-radar" class="page-section active">
+    <div class="page-hero">
+      <div class="page-eyebrow">Development</div>
+      <div class="page-title">Release Signals & Raw Files</div>
+      <div class="page-desc">These links make it easy to inspect live release markers and policy files without leaving the docs shell.</div>
+    </div>
+
+    <div class="dev-grid">
+      <div class="dev-card">
+        <div class="dev-card-title">Tags</div>
+        <div class="dev-card-copy">Browse the latest tag names and jump into the repository state behind them.</div>
+        <div id="dev-tags-list" class="dev-list">
+          <div class="callout callout-info"><div class="callout-title">Tags</div>Waiting for tag data...</div>
+        </div>
+      </div>
+      <div class="dev-card">
+        <div class="dev-card-title">Repository Files</div>
+        <div class="dev-card-copy">Click any file below to preview it inline in a small popup window.</div>
+        <div id="dev-link-grid" class="raw-link-grid"></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer id="site-footer">
+  <div><div class="footer-col-title">Development</div><span class="footer-copy">Live GitHub activity and raw project files</span></div>
+  <div><div class="footer-col-title">Project</div><a class="footer-link" href="project.html#author">Author &amp; License</a><a class="footer-link" href="index.html">Overview</a></div>
+  <div><div class="footer-col-title">Docs</div><a class="footer-link" href="workflow.html#pipeline">Workflow</a><a class="footer-link" href="reporting.html#testing">Testing</a></div>
+  <div><div class="footer-col-title">GitHub</div><a class="footer-link" href="https://github.com/voltsparx/ASRFacet-Rb" target="_blank">Repository</a><a class="footer-link" href="https://github.com/voltsparx/ASRFacet-Rb/actions" target="_blank">Actions</a><a class="footer-link" href="https://raw.githubusercontent.com/voltsparx/ASRFacet-Rb/main/SECURITY.md" target="_blank">Security Policy</a></div>
+</footer>
+
+<script src="js/core/site-data.js?v=1.0.0"></script>
+<script src="js/core/helpers.js?v=1.0.0"></script>
+<script src="js/features/sidebar.js?v=1.0.0"></script>
+<script src="js/features/easter-eggs.js?v=1.0.0"></script>
+<script src="js/features/search.js?v=1.0.0"></script>
+<script src="js/features/contact-panel.js?v=1.0.0"></script>
+<script src="js/features/workflow-visual.js?v=1.0.0"></script>
+<script src="js/features/raw-popup.js?v=1.0.0"></script>
+<script src="js/features/development-feed.js?v=1.0.0"></script>
+<script src="js/bootstrap/app.js?v=1.0.0"></script>
+</body>
+</html>

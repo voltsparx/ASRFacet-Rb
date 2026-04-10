@@ -7,6 +7,7 @@ const DocsData = (() => {
     "cli-reference.html": { title: "CLI Reference", short: "CLI" },
     "modes.html": { title: "Modes & Examples", short: "Modes" },
     "reporting.html": { title: "Reporting & Config", short: "Reports" },
+    "development.html": { title: "Development", short: "Dev" },
     "project.html": { title: "Project", short: "Project" }
   };
 
@@ -41,13 +42,24 @@ const DocsData = (() => {
     { id: "config", title: "Configuration", page: "reporting.html", hint: "Defaults, overrides, and operator config behavior.", group: "Reports" },
     { id: "storage", title: "Files & Storage", page: "reporting.html", hint: "Where reports, memory, sessions, and lab data live.", group: "Reports" },
     { id: "testing", title: "Testing", page: "reporting.html", hint: "Rake verification, smoke tests, and release checks.", group: "Reports" },
+    { id: "development-home", title: "Development", page: "development.html", hint: "Live GitHub-powered project pulse, maintainer profile, and repository snapshot.", group: "Project" },
+    { id: "repo-activity", title: "Repository Activity", page: "development.html", hint: "Recent commits, contributors, and branch-level movement from GitHub.", group: "Project" },
+    { id: "release-radar", title: "Release Radar", page: "development.html", hint: "Tags, release signals, workflow links, and inline raw file previews.", group: "Project" },
     { id: "author", title: "Project & License", page: "project.html", hint: "Author, repository, license, and publishing context.", group: "Project" },
     { id: "signals", title: "Versioning Signals", page: "project.html", hint: "Version, changelog, roadmap, and release trust markers.", group: "Project" }
   ];
 
   const groups = ["Start Here", "Downloads", "Pipeline", "Operators", "Modes", "Reports", "Project"];
 
-  return { pages, entries, groups };
+  const github = {
+    owner: "voltsparx",
+    repo: "ASRFacet-Rb",
+    branch: "main",
+    profileUrl: "https://github.com/voltsparx",
+    repoUrl: "https://github.com/voltsparx/ASRFacet-Rb"
+  };
+
+  return { pages, entries, groups, github };
 })();
 
 const DocsState = {

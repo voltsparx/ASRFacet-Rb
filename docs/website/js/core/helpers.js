@@ -65,6 +65,86 @@ const DocsHelpers = (() => {
       : `${pageTitle} | ASRFacet-Rb`;
   }
 
+  function githubApi(path = "") {
+    return `https://api.github.com/repos/${DocsData.github.owner}/${DocsData.github.repo}${path}`;
+  }
+
+  function githubProfileApi() {
+    return `https://api.github.com/users/${DocsData.github.owner}`;
+  }
+
+  function githubRaw(path = "") {
+    return `https://raw.githubusercontent.com/${DocsData.github.owner}/${DocsData.github.repo}/${DocsData.github.branch}/${path}`;
+  }
+
+  function githubBlob(path = "") {
+    return `https://github.com/${DocsData.github.owner}/${DocsData.github.repo}/blob/${DocsData.github.branch}/${path}`;
+  }
+
+  function escapeHtml(value = "") {
+    return value
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
+  function formatDate(value) {
+    if (!value) {
+      return "Unknown";
+    }
+
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) {
+      return "Unknown";
+    }
+
+    return new Intl.DateTimeFormat("en", {
+      year: "numeric",
+      month: "short",
+      day: "numeric"
+    }).format(parsed);
+  }
+
+  function formatRelativeTime(value) {
+    if (!value) {
+      return "Unknown";
+    }
+
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) {
+      return "Unknown";
+    }
+
+    const diffMs = Date.now() - parsed.getTime();
+    const diffMinutes = Math.round(diffMs / 60000);
+
+    if (diffMinutes < 60) {
+      return `${Math.max(diffMinutes, 0)}m ago`;
+    }
+
+    const diffHours = Math.round(diffMinutes / 60);
+    if (diffHours < 48) {
+      return `${diffHours}h ago`;
+    }
+
+    const diffDays = Math.round(diffHours / 24);
+    if (diffDays < 32) {
+      return `${diffDays}d ago`;
+    }
+
+    const diffMonths = Math.round(diffDays / 30);
+    return `${diffMonths}mo ago`;
+  }
+
+  function compactNumber(value) {
+    return new Intl.NumberFormat("en", {
+      notation: "compact",
+      maximumFractionDigits: 1
+    }).format(Number(value || 0));
+  }
+
   return {
     hrefFor,
     findEntry,
@@ -72,7 +152,15 @@ const DocsHelpers = (() => {
     currentHashId,
     goToEntry,
     scrollToSection,
-    syncCurrentSection
+    syncCurrentSection,
+    githubApi,
+    githubProfileApi,
+    githubRaw,
+    githubBlob,
+    escapeHtml,
+    formatDate,
+    formatRelativeTime,
+    compactNumber
   };
 })();
 

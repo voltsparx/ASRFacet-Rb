@@ -21,6 +21,7 @@ The website is kept separate from the Ruby runtime so it can be:
 - `cli-reference.html` documents commands and flags
 - `modes.html` covers console, web, wizard, and lab usage
 - `reporting.html` explains outputs and configuration
+- `development.html` shows live GitHub development signals and raw file previews
 - `project.html` covers author, repository, and license context
 
 ### CSS
@@ -50,7 +51,8 @@ The HTML pages load CSS in this order:
 4. `css/layout/content.css`
 5. `css/components/workflow.css`
 6. `css/components/modules.css`
-7. `css/layout/responsive.css`
+7. `css/components/development.css`
+8. `css/layout/responsive.css`
 
 The HTML pages load JavaScript in this order:
 
@@ -61,7 +63,9 @@ The HTML pages load JavaScript in this order:
 5. `js/features/search.js`
 6. `js/features/contact-panel.js`
 7. `js/features/workflow-visual.js`
-8. `js/bootstrap/app.js`
+8. `js/features/raw-popup.js`
+9. `js/features/development-feed.js`
+10. `js/bootstrap/app.js`
 
 Do not change that order unless the dependency chain changes too.
 
@@ -95,6 +99,8 @@ node --check docs/website/js/features/easter-eggs.js
 node --check docs/website/js/features/search.js
 node --check docs/website/js/features/contact-panel.js
 node --check docs/website/js/features/workflow-visual.js
+node --check docs/website/js/features/raw-popup.js
+node --check docs/website/js/features/development-feed.js
 node --check docs/website/js/bootstrap/app.js
 ```
 
