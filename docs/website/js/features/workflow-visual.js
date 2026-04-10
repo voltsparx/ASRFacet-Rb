@@ -43,40 +43,77 @@ const WorkflowVisual = (() => {
     `;
   }
 
-  function activate(stageName) {
-    if (!DocsElements.workflowRail) {
+  function renderHomeDetail(stage) {
+    if (!DocsElements.homeWorkflowDetail || !stage) {
       return;
     }
 
+    DocsElements.homeWorkflowDetail.innerHTML = `
+      <div class="workflow-mini-detail-title">${stage.order} &middot; ${stage.name}</div>
+      <div class="workflow-mini-detail-copy">${stage.detail}</div>
+    `;
+  }
+
+  function activate(stageName) {
     const stage = stages.find((entry) => entry.name === stageName) || stages[0];
-    DocsElements.workflowRail.querySelectorAll(".workflow-stage").forEach((node) => {
-      node.classList.toggle("is-active", node.dataset.stageName === stage.name);
-    });
-    renderDetail(stage);
+    if (DocsElements.workflowRail) {
+      DocsElements.workflowRail.querySelectorAll(".workflow-stage").forEach((node) => {
+        node.classList.toggle("is-active", node.dataset.stageName === stage.name);
+      });
+      renderDetail(stage);
+    }
+
+    if (DocsElements.homeWorkflowRail) {
+      DocsElements.homeWorkflowRail.querySelectorAll(".workflow-mini-stage").forEach((node) => {
+        node.classList.toggle("is-active", node.dataset.stageName === stage.name);
+      });
+      renderHomeDetail(stage);
+    }
   }
 
   function bind() {
-    if (!DocsElements.workflowRail) {
+    if (!DocsElements.workflowRail && !DocsElements.homeWorkflowRail) {
       return;
     }
 
-    DocsElements.workflowRail.innerHTML = stages.map((stage) => `
-      <button type="button" class="workflow-stage" data-stage-name="${stage.name}">
-        <span class="workflow-stage-order">${stage.order}</span>
-        <div class="workflow-stage-name">${stage.name}</div>
-        <div class="workflow-stage-copy">${stage.short}</div>
-        <span class="workflow-stage-arrow">></span>
-      </button>
-    `).join("");
+    if (DocsElements.workflowRail) {
+      DocsElements.workflowRail.innerHTML = stages.map((stage) => `
+        <button type="button" class="workflow-stage" data-stage-name="${stage.name}">
+          <span class="workflow-stage-order">${stage.order}</span>
+          <div class="workflow-stage-name">${stage.name}</div>
+          <div class="workflow-stage-copy">${stage.short}</div>
+          <span class="workflow-stage-arrow">></span>
+        </button>
+      `).join("");
 
-    DocsElements.workflowRail.querySelectorAll(".workflow-stage").forEach((node) => {
-      node.addEventListener("click", () => activate(node.dataset.stageName));
-      node.addEventListener("mouseenter", () => {
-        if (window.matchMedia("(hover: hover)").matches) {
-          activate(node.dataset.stageName);
-        }
+      DocsElements.workflowRail.querySelectorAll(".workflow-stage").forEach((node) => {
+        node.addEventListener("click", () => activate(node.dataset.stageName));
+        node.addEventListener("mouseenter", () => {
+          if (window.matchMedia("(hover: hover)").matches) {
+            activate(node.dataset.stageName);
+          }
+        });
       });
-    });
+    }
+
+    if (DocsElements.homeWorkflowRail) {
+      DocsElements.homeWorkflowRail.innerHTML = stages.map((stage) => `
+        <button type="button" class="workflow-mini-stage" data-stage-name="${stage.name}">
+          <span class="workflow-mini-stage-order">${stage.order}</span>
+          <div class="workflow-mini-stage-name">${stage.name}</div>
+          <div class="workflow-mini-stage-copy">${stage.short}</div>
+        </button>
+      `).join("");
+
+      DocsElements.homeWorkflowRail.querySelectorAll(".workflow-mini-stage").forEach((node) => {
+        node.addEventListener("click", () => activate(node.dataset.stageName));
+        node.addEventListener("mouseenter", () => {
+          if (window.matchMedia("(hover: hover)").matches) {
+            activate(node.dataset.stageName);
+          }
+        });
+      });
+    }
 
     activate(stages[0].name);
   }
