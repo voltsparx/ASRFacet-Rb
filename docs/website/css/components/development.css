@@ -219,6 +219,10 @@ body.raw-viewer-open {
   padding: 20px;
 }
 
+.raw-viewer-backdrop[hidden] {
+  display: none !important;
+}
+
 .raw-viewer-window {
   width: min(880px, 94vw);
   max-height: min(78vh, 760px);
