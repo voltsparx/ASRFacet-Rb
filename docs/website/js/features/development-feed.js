@@ -218,10 +218,19 @@ const DevelopmentFeed = (() => {
     const latestTag = Array.isArray(tags) && tags[0] ? tags[0].name : "No tags yet";
 
     node.innerHTML = `
-      <div class="dev-pill-row">
-        <span class="flag-pill">Default Branch: ${DocsHelpers.escapeHtml(repo.default_branch || "main")}</span>
-        <span class="flag-pill">Latest Tag: ${DocsHelpers.escapeHtml(latestTag)}</span>
-        <span class="flag-pill">Release: ${DocsHelpers.escapeHtml(latestRelease)}</span>
+      <div class="dev-radar-grid">
+        <div class="dev-radar-card">
+          <span class="dev-radar-label">Default Branch</span>
+          <strong class="dev-radar-value">${DocsHelpers.escapeHtml(repo.default_branch || "main")}</strong>
+        </div>
+        <div class="dev-radar-card">
+          <span class="dev-radar-label">Latest Tag</span>
+          <strong class="dev-radar-value">${DocsHelpers.escapeHtml(latestTag)}</strong>
+        </div>
+        <div class="dev-radar-card dev-radar-card-wide">
+          <span class="dev-radar-label">Release</span>
+          <strong class="dev-radar-value">${DocsHelpers.escapeHtml(latestRelease)}</strong>
+        </div>
       </div>
       <div class="dev-meta-list">
         <div><span>CI</span><strong><a href="${DocsData.github.repoUrl}/actions/workflows/ci.yml" target="_blank" rel="noopener noreferrer">Workflow</a></strong></div>
