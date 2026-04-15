@@ -66,10 +66,20 @@ const DevelopmentFeed = (() => {
         <div class="dev-stat"><span class="dev-stat-label">Open Issues</span><span class="dev-stat-value">${DocsHelpers.compactNumber(repo.open_issues_count)}</span></div>
         <div class="dev-stat"><span class="dev-stat-label">Watchers</span><span class="dev-stat-value">${DocsHelpers.compactNumber(repo.subscribers_count || repo.watchers_count)}</span></div>
       </div>
-      <div class="dev-meta-list">
-        <div><span>Default branch</span><strong>${DocsHelpers.escapeHtml(repo.default_branch || "main")}</strong></div>
-        <div><span>Last push</span><strong>${DocsHelpers.formatDate(repo.pushed_at)} (${DocsHelpers.formatRelativeTime(repo.pushed_at)})</strong></div>
-        <div><span>Repo</span><strong><a href="${repo.html_url}" target="_blank" rel="noopener noreferrer">${DocsHelpers.escapeHtml(repo.full_name)}</a></strong></div>
+      <div class="dev-snapshot-grid">
+        <div class="dev-snapshot-card">
+          <span class="dev-snapshot-label">Default Branch</span>
+          <strong class="dev-snapshot-value">${DocsHelpers.escapeHtml(repo.default_branch || "main")}</strong>
+        </div>
+        <div class="dev-snapshot-card">
+          <span class="dev-snapshot-label">Last Push</span>
+          <strong class="dev-snapshot-value">${DocsHelpers.formatDate(repo.pushed_at)}</strong>
+          <span class="dev-snapshot-meta">${DocsHelpers.formatRelativeTime(repo.pushed_at)}</span>
+        </div>
+        <div class="dev-snapshot-card dev-snapshot-card-wide">
+          <span class="dev-snapshot-label">Repository</span>
+          <a class="dev-snapshot-link" href="${repo.html_url}" target="_blank" rel="noopener noreferrer">${DocsHelpers.escapeHtml(repo.full_name)}</a>
+        </div>
       </div>
     `;
   }

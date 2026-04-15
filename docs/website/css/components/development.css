@@ -99,6 +99,70 @@
   font-size: 0.66rem;
 }
 
+.dev-snapshot-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.dev-snapshot-card {
+  min-width: 0;
+  border: 1px solid var(--border2);
+  border-radius: 12px;
+  background: rgba(255, 26, 26, 0.04);
+  padding: 13px 14px;
+}
+
+.dev-snapshot-card-wide {
+  grid-column: 1 / -1;
+}
+
+.dev-snapshot-label {
+  display: block;
+  color: var(--txt3);
+  font-family: var(--mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.dev-snapshot-value,
+.dev-snapshot-link {
+  display: block;
+  color: var(--txt);
+  font-size: 0.92rem;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.dev-snapshot-value {
+  font-family: var(--display);
+  font-weight: 700;
+  color: var(--r0);
+  letter-spacing: 0.03em;
+}
+
+.dev-snapshot-link {
+  font-weight: 600;
+}
+
+.dev-snapshot-link:hover {
+  color: var(--r0);
+  text-decoration: none;
+}
+
+.dev-snapshot-meta {
+  display: block;
+  margin-top: 5px;
+  color: var(--txt3);
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
 .dev-meta-list strong,
 .dev-meta-list a {
   display: block;
@@ -579,6 +643,10 @@ body.raw-viewer-open {
   .dev-meta-list strong,
   .dev-meta-list a {
     text-align: left;
+  }
+
+  .dev-snapshot-grid {
+    grid-template-columns: 1fr;
   }
 
   .raw-viewer-window {
