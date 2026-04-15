@@ -80,7 +80,7 @@
       Waiting for repository data...
     </div>
 
-    <div class="dev-grid">
+    <div class="dev-stack">
       <div class="dev-card">
         <div class="dev-card-title">Repository Snapshot</div>
         <div class="dev-card-copy">Stars, forks, open issues, branch defaults, and the latest push signal.</div>
@@ -108,12 +108,15 @@
       <div class="page-desc">Recent commits and contributor movement help visitors understand whether the project is quiet, active, or actively changing right now.</div>
     </div>
 
-    <div class="dev-grid">
+    <div class="dev-stack">
       <div class="dev-card">
         <div class="dev-card-title">Recent Commits</div>
         <div class="dev-card-copy">Latest commit messages with direct links into GitHub.</div>
         <div id="dev-commits-list" class="dev-list">
           <div class="callout callout-info"><div class="callout-title">Commits</div>Waiting for commit history...</div>
+        </div>
+        <div class="dev-card-actions">
+          <button id="dev-commits-more" class="dev-action-button" type="button">View More</button>
         </div>
       </div>
       <div class="dev-card">
@@ -149,6 +152,21 @@
     </div>
   </section>
 </main>
+
+<div id="dev-history-backdrop" class="dev-history-backdrop" hidden>
+  <div class="dev-history-window" role="dialog" aria-modal="true" aria-label="Repository commit history">
+    <div class="dev-history-head">
+      <div>
+        <div class="dev-history-title">Commit History</div>
+        <div id="dev-history-meta" class="dev-history-meta">Repository-wide commit history fetched from GitHub.</div>
+      </div>
+      <button id="dev-history-close" class="dev-history-close" type="button" aria-label="Close commit history">Close</button>
+    </div>
+    <div id="dev-history-body" class="dev-history-body">
+      <div class="callout callout-info"><div class="callout-title">History</div>Select “View More” to load the full commit history.</div>
+    </div>
+  </div>
+</div>
 
 <footer id="site-footer">
   <div><div class="footer-col-title">Development</div><span class="footer-copy">Live GitHub activity and raw project files</span></div>

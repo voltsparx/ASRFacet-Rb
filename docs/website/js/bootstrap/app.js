@@ -173,6 +173,11 @@ const App = (() => {
       }
 
       if (event.key === "Escape") {
+        if (typeof DevelopmentFeed !== "undefined" && DevelopmentFeed.isHistoryOpen()) {
+          DevelopmentFeed.closeHistoryWindow();
+          return;
+        }
+
         if (typeof RawPopup !== "undefined" && RawPopup.isOpen()) {
           RawPopup.close();
           return;

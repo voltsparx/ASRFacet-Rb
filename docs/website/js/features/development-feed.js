@@ -4,11 +4,21 @@ const DevelopmentFeed = (() => {
     chart: "#dev-commit-chart",
     releaseSummary: "#dev-release-summary",
     commits: "#dev-commits-list",
+    commitsMore: "#dev-commits-more",
     contributors: "#dev-contributors-list",
     tags: "#dev-tags-list",
     links: "#dev-link-grid",
-    pulse: "#dev-pulse"
+    pulse: "#dev-pulse",
+    historyBackdrop: "#dev-history-backdrop",
+    historyMeta: "#dev-history-meta",
+    historyBody: "#dev-history-body",
+    historyClose: "#dev-history-close"
   };
+
+  let historyOpen = false;
+  let historyLoaded = false;
+  let historyLoading = false;
+  let historyCache = [];
 
   function element(selector) {
     return document.querySelector(selector);
@@ -112,9 +122,9 @@ const DevelopmentFeed = (() => {
     }
 
     const series = buildCommitSeries(commits);
-    const width = 640;
-    const height = 240;
-    const padding = { top: 22, right: 18, bottom: 42, left: 38 };
+    const width = 760;
+    const height = 300;
+    const padding = { top: 26, right: 24, bottom: 56, left: 54 };
     const chartWidth = width - padding.left - padding.right;
     const chartHeight = height - padding.top - padding.bottom;
     const maxCount = Math.max(...series.map((item) => item.count), 1);
@@ -163,7 +173,7 @@ const DevelopmentFeed = (() => {
             const y = Number((padding.top + chartHeight - ((value / maxCount) * chartHeight)).toFixed(2));
             return `
               <line class="dev-chart-grid" x1="${padding.left}" y1="${y}" x2="${width - padding.right}" y2="${y}"></line>
-              <text class="dev-chart-axis dev-chart-axis-y" x="${padding.left - 10}" y="${y + 4}">${value}</text>
+              <text class="dev-chart-axis dev-chart-axis-y" x="${padding.left - 14}" y="${y + 5}">${value}</text>
             `;
           }).join("")}
           <path class="dev-chart-fill" d="${area}"></path>
@@ -172,7 +182,7 @@ const DevelopmentFeed = (() => {
             <g>
               <circle class="dev-chart-point-glow" cx="${point.x}" cy="${point.y}" r="7"></circle>
               <circle class="dev-chart-point" cx="${point.x}" cy="${point.y}" r="4.2"></circle>
-              <text class="dev-chart-axis dev-chart-axis-x" x="${point.x}" y="${height - 14}" text-anchor="middle">${DocsHelpers.escapeHtml(point.label)}</text>
+              <text class="dev-chart-axis dev-chart-axis-x" x="${point.x}" y="${height - 18}" text-anchor="middle">${DocsHelpers.escapeHtml(point.label)}</text>
             </g>
           `).join("")}
         </svg>
@@ -217,7 +227,7 @@ const DevelopmentFeed = (() => {
       return;
     }
 
-    node.innerHTML = commits.map((commit) => {
+    node.innerHTML = commits.slice(0, 5).map((commit) => {
       const sha = (commit.sha || "").slice(0, 7);
       const message = (commit.commit?.message || "Commit").split("\n")[0];
       const author = commit.commit?.author?.name || commit.author?.login || "Unknown";
@@ -230,6 +240,153 @@ const DevelopmentFeed = (() => {
         </a>
       `;
     }).join("");
+  }
+
+  function renderHistory(commits) {
+    const node = element(selectors.historyBody);
+    const meta = element(selectors.historyMeta);
+    if (!node || !meta) {
+      return;
+    }
+
+    if (!Array.isArray(commits) || commits.length === 0) {
+      meta.textContent = "No commit history could be fetched from GitHub right now.";
+      node.innerHTML = '<div class="callout callout-warn"><div class="callout-title">History</div>Commit history is not available right now.</div>';
+      return;
+    }
+
+    meta.textContent = `Showing ${DocsHelpers.compactNumber(commits.length)} commits fetched from the repository history.`;
+    node.innerHTML = commits.map((commit) => {
+      const sha = (commit.sha || "").slice(0, 7);
+      const message = (commit.commit?.message || "Commit").split("\n")[0];
+      const author = commit.commit?.author?.name || commit.author?.login || "Unknown";
+      const date = commit.commit?.author?.date;
+
+      return `
+        <a class="dev-history-item" href="${commit.html_url}" target="_blank" rel="noopener noreferrer">
+          <div class="dev-history-item-title">${DocsHelpers.escapeHtml(message)}</div>
+          <div class="dev-history-item-meta">${DocsHelpers.escapeHtml(sha)} | ${DocsHelpers.escapeHtml(author)} | ${DocsHelpers.formatDate(date)} (${DocsHelpers.formatRelativeTime(date)})</div>
+        </a>
+      `;
+    }).join("");
+  }
+
+  function setHistoryLoading(message) {
+    const node = element(selectors.historyBody);
+    const meta = element(selectors.historyMeta);
+    if (!node || !meta) {
+      return;
+    }
+
+    meta.textContent = message;
+    node.innerHTML = '<div class="callout callout-info"><div class="callout-title">History</div>Loading repository commit history from GitHub...</div>';
+  }
+
+  function setHistoryError(message) {
+    const node = element(selectors.historyBody);
+    const meta = element(selectors.historyMeta);
+    if (!node || !meta) {
+      return;
+    }
+
+    meta.textContent = "Commit history could not be loaded.";
+    node.innerHTML = `
+      <div class="callout callout-warn">
+        <div class="callout-title">History</div>
+        ${DocsHelpers.escapeHtml(message)}
+      </div>
+    `;
+  }
+
+  function openHistoryWindow() {
+    const backdrop = element(selectors.historyBackdrop);
+    if (!backdrop) {
+      return;
+    }
+
+    backdrop.hidden = false;
+    document.body.classList.add("dev-history-open");
+    historyOpen = true;
+  }
+
+  function closeHistoryWindow() {
+    const backdrop = element(selectors.historyBackdrop);
+    if (!backdrop) {
+      return;
+    }
+
+    backdrop.hidden = true;
+    document.body.classList.remove("dev-history-open");
+    historyOpen = false;
+  }
+
+  function isHistoryOpen() {
+    return historyOpen;
+  }
+
+  async function fetchAllCommits() {
+    const allCommits = [];
+    let page = 1;
+
+    while (true) {
+      const commits = await fetchJson(DocsHelpers.githubApi(`/commits?per_page=100&page=${page}`));
+      if (!Array.isArray(commits) || commits.length === 0) {
+        break;
+      }
+
+      allCommits.push(...commits);
+
+      if (commits.length < 100) {
+        break;
+      }
+
+      page += 1;
+    }
+
+    return allCommits;
+  }
+
+  async function loadHistory() {
+    if (historyLoaded) {
+      renderHistory(historyCache);
+      return;
+    }
+
+    if (historyLoading) {
+      return;
+    }
+
+    historyLoading = true;
+    setHistoryLoading("Fetching repository commit history...");
+
+    try {
+      historyCache = await fetchAllCommits();
+      historyLoaded = true;
+      renderHistory(historyCache);
+    } catch (error) {
+      setHistoryError(error.message || "Unknown error while loading commit history.");
+    } finally {
+      historyLoading = false;
+    }
+  }
+
+  function bindHistoryControls() {
+    const button = element(selectors.commitsMore);
+    const closeButton = element(selectors.historyClose);
+    const backdrop = element(selectors.historyBackdrop);
+
+    button?.addEventListener("click", async () => {
+      openHistoryWindow();
+      await loadHistory();
+    });
+
+    closeButton?.addEventListener("click", closeHistoryWindow);
+
+    backdrop?.addEventListener("click", (event) => {
+      if (event.target === backdrop) {
+        closeHistoryWindow();
+      }
+    });
   }
 
   function renderContributors(contributors) {
@@ -294,6 +451,7 @@ const DevelopmentFeed = (() => {
       return;
     }
 
+    bindHistoryControls();
     renderLinks();
     setPulse("Fetching live GitHub development data...");
 
@@ -337,5 +495,5 @@ const DevelopmentFeed = (() => {
     }
   }
 
-  return { bind };
+  return { bind, closeHistoryWindow, isHistoryOpen };
 })();
