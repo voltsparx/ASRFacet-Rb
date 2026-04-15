@@ -67,6 +67,88 @@ const RawPopup = (() => {
     return new TextDecoder("utf-8").decode(bytes);
   }
 
+  function basename(path = "") {
+    return path.split("/").pop() || path;
+  }
+
+  function friendlyTitleFromPath(path = "") {
+    const name = basename(path);
+    const knownTitles = {
+      "LICENSE": "License",
+      "SECURITY.md": "Security Policy",
+      "CHANGELOG.md": "Changelog",
+      "ROADMAP.md": "Roadmap",
+      "VERSION": "Version"
+    };
+
+    if (knownTitles[name]) {
+      return knownTitles[name];
+    }
+
+    return name
+      .replace(/\.[^.]+$/, "")
+      .replace(/[-_]+/g, " ")
+      .replace(/\b\w/g, (char) => char.toUpperCase());
+  }
+
+  function extractLinkTitle(link, path) {
+    const explicit = (link.dataset.rawTitle || "").trim();
+    if (explicit) {
+      return explicit;
+    }
+
+    const labeledChild = link.querySelector(".dev-card-title, .ov-name, .install-card-title, .footer-col-title");
+    if (labeledChild && labeledChild.textContent) {
+      const label = labeledChild.textContent.trim();
+      if (label) {
+        return label;
+      }
+    }
+
+    const aria = (link.getAttribute("aria-label") || link.getAttribute("title") || "").trim();
+    if (aria) {
+      return aria;
+    }
+
+    return friendlyTitleFromPath(path);
+  }
+
+  function normalizedHeading(text = "") {
+    return text
+      .toLowerCase()
+      .replace(/[`*_#>-]+/g, " ")
+      .replace(/[^\w\s]/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  function normalizePreviewContent(content, title, path) {
+    let normalized = (content || "")
+      .replace(/^\uFEFF/, "")
+      .replace(/\r\n/g, "\n");
+
+    const lines = normalized.split("\n");
+    const firstLine = lines[0] ? lines[0].trim() : "";
+    const titleCandidates = [
+      normalizedHeading(title),
+      normalizedHeading(friendlyTitleFromPath(path)),
+      normalizedHeading(basename(path))
+    ].filter(Boolean);
+
+    if (firstLine.startsWith("#")) {
+      const heading = normalizedHeading(firstLine);
+      if (titleCandidates.includes(heading)) {
+        lines.shift();
+        while (lines[0] !== undefined && lines[0].trim() === "") {
+          lines.shift();
+        }
+        normalized = lines.join("\n");
+      }
+    }
+
+    return normalized.trimEnd();
+  }
+
   async function fetchFileContent(path) {
     const response = await fetch(DocsHelpers.githubApi(`/contents/${path}?ref=${DocsData.github.branch}`), {
       headers: { Accept: "application/vnd.github+json" }
@@ -103,7 +185,7 @@ const RawPopup = (() => {
 
     viewerTitle.textContent = title || "Repository File";
     viewerMeta.textContent = `${path} | inline preview`;
-    viewerBody.textContent = content;
+    viewerBody.textContent = normalizePreviewContent(content, title, path);
   }
 
   function showError(title, path, message) {
@@ -124,7 +206,7 @@ const RawPopup = (() => {
       return;
     }
 
-    const title = link.dataset.rawTitle || link.textContent.trim() || path.split("/").pop();
+    const title = extractLinkTitle(link, path);
     showLoading(title, path, href);
 
     try {
