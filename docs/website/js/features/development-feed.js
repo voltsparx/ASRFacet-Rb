@@ -59,12 +59,14 @@ const DevelopmentFeed = (() => {
       return;
     }
 
+    const watchers = Number.isFinite(Number(repo.subscribers_count)) ? Number(repo.subscribers_count) : 0;
+
     node.innerHTML = `
       <div class="dev-stat-grid">
         <div class="dev-stat"><span class="dev-stat-label">Stars</span><span class="dev-stat-value">${DocsHelpers.compactNumber(repo.stargazers_count)}</span></div>
         <div class="dev-stat"><span class="dev-stat-label">Forks</span><span class="dev-stat-value">${DocsHelpers.compactNumber(repo.forks_count)}</span></div>
         <div class="dev-stat"><span class="dev-stat-label">Open Issues</span><span class="dev-stat-value">${DocsHelpers.compactNumber(repo.open_issues_count)}</span></div>
-        <div class="dev-stat"><span class="dev-stat-label">Watchers</span><span class="dev-stat-value">${DocsHelpers.compactNumber(repo.subscribers_count || repo.watchers_count)}</span></div>
+        <div class="dev-stat"><span class="dev-stat-label">Watchers</span><span class="dev-stat-value">${DocsHelpers.compactNumber(watchers)}</span></div>
       </div>
       <div class="dev-snapshot-grid">
         <div class="dev-snapshot-card">
@@ -85,23 +87,7 @@ const DevelopmentFeed = (() => {
   }
 
   function buildCommitSeries(commits, days = 5) {
-    const buckets = [];
     const counts = new Map();
-    const today = new Date();
-
-    for (let offset = days - 1; offset >= 0; offset -= 1) {
-      const date = new Date(today);
-      date.setHours(0, 0, 0, 0);
-      date.setDate(date.getDate() - offset);
-      const key = date.toISOString().slice(0, 10);
-      buckets.push({
-        key,
-        label: date.toLocaleDateString(undefined, { weekday: "short" }),
-        fullLabel: date.toLocaleDateString(undefined, { month: "short", day: "numeric" }),
-        count: 0
-      });
-      counts.set(key, 0);
-    }
 
     commits.forEach((commit) => {
       const date = commit.commit?.author?.date;
@@ -110,15 +96,28 @@ const DevelopmentFeed = (() => {
       }
 
       const key = new Date(date).toISOString().slice(0, 10);
-      if (counts.has(key)) {
-        counts.set(key, counts.get(key) + 1);
-      }
+      counts.set(key, (counts.get(key) || 0) + 1);
     });
 
-    return buckets.map((bucket) => ({
-      ...bucket,
-      count: counts.get(bucket.key) || 0
-    }));
+    const recentDays = Array.from(counts.keys())
+      .sort((left, right) => new Date(left) - new Date(right))
+      .slice(-days);
+
+    if (recentDays.length === 0) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      recentDays.push(today.toISOString().slice(0, 10));
+    }
+
+    return recentDays.map((key) => {
+      const date = new Date(key);
+      return {
+        key,
+        label: date.toLocaleDateString(undefined, { weekday: "short" }),
+        fullLabel: date.toLocaleDateString(undefined, { month: "short", day: "numeric" }),
+        count: counts.get(key) || 0
+      };
+    });
   }
 
   function chartPath(points) {
