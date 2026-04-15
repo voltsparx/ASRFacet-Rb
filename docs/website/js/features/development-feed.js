@@ -1,8 +1,6 @@
 const DevelopmentFeed = (() => {
   const selectors = {
-    repoSummary: "#dev-repo-summary",
     chart: "#dev-commit-chart",
-    releaseSummary: "#dev-release-summary",
     commits: "#dev-commits-list",
     commitsMore: "#dev-commits-more",
     contributors: "#dev-contributors-list",
@@ -25,7 +23,7 @@ const DevelopmentFeed = (() => {
   }
 
   function hasPage() {
-    return Boolean(element(selectors.repoSummary));
+    return Boolean(element(selectors.chart));
   }
 
   async function fetchJson(url) {
@@ -50,39 +48,6 @@ const DevelopmentFeed = (() => {
     pulse.innerHTML = `
       <div class="callout-title">GitHub Pulse</div>
       ${DocsHelpers.escapeHtml(message)}
-    `;
-  }
-
-  function renderRepoSummary(repo) {
-    const node = element(selectors.repoSummary);
-    if (!node) {
-      return;
-    }
-
-    const watchers = Number.isFinite(Number(repo.subscribers_count)) ? Number(repo.subscribers_count) : 0;
-
-    node.innerHTML = `
-      <div class="dev-stat-grid">
-        <div class="dev-stat"><span class="dev-stat-label">Stars</span><span class="dev-stat-value">${DocsHelpers.compactNumber(repo.stargazers_count)}</span></div>
-        <div class="dev-stat"><span class="dev-stat-label">Forks</span><span class="dev-stat-value">${DocsHelpers.compactNumber(repo.forks_count)}</span></div>
-        <div class="dev-stat"><span class="dev-stat-label">Open Issues</span><span class="dev-stat-value">${DocsHelpers.compactNumber(repo.open_issues_count)}</span></div>
-        <div class="dev-stat"><span class="dev-stat-label">Watchers</span><span class="dev-stat-value">${DocsHelpers.compactNumber(watchers)}</span></div>
-      </div>
-      <div class="dev-snapshot-grid">
-        <div class="dev-snapshot-card">
-          <span class="dev-snapshot-label">Default Branch</span>
-          <strong class="dev-snapshot-value">${DocsHelpers.escapeHtml(repo.default_branch || "main")}</strong>
-        </div>
-        <div class="dev-snapshot-card">
-          <span class="dev-snapshot-label">Last Push</span>
-          <strong class="dev-snapshot-value">${DocsHelpers.formatDate(repo.pushed_at)}</strong>
-          <span class="dev-snapshot-meta">${DocsHelpers.formatRelativeTime(repo.pushed_at)}</span>
-        </div>
-        <div class="dev-snapshot-card dev-snapshot-card-wide">
-          <span class="dev-snapshot-label">Repository</span>
-          <a class="dev-snapshot-link" href="${repo.html_url}" target="_blank" rel="noopener noreferrer">${DocsHelpers.escapeHtml(repo.full_name)}</a>
-        </div>
-      </div>
     `;
   }
 
@@ -203,38 +168,6 @@ const DevelopmentFeed = (() => {
             </div>
           `).join("")}
         </div>
-      </div>
-    `;
-  }
-
-  function renderReleaseSummary(repo, release, tags) {
-    const node = element(selectors.releaseSummary);
-    if (!node) {
-      return;
-    }
-
-    const latestRelease = release && !release.message ? (release.name || release.tag_name) : "No published release";
-    const latestTag = Array.isArray(tags) && tags[0] ? tags[0].name : "No tags yet";
-
-    node.innerHTML = `
-      <div class="dev-radar-grid">
-        <div class="dev-radar-card">
-          <span class="dev-radar-label">Default Branch</span>
-          <strong class="dev-radar-value">${DocsHelpers.escapeHtml(repo.default_branch || "main")}</strong>
-        </div>
-        <div class="dev-radar-card">
-          <span class="dev-radar-label">Latest Tag</span>
-          <strong class="dev-radar-value">${DocsHelpers.escapeHtml(latestTag)}</strong>
-        </div>
-        <div class="dev-radar-card dev-radar-card-wide">
-          <span class="dev-radar-label">Release</span>
-          <strong class="dev-radar-value">${DocsHelpers.escapeHtml(latestRelease)}</strong>
-        </div>
-      </div>
-      <div class="dev-meta-list">
-        <div><span>CI</span><strong><a href="${DocsData.github.repoUrl}/actions/workflows/ci.yml" target="_blank" rel="noopener noreferrer">Workflow</a></strong></div>
-        <div><span>Docs Website</span><strong><a href="${DocsData.github.repoUrl}/actions/workflows/pages.yml" target="_blank" rel="noopener noreferrer">Pages workflow</a></strong></div>
-        <div><span>Latest movement</span><strong>${DocsHelpers.formatRelativeTime(repo.pushed_at)}</strong></div>
       </div>
     `;
   }
@@ -473,25 +406,17 @@ const DevelopmentFeed = (() => {
     renderLinks();
     setPulse("Fetching live GitHub development data...");
 
-    const [repoResult, commitsResult, contributorsResult, tagsResult, releaseResult] = await Promise.allSettled([
+    const [repoResult, commitsResult, contributorsResult, tagsResult] = await Promise.allSettled([
       fetchJson(DocsHelpers.githubApi("")),
       fetchJson(DocsHelpers.githubApi("/commits?per_page=20")),
       fetchJson(DocsHelpers.githubApi("/contributors?per_page=6")),
-      fetchJson(DocsHelpers.githubApi("/tags?per_page=5")),
-      fetchJson(DocsHelpers.githubApi("/releases/latest"))
+      fetchJson(DocsHelpers.githubApi("/tags?per_page=5"))
     ]);
 
     if (repoResult.status === "fulfilled") {
-      renderRepoSummary(repoResult.value);
       setPulse(`Live GitHub data loaded from ${DocsData.github.repo}. Last push ${DocsHelpers.formatRelativeTime(repoResult.value.pushed_at)}.`);
     } else {
       setPulse("GitHub API data could not be loaded right now. Direct repository links are still available below.", "warn");
-    }
-
-    if (repoResult.status === "fulfilled") {
-      const releaseValue = releaseResult.status === "fulfilled" ? releaseResult.value : { message: "No release" };
-      const tagsValue = tagsResult.status === "fulfilled" ? tagsResult.value : [];
-      renderReleaseSummary(repoResult.value, releaseValue, tagsValue);
     }
 
     if (commitsResult.status === "fulfilled") {
