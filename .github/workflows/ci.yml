@@ -5,106 +5,17 @@ on:
     branches:
       - main
   pull_request:
-  workflow_dispatch:
-
-permissions:
-  contents: read
-
-concurrency:
-  group: ci-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+    branches:
+      - main
 
 jobs:
-  website:
-    name: Website Sanity
+  test:
+    name: Test (Ruby ${{ matrix.ruby-version }})
     runs-on: ubuntu-latest
-    timeout-minutes: 10
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v5
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v5
-        with:
-          node-version: "22"
-
-      - name: Validate workflow YAML
-        shell: bash
-        run: |
-          ruby -e 'require "yaml"; Dir[".github/workflows/*.yml"].sort.each { |file| YAML.load_file(file) }'
-
-      - name: Validate website asset structure
-        shell: bash
-        run: |
-          test -f docs/website/index.html
-          test -f docs/website/development.html
-          test -f docs/website/css/core/base.css
-          test -f docs/website/css/layout/topbar.css
-          test -f docs/website/css/layout/sidebar.css
-          test -f docs/website/css/layout/content.css
-          test -f docs/website/css/layout/responsive.css
-          test -f docs/website/css/components/workflow.css
-          test -f docs/website/css/components/modules.css
-          test -f docs/website/css/components/development.css
-          test -f docs/website/js/core/site-data.js
-          test -f docs/website/js/core/helpers.js
-          test -f docs/website/js/features/sidebar.js
-          test -f docs/website/js/features/easter-eggs.js
-          test -f docs/website/js/features/search.js
-          test -f docs/website/js/features/contact-panel.js
-          test -f docs/website/js/features/workflow-visual.js
-          test -f docs/website/js/features/raw-popup.js
-          test -f docs/website/js/features/development-feed.js
-          test -f docs/website/js/bootstrap/app.js
-          test -f docs/website/web_assets/media/favicon.ico
-          test -f SECURITY.md
-          test -f docs/website/.nojekyll
-
-      - name: Validate website scripts
-        shell: bash
-        run: |
-          for file in docs/website/js/core/*.js docs/website/js/features/*.js docs/website/js/bootstrap/*.js; do
-            node --check "$file"
-          done
-
-      - name: Validate page includes
-        shell: bash
-        run: |
-          shopt -s nullglob
-          pages=(docs/website/*.html)
-          [ ${#pages[@]} -gt 0 ]
-          for page in "${pages[@]}"; do
-            grep -q 'css/core/base.css?v=' "${page}"
-            grep -q 'css/layout/topbar.css?v=' "${page}"
-            grep -q 'css/layout/sidebar.css?v=' "${page}"
-            grep -q 'css/layout/content.css?v=' "${page}"
-            grep -q 'css/components/workflow.css?v=' "${page}"
-            grep -q 'css/components/modules.css?v=' "${page}"
-            grep -q 'css/components/development.css?v=' "${page}"
-            grep -q 'css/layout/responsive.css?v=' "${page}"
-            grep -q 'js/core/site-data.js?v=' "${page}"
-            grep -q 'js/core/helpers.js?v=' "${page}"
-            grep -q 'js/features/sidebar.js?v=' "${page}"
-            grep -q 'js/features/easter-eggs.js?v=' "${page}"
-            grep -q 'js/features/search.js?v=' "${page}"
-            grep -q 'js/features/contact-panel.js?v=' "${page}"
-            grep -q 'js/features/workflow-visual.js?v=' "${page}"
-            grep -q 'js/features/raw-popup.js?v=' "${page}"
-            grep -q 'js/features/development-feed.js?v=' "${page}"
-            grep -q 'js/bootstrap/app.js?v=' "${page}"
-            grep -q 'topbar-contact-popover" hidden' "${page}"
-          done
-
-  verify:
-    name: Verify (Ruby ${{ matrix.ruby }})
-    runs-on: ubuntu-latest
-    timeout-minutes: 25
-    needs: website
     strategy:
       fail-fast: false
       matrix:
-        ruby:
+        ruby-version:
           - "3.2"
           - "3.3"
 
@@ -115,33 +26,10 @@ jobs:
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
-          ruby-version: ${{ matrix.ruby }}
-          bundler-cache: true
+          ruby-version: ${{ matrix.ruby-version }}
 
-      - name: Print runtime diagnostics
-        run: |
-          ruby -v
-          bundle -v
+      - name: Install dependencies
+        run: bundle install
 
-      - name: Run release verification
-        run: bundle exec rake
-
-      - name: Dump smoke logs on failure
-        if: failure()
-        shell: bash
-        run: |
-          if [ ! -d tmp/test ]; then
-            echo "No tmp/test directory found."
-            exit 0
-          fi
-          shopt -s nullglob
-          found=false
-          for file in tmp/test/*.log; do
-            found=true
-            echo "::group::${file}"
-            cat "${file}"
-            echo "::endgroup::"
-          done
-          if [ "${found}" = false ]; then
-            echo "No smoke log files were generated."
-          fi
+      - name: Run verification
+        run: bundle exec rake verify

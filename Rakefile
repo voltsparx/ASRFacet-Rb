@@ -16,7 +16,10 @@ require "rbconfig"
 require "rake/clean"
 require "rspec/core/rake_task"
 
-CLEAN.include("asrfacet-rb-*.gem", "tmp/test", "install/test-root")
+PROJECT_ROOT = __dir__
+GEM_ARTIFACT_GLOB = File.join(PROJECT_ROOT, "asrfacet-rb-*.gem")
+
+CLEAN.include(GEM_ARTIFACT_GLOB, "tmp/test", "install/test-root")
 
 RSpec::Core::RakeTask.new(:spec) do |task|
   task.pattern = "spec/**/*_spec.rb"
@@ -24,7 +27,8 @@ end
 
 def ruby_exec(*args)
   ruby = RbConfig.ruby
-  sh ruby, *args
+  result = system(ruby, *args)
+  raise "Command failed: #{args.join(' ')}" unless result
 end
 
 namespace :test do
@@ -62,8 +66,10 @@ namespace :build do
   task :gem do
     gem_file = nil
     sh "gem", "build", "asrfacet-rb.gemspec"
-    gem_file = Dir.glob("asrfacet-rb-*.gem").max_by { |path| File.mtime(path) }
-    puts "[BUILD] Built #{gem_file}" if gem_file
+    gem_file = Dir.glob(GEM_ARTIFACT_GLOB).max_by { |path| File.mtime(path) }
+    raise "Gem build failed — no .gem artifact found" unless gem_file && File.exist?(gem_file)
+
+    puts "[BUILD] Built #{gem_file}"
   ensure
     FileUtils.rm_f(gem_file) if gem_file && File.exist?(gem_file)
   end

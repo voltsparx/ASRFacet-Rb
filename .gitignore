@@ -5,6 +5,7 @@ __pycache__/
 *.pyc
 *.gem
 .bundle/
+Gemfile.lock
 coverage/
 .asrfacet_rb/
 temp/

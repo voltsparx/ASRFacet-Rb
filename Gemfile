@@ -15,6 +15,7 @@ source "https://rubygems.org"
 gemspec
 
 group :development do
+  gem "ferrum"
   gem "rake"
   gem "rspec"
   gem "webmock"
