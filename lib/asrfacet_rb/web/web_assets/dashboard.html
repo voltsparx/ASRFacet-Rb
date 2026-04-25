@@ -188,14 +188,17 @@
                 <div>
                   <div class="nav-title">Top Targets</div>
                   <h3>Highest-signal assets</h3>
+                  <p class="panel-copy">Score and rationale stay visible together so the queue is easier to triage from the top down.</p>
                 </div>
               </div>
-              <table>
-                <thead>
-                  <tr><th>Asset</th><th>Score</th><th>Why it matters</th></tr>
-                </thead>
-                <tbody id="top-assets-table"></tbody>
-              </table>
+              <div class="table-shell">
+                <table class="data-table">
+                  <thead>
+                    <tr><th>Asset</th><th>Score</th><th>Why it matters</th></tr>
+                  </thead>
+                  <tbody id="top-assets-table"></tbody>
+                </table>
+              </div>
             </section>
 
             <section class="shell-card">
@@ -203,14 +206,17 @@
                 <div>
                   <div class="nav-title">Recent Findings</div>
                   <h3>Latest output from the pipeline</h3>
+                  <p class="panel-copy">Severity is surfaced as a quick badge so the higher-risk rows stand out during live review.</p>
                 </div>
               </div>
-              <table>
-                <thead>
-                  <tr><th>Severity</th><th>Title</th><th>Host</th></tr>
-                </thead>
-                <tbody id="findings-table"></tbody>
-              </table>
+              <div class="table-shell">
+                <table class="data-table">
+                  <thead>
+                    <tr><th>Severity</th><th>Title</th><th>Host</th></tr>
+                  </thead>
+                  <tbody id="findings-table"></tbody>
+                </table>
+              </div>
             </section>
           </div>
         </section>
@@ -285,9 +291,10 @@
                 <div>
                   <div class="nav-title">Artifacts</div>
                   <h3>Saved reports</h3>
+                  <p class="panel-copy">Open the human-readable report first, then pivot into raw exports when you need automation or forensic detail.</p>
                 </div>
               </div>
-              <div id="report-links" class="link-grid"></div>
+              <div id="report-links" class="link-grid report-grid"></div>
             </section>
 
             <section class="shell-card">
@@ -295,14 +302,17 @@
                 <div>
                   <div class="nav-title">Guidance</div>
                   <h3>Operator recommendations</h3>
+                  <p class="panel-copy">This review table stays focused on what the current session means and what the operator should do next.</p>
                 </div>
               </div>
-              <table>
-                <thead>
-                  <tr><th>Item</th><th>Meaning</th><th>Recommendation</th></tr>
-                </thead>
-                <tbody id="detail-table"></tbody>
-              </table>
+              <div class="table-shell">
+                <table class="data-table">
+                  <thead>
+                    <tr><th>Item</th><th>Meaning</th><th>Recommendation</th></tr>
+                  </thead>
+                  <tbody id="detail-table"></tbody>
+                </table>
+              </div>
             </section>
           </div>
         </section>
@@ -314,6 +324,7 @@
                 <div>
                   <div class="nav-title">Documentation</div>
                   <h3>Bundled docs</h3>
+                  <p class="panel-copy">Keep the operator docs docked in-session instead of leaving the control plane to look up workflow details.</p>
                 </div>
               </div>
               <label class="field field-span docs-search-field">
