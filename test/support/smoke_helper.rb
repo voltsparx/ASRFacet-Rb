@@ -172,7 +172,7 @@ module ASRFacet
 
       run_command(*ruby_command("bin/asrfacet-rb", "version")).strip
     rescue StandardError
-      "1.0.0"
+      "1.5.0"
     end
 
     def load_version_constant

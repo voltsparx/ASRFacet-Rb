@@ -23,7 +23,7 @@ RSpec.describe ASRFacet::Core::IntegrityChecker do
       File.write(File.join(dir, "bin", "asrfacet-rb"), "#!/usr/bin/env ruby\n")
       File.write(File.join(dir, "bin", "asrfrb"), "#!/usr/bin/env ruby\n")
       File.write(File.join(dir, "lib", "asrfacet_rb.rb"), "module ASRFacet; end\n")
-      File.write(File.join(dir, "lib", "asrfacet_rb", "version.rb"), "module ASRFacet; VERSION='1.0.0'; end\n")
+      File.write(File.join(dir, "lib", "asrfacet_rb", "version.rb"), "module ASRFacet; VERSION='1.5.0'; end\n")
       File.write(File.join(dir, "config", "default.yml"), <<~YAML)
         wordlists:
           subdomain: wordlists/subdomains_small.txt

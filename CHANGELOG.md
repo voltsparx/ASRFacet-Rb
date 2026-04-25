@@ -2,7 +2,7 @@
 
 All notable changes to ASRFacet-Rb are documented in this file.
 
-## [1.0.0] - 2026-04-09
+## [1.5.0] - 2026-04-09
 
 ### Added
 
