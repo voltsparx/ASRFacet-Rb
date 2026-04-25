@@ -30,6 +30,7 @@ module ASRFacet
 
       OPTIONAL_PATHS = [
         "man/asrfacet-rb.1",
+        "man/asrfrb.1",
         "README.md"
       ].freeze
 

@@ -27,6 +27,7 @@ Project website: [https://voltsparx.github.io/ASRFacet-Rb/](https://voltsparx.gi
 - [Installation Guide](#installation-guide)
 - [Usage Guide with Examples](#usage-guide-with-examples)
 - [Output, Storage, and Reporting](#output-storage-and-reporting)
+- [Transparency and Operator Expectations](#transparency-and-operator-expectations)
 - [Testing and Release Verification](#testing-and-release-verification)
 - [Troubleshooting Guide](#troubleshooting-guide)
 - [Documentation Map](#documentation-map)
@@ -131,6 +132,7 @@ Installer prompt theme:
 | `dns DOMAIN` | DNS-focused collection | `asrfacet-rb dns example.com` |
 | `--console` | Interactive shell mode | `asrfacet-rb --console` |
 | `--web-session` | Local web control panel | `asrfacet-rb --web-session` |
+| `--version` | Print installed version | `asrfacet-rb --version` |
 | `about` | Framework overview | `asrfacet-rb about` |
 | `--explain TOPIC` | Built-in topic guidance | `asrfacet-rb --explain scope` |
 
@@ -189,6 +191,25 @@ flowchart TD
     D --> E[Recon Memory Updated]
     E --> F[Change Summary Available]
 ```
+
+## Transparency and Operator Expectations
+
+ASRFacet-Rb is meant to be inspectable and explicit about what it is doing.
+
+- Active modes make real DNS, TCP, HTTP, and related network requests to the configured target scope.
+- Passive results come from external sources and may be incomplete, stale, or include shared infrastructure that is not automatically authorized.
+- The local web session starts a local HTTP server and stores persistent drafts under `~/.asrfacet_rb/web_sessions/`.
+- Report bundles, event streams, and recon memory are written under `~/.asrfacet_rb/output/` and `~/.asrfacet_rb/memory/`.
+- Findings and prioritization are operator aids, not proof of exploitability or ownership.
+- The framework does not claim stealth, evasion, or guaranteed completeness.
+- Scope control remains the operator's responsibility. Use `--scope` and `--exclude` before active runs.
+
+Manual surfaces:
+
+- `asrfacet-rb manual`
+- `asrfacet-rb manual workflow`
+- `man asrfacet-rb`
+- `man asrfrb`
 
 ## Testing and Release Verification
 

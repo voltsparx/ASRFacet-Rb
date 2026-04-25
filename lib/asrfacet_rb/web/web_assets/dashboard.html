@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <link rel="icon" type="image/png" href="/assets/icon">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/dashboard.css">
+  <title>ASRFacet-Rb Web Session</title>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="app-sidebar" id="app-sidebar">
+      <div class="sidebar-head shell-card">
+        <div class="sidebar-brand">
+          <img src="/assets/icon" alt="ASRFacet-Rb icon" class="brand-icon">
+          <div>
+            <div class="sidebar-kicker">Local Control Plane</div>
+            <h1>ASRFacet-Rb</h1>
+            <p>Session-driven recon with safer review, richer navigation, and report access that stays usable during longer runs.</p>
+          </div>
+        </div>
+        <div class="sidebar-actions">
+          <button id="new-session" class="button button-primary" type="button">New Session</button>
+          <button id="refresh-sessions" class="button button-secondary" type="button">Refresh</button>
+        </div>
+      </div>
+
+      <nav class="shell-card sidebar-nav" aria-label="Workspace">
+        <div class="nav-title">Workspace</div>
+        <button class="nav-item active" data-view="workbench" type="button">
+          <span class="nav-label">Workbench</span>
+          <span class="nav-hint">Overview, findings, and run posture</span>
+        </button>
+        <button class="nav-item" data-view="sessions" type="button">
+          <span class="nav-label">Session Builder</span>
+          <span class="nav-hint">Config tabs for target, execution, and integrations</span>
+        </button>
+        <button class="nav-item" data-view="reports" type="button">
+          <span class="nav-label">Reports</span>
+          <span class="nav-hint">Artifacts, operator notes, and next actions</span>
+        </button>
+        <button class="nav-item" data-view="docs" type="button">
+          <span class="nav-label">Documentation</span>
+          <span class="nav-hint">Bundled docs in a persistent side panel flow</span>
+        </button>
+        <button class="nav-item" data-view="about" type="button">
+          <span class="nav-label">About</span>
+          <span class="nav-hint">Framework overview and first-run guidance</span>
+        </button>
+      </nav>
+
+      <section class="shell-card session-browser">
+        <div class="panel-head">
+          <div>
+            <div class="nav-title">Saved Sessions</div>
+            <p class="panel-copy">Choose a draft to inspect, edit, or rerun. The active session stays highlighted while the main workspace changes views.</p>
+          </div>
+          <div class="meta-pill" id="meta-sessions">0 sessions</div>
+        </div>
+        <div class="session-tools">
+          <label class="field field-span">
+            <span>Find a session</span>
+            <input id="session-search" placeholder="Search by name, target, or mode">
+          </label>
+          <div class="filter-strip">
+            <button class="filter-button active" data-session-filter="all" type="button">All</button>
+            <button class="filter-button" data-session-filter="running" type="button">Running</button>
+            <button class="filter-button" data-session-filter="attention" type="button">Needs Attention</button>
+          </div>
+        </div>
+        <div id="session-list" class="session-list"></div>
+      </section>
+
+      <section class="shell-card sidebar-foot">
+        <div class="nav-title">Storage</div>
+        <div class="storage-line">
+          <span>Sessions</span>
+          <strong id="session-root">Loading...</strong>
+        </div>
+        <div class="storage-line">
+          <span>Reports</span>
+          <strong id="report-root">Loading...</strong>
+        </div>
+      </section>
+    </aside>
+
+    <main class="app-main">
+      <header class="app-topbar shell-card">
+        <div class="topbar-main">
+          <button id="sidebar-toggle" class="button button-secondary mobile-only" type="button">Menu</button>
+          <div>
+            <div class="topbar-kicker">Web Session Mode</div>
+            <h2 id="current-heading">Session Builder</h2>
+            <p id="current-subheading">Select a saved session or create a new draft to begin.</p>
+          </div>
+        </div>
+        <div class="topbar-metrics">
+          <div class="metric-chip">
+            <span>Status</span>
+            <strong id="status-pill" class="status-pill idle">idle</strong>
+          </div>
+          <div class="metric-chip">
+            <span>Heartbeat</span>
+            <strong id="heartbeat-label">Idle</strong>
+          </div>
+          <div class="metric-chip">
+            <span>Target</span>
+            <strong id="active-target">No target</strong>
+          </div>
+        </div>
+        <div class="topbar-actions">
+          <button id="open-activity" class="button button-secondary" type="button">Activity Drawer</button>
+          <button id="save-session" class="button button-secondary" type="button">Save Session</button>
+          <button id="run-session" class="button button-primary" type="button">Run Session</button>
+        </div>
+      </header>
+
+      <section class="hero-band shell-card">
+        <div class="hero-copy">
+          <div class="topbar-kicker">Operator View</div>
+          <h3 id="hero-title">A more inspectable recon workspace</h3>
+          <p id="hero-copy">This shell separates building, reviewing, and operating so the session mode feels closer to a control plane than a single long report page.</p>
+        </div>
+        <div class="hero-grid">
+          <div class="hero-stat">
+            <span>Current Stage</span>
+            <strong id="stage-name">Waiting for a run.</strong>
+          </div>
+          <div class="hero-stat">
+            <span>Saved Reports</span>
+            <strong id="meta-reports">Awaiting</strong>
+          </div>
+          <div class="hero-stat">
+            <span>Unsaved Changes</span>
+            <strong id="save-note">Clean draft</strong>
+          </div>
+        </div>
+      </section>
+
+      <section class="workspace">
+        <section class="view-panel active" data-view-panel="workbench">
+          <div class="content-grid">
+            <section class="shell-card">
+              <div class="panel-head">
+                <div>
+                  <div class="nav-title">Run Summary</div>
+                  <h3>Coverage at a glance</h3>
+                </div>
+              </div>
+              <div class="summary-grid">
+                <div class="summary-tile"><span>Subdomains</span><strong id="sum-subdomains">0</strong></div>
+                <div class="summary-tile"><span>IPs</span><strong id="sum-ips">0</strong></div>
+                <div class="summary-tile"><span>Ports</span><strong id="sum-ports">0</strong></div>
+                <div class="summary-tile"><span>Web</span><strong id="sum-web">0</strong></div>
+                <div class="summary-tile"><span>Findings</span><strong id="sum-findings">0</strong></div>
+              </div>
+              <div class="chart-shell">
+                <div id="bar-chart" class="bar-chart"></div>
+                <div class="snapshot-card">
+                  <div class="nav-title">Stage Snapshot</div>
+                  <div id="stage-snapshot" class="snapshot-list"></div>
+                </div>
+              </div>
+            </section>
+
+            <section class="shell-card">
+              <div class="panel-head">
+                <div>
+                  <div class="nav-title">Current Session</div>
+                  <h3>Operational posture</h3>
+                </div>
+              </div>
+              <div id="session-overview" class="overview-grid"></div>
+              <div class="command-preview">
+                <div class="nav-title">CLI Equivalent</div>
+                <pre id="command-preview">asrfacet-rb scan TARGET</pre>
+              </div>
+            </section>
+          </div>
+
+          <div class="content-grid">
+            <section class="shell-card">
+              <div class="panel-head">
+                <div>
+                  <div class="nav-title">Top Targets</div>
+                  <h3>Highest-signal assets</h3>
+                </div>
+              </div>
+              <table>
+                <thead>
+                  <tr><th>Asset</th><th>Score</th><th>Why it matters</th></tr>
+                </thead>
+                <tbody id="top-assets-table"></tbody>
+              </table>
+            </section>
+
+            <section class="shell-card">
+              <div class="panel-head">
+                <div>
+                  <div class="nav-title">Recent Findings</div>
+                  <h3>Latest output from the pipeline</h3>
+                </div>
+              </div>
+              <table>
+                <thead>
+                  <tr><th>Severity</th><th>Title</th><th>Host</th></tr>
+                </thead>
+                <tbody id="findings-table"></tbody>
+              </table>
+            </section>
+          </div>
+        </section>
+
+        <section class="view-panel" data-view-panel="sessions">
+          <div class="content-grid">
+            <section class="shell-card">
+              <div class="panel-head">
+                <div>
+                  <div class="nav-title">Session Builder</div>
+                  <h3>Configuration tabs</h3>
+                </div>
+              </div>
+              <div class="tab-strip">
+                <button class="tab-button active" data-form-tab="target" type="button">Targeting</button>
+                <button class="tab-button" data-form-tab="execution" type="button">Execution</button>
+                <button class="tab-button" data-form-tab="integrations" type="button">Integrations</button>
+              </div>
+
+              <div class="form-panel active" data-form-panel="target">
+                <div class="form-grid">
+                  <label class="field"><span>Session Name</span><input id="name" placeholder="Production perimeter review"></label>
+                  <label class="field"><span>Target</span><input id="target" placeholder="example.com or 10.0.0.5"></label>
+                  <label class="field"><span>Mode</span><select id="mode"><option value="scan">Full scan</option><option value="passive">Passive</option><option value="dns">DNS only</option><option value="ports">Ports only</option></select></label>
+                  <label class="field"><span>Allowlist Scope</span><input id="scope" placeholder="example.com,*.example.com"></label>
+                  <label class="field"><span>Excluded Targets</span><input id="exclude" placeholder="dev.example.com"></label>
+                  <label class="field"><span>Preferred Report</span><select id="format"><option value="html">HTML</option><option value="txt">TXT</option><option value="json">JSON</option><option value="cli">CLI</option></select></label>
+                </div>
+              </div>
+
+              <div class="form-panel" data-form-panel="execution">
+                <div class="form-grid">
+                  <label class="field"><span>Ports</span><input id="ports" placeholder="top100 or 80,443"></label>
+                  <label class="field"><span>Threads</span><input id="threads" type="number" min="1"></label>
+                  <label class="field"><span>Timeout (seconds)</span><input id="timeout" type="number" min="1"></label>
+                  <label class="field"><span>Base Delay (ms)</span><input id="delay" type="number" min="0"></label>
+                </div>
+                <div class="check-grid">
+                  <label class="check-card"><input id="monitor" type="checkbox"><span>Change monitoring</span></label>
+                  <label class="check-card"><input id="memory" type="checkbox"><span>Recon memory</span></label>
+                  <label class="check-card"><input id="headless" type="checkbox"><span>Headless SPA probing</span></label>
+                  <label class="check-card"><input id="verbose" type="checkbox"><span>Live verbose events</span></label>
+                  <label class="check-card"><input id="adaptive-rate" type="checkbox"><span>Adaptive rate control</span></label>
+                </div>
+              </div>
+
+              <div class="form-panel" data-form-panel="integrations">
+                <div class="form-grid">
+                  <label class="field"><span>Webhook URL</span><input id="webhook-url" placeholder="Optional"></label>
+                  <label class="field"><span>Webhook Platform</span><select id="webhook-platform"><option value="slack">Slack</option><option value="discord">Discord</option></select></label>
+                  <label class="field field-span"><span>Shodan Key</span><input id="shodan-key" placeholder="Optional"></label>
+                </div>
+              </div>
+            </section>
+
+            <section class="shell-card">
+              <div class="panel-head">
+                <div>
+                  <div class="nav-title">Inspector</div>
+                  <h3>Builder notes</h3>
+                </div>
+              </div>
+              <div id="builder-notes" class="builder-notes"></div>
+            </section>
+          </div>
+        </section>
+
+        <section class="view-panel" data-view-panel="reports">
+          <div class="content-grid">
+            <section class="shell-card">
+              <div class="panel-head">
+                <div>
+                  <div class="nav-title">Artifacts</div>
+                  <h3>Saved reports</h3>
+                </div>
+              </div>
+              <div id="report-links" class="link-grid"></div>
+            </section>
+
+            <section class="shell-card">
+              <div class="panel-head">
+                <div>
+                  <div class="nav-title">Guidance</div>
+                  <h3>Operator recommendations</h3>
+                </div>
+              </div>
+              <table>
+                <thead>
+                  <tr><th>Item</th><th>Meaning</th><th>Recommendation</th></tr>
+                </thead>
+                <tbody id="detail-table"></tbody>
+              </table>
+            </section>
+          </div>
+        </section>
+
+        <section class="view-panel" data-view-panel="docs">
+          <div class="content-grid docs-grid">
+            <section class="shell-card">
+              <div class="panel-head">
+                <div>
+                  <div class="nav-title">Documentation</div>
+                  <h3>Bundled docs</h3>
+                </div>
+              </div>
+              <label class="field field-span docs-search-field">
+                <span>Find a document</span>
+                <input id="docs-search" placeholder="Search titles or content">
+              </label>
+              <div id="docs-nav" class="docs-nav"></div>
+            </section>
+
+            <section class="shell-card">
+              <pre id="docs-content" class="doc-pre"></pre>
+            </section>
+          </div>
+        </section>
+
+        <section class="view-panel" data-view-panel="about">
+          <div class="content-grid">
+            <section class="shell-card">
+              <div class="panel-head">
+                <div>
+                  <div class="nav-title">About</div>
+                  <h3>About ASRFacet-Rb</h3>
+                </div>
+              </div>
+              <div id="first-run-banner" class="notice hidden"></div>
+              <pre id="about-copy" class="doc-pre"></pre>
+            </section>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <aside class="activity-drawer" id="activity-drawer">
+      <div class="drawer-head">
+        <div>
+          <div class="nav-title">Live Activity</div>
+          <h3>Run log and stage flow</h3>
+        </div>
+        <button id="close-activity" class="button button-secondary" type="button">Close</button>
+      </div>
+      <div class="drawer-summary">
+        <div class="summary-tile compact"><span>Status</span><strong id="drawer-status">idle</strong></div>
+        <div class="summary-tile compact"><span>Stage</span><strong id="drawer-stage">Waiting</strong></div>
+      </div>
+      <div id="activity-log" class="activity-log"></div>
+    </aside>
+  </div>
+
+  <button id="sidebar-backdrop" class="overlay hidden" type="button" aria-label="Close menu"></button>
+  <button id="drawer-backdrop" class="overlay hidden" type="button" aria-label="Close activity drawer"></button>
+
+  <script src="/assets/dashboard.js"></script>
+</body>
+</html>

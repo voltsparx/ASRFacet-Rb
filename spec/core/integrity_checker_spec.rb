@@ -33,6 +33,7 @@ RSpec.describe ASRFacet::Core::IntegrityChecker do
       File.write(File.join(dir, "wordlists", "subdomains_small.txt"), "www\n")
       File.write(File.join(dir, "wordlists", "paths_common.txt"), "/admin\n")
       File.write(File.join(dir, "man", "asrfacet-rb.1"), ".TH asrfacet-rb 1\n")
+      File.write(File.join(dir, "man", "asrfrb.1"), ".so asrfacet-rb.1\n")
       output_root = File.join(dir, "output")
 
       report = described_class.check(app_root: dir, output_root: output_root)

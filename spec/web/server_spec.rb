@@ -14,15 +14,15 @@
 require "spec_helper"
 
 RSpec.describe ASRFacet::Web::Server do
-  it "renders the branded dashboard with theme toggles and framework icon" do
+  it "renders the branded dashboard shell with external assets and workspace views" do
     html = described_class.new.send(:dashboard_html)
 
     expect(html).to include("/assets/icon")
-    expect(html).to include("theme-light")
-    expect(html).to include("theme-dark")
-    expect(html).to include("theme-grey")
+    expect(html).to include("/assets/dashboard.css")
+    expect(html).to include("/assets/dashboard.js")
     expect(html).to include("ASRFacet-Rb")
-    expect(html).to include("Press OK to save before switching, or Cancel to stay")
+    expect(html).to include("Session Builder")
+    expect(html).to include("Activity Drawer")
     expect(html).to include("About ASRFacet-Rb")
     expect(html).to include("Documentation")
   end

@@ -320,12 +320,12 @@ module ASRFacet
         },
         "version" => {
           summary: "Print the currently installed ASRFacet-Rb version.",
-          usage: "asrfacet-rb version",
+          usage: "asrfacet-rb --version",
           details: [
             "Use this when validating the local CLI version before running a scan or sharing results."
           ],
           examples: [
-            "asrfacet-rb version"
+            "asrfacet-rb --version"
           ]
         },
         "manual" => {
@@ -333,12 +333,13 @@ module ASRFacet
           usage: "asrfacet-rb manual [section]",
           details: [
             "Use the built-in manual when you want a structured reference for commands, workflow, configuration, outputs, and recon concepts.",
-            "The same content also ships as a man page source under man/asrfacet-rb.1."
+            "The same content also ships as man page sources under man/asrfacet-rb.1 and man/asrfrb.1."
           ],
           examples: [
             "asrfacet-rb manual",
             "asrfacet-rb manual workflow",
-            "man asrfacet-rb"
+            "man asrfacet-rb",
+            "man asrfrb"
           ]
         },
         "wizard" => {
@@ -401,6 +402,7 @@ module ASRFacet
         "--delay" => "delay",
         "--adaptive-rate" => "adaptive-rate",
         "--about" => "about",
+        "--version" => "version",
         "--explain" => "explain",
         "--memory" => "memory",
         "--top" => "top",
@@ -472,7 +474,7 @@ module ASRFacet
           "  explain TOPIC      Explain a command or topic          Aliases: x, exp",
           "  help [TOPIC]       Show the help menu                  Aliases: h, ?",
           "  manual [SECTION]   Read the built-in manual            Aliases: m, man",
-          "  version            Print the installed version         Aliases: v, ver",
+          "      --version      Print the installed version         Command: version | Aliases: v, ver",
           "",
           "Global options:",
           "  -o, --output PATH  Save output to a file instead of printing",

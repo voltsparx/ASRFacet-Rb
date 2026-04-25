@@ -28,6 +28,7 @@ module ASRFacet
         configurations
         outputs
         files
+        transparency
         safety
         examples
       ].freeze
@@ -36,17 +37,19 @@ module ASRFacet
         "name" => {
           title: "NAME",
           body: [
-            "asrfacet-rb - authorized attack surface reconnaissance and security mapping framework for Ruby 3.2+"
+            "asrfacet-rb, asrfrb - authorized attack surface reconnaissance and security mapping framework for Ruby 3.2+"
           ]
         },
         "synopsis" => {
           title: "SYNOPSIS",
           body: [
             "asrfacet-rb <command> [arguments] [options]",
+            "asrfacet-rb --version",
             "asrfacet-rb --console",
             "asrfacet-rb --web-session",
             "asrfacet-rb manual [section]",
-            "man asrfacet-rb"
+            "man asrfacet-rb",
+            "man asrfrb"
           ]
         },
         "description" => {
@@ -189,7 +192,19 @@ module ASRFacet
             "~/.asrfacet_rb/web_sessions/",
             "  Persistent web-session drafts, run state, and recovered sessions for the local control panel.",
             "man/asrfacet-rb.1",
-            "  Manual page source for `man asrfacet-rb` on systems where the man page is installed or the repository man directory is on MANPATH."
+            "  Manual page source for `man asrfacet-rb` on systems where the man page is installed or the repository man directory is on MANPATH.",
+            "man/asrfrb.1",
+            "  Alias man page source for `man asrfrb`."
+          ]
+        },
+        "transparency" => {
+          title: "TRANSPARENCY",
+          body: [
+            "Active modes make real DNS, TCP, HTTP, and related requests to the targets you configure.",
+            "Passive results are lead generation, not guaranteed truth. They may include stale records, inherited infrastructure, or shared services that are not automatically authorized.",
+            "The local web session starts a local HTTP server, stores drafts under ~/.asrfacet_rb/web_sessions/, and writes reports and streams to the normal output directories.",
+            "Findings, scores, and recommendations are operator aids. They do not prove exploitability, ownership, or business impact on their own.",
+            "ASRFacet-Rb does not claim stealth, evasion, or complete coverage. Operators must still define scope, exclusions, and verification steps explicitly."
           ]
         },
         "safety" => {
@@ -212,7 +227,8 @@ module ASRFacet
             "asrfacet-rb --explain scope",
             "asrfacet-rb scan example.com --scope example.com,api.example.com --exclude dev.example.com --monitor",
             "asrfacet-rb --console",
-            "man asrfacet-rb"
+            "man asrfacet-rb",
+            "man asrfrb"
           ]
         }
       }.freeze

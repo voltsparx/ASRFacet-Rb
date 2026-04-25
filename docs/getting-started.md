@@ -11,7 +11,7 @@
 ```bash
 bundle install
 bundle exec ruby bin/asrfacet-rb help
-bundle exec ruby bin/asrfacet-rb version
+bundle exec ruby bin/asrfacet-rb --version
 bundle exec ruby bin/asrfacet-rb about
 bundle exec ruby bin/asrfacet-rb --explain scope
 bundle exec rake
@@ -100,6 +100,14 @@ The pipeline may also write a JSONL event stream under:
 ~/.asrfacet_rb/output/streams/
 ```
 
+## Transparency
+
+- Active commands send real requests to the targets you specify.
+- Passive results can still include third-party or stale infrastructure, so treat them as leads to validate, not automatic in-scope truth.
+- The web session starts a local server on `127.0.0.1:4567` by default and stores drafts under `~/.asrfacet_rb/web_sessions/`.
+- Recon memory and report bundles persist under `~/.asrfacet_rb/memory/` and `~/.asrfacet_rb/output/`.
+- Findings help prioritize operator review, but they are not guaranteed exploit proof.
+
 ## Built-In Help
 
 ```bash
@@ -108,4 +116,6 @@ asrfacet-rb help scan
 asrfacet-rb explain scope
 asrfacet-rb manual
 asrfacet-rb manual workflow
+man asrfacet-rb
+man asrfrb
 ```

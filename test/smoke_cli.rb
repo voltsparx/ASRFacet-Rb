@@ -21,10 +21,10 @@ version = expected_version
 help_output = run_command(*ruby_command("bin/asrfacet-rb", "help"))
 assert(help_output.include?("ASRFacet-Rb Help"), "CLI help output was not returned.")
 
-version_output = run_command(*ruby_command("bin/asrfacet-rb", "version")).strip
+version_output = run_command(*ruby_command("bin/asrfacet-rb", "--version")).strip
 assert(version_output == version, "Expected version #{version}, got #{version_output.inspect}.")
 
-alias_version = run_command(*ruby_command("bin/asrfrb", "version")).strip
+alias_version = run_command(*ruby_command("bin/asrfrb", "--version")).strip
 assert(alias_version == version, "Expected alias version #{version}, got #{alias_version.inspect}.")
 
 about_output = run_command(*ruby_command("bin/asrfacet-rb", "--about"))

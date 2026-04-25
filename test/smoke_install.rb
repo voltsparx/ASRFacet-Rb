@@ -26,20 +26,20 @@ if windows?
   run_command("powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", File.join("install", "windows.ps1"), "test", unbundled: true)
   primary_launcher = File.join("install", "test-root", "bin", "asrfacet-rb.cmd").tr("/", "\\")
   alias_launcher = File.join("install", "test-root", "bin", "asrfrb.cmd").tr("/", "\\")
-  primary_version = run_command("cmd", "/c", primary_launcher, "version", unbundled: true).strip
-  alias_version = run_command("cmd", "/c", alias_launcher, "version", unbundled: true).strip
+  primary_version = run_command("cmd", "/c", primary_launcher, "--version", unbundled: true).strip
+  alias_version = run_command("cmd", "/c", alias_launcher, "--version", unbundled: true).strip
 elsif macos?
   run_command("bash", File.join("install", "macos.sh"), "test", unbundled: true)
   primary_launcher = File.join("install", "test-root", "bin", "asrfacet-rb")
   alias_launcher = File.join("install", "test-root", "bin", "asrfrb")
-  primary_version = run_command(primary_launcher, "version", unbundled: true).strip
-  alias_version = run_command(alias_launcher, "version", unbundled: true).strip
+  primary_version = run_command(primary_launcher, "--version", unbundled: true).strip
+  alias_version = run_command(alias_launcher, "--version", unbundled: true).strip
 else
   run_command("bash", File.join("install", "linux.sh"), "test", unbundled: true)
   primary_launcher = File.join("install", "test-root", "bin", "asrfacet-rb")
   alias_launcher = File.join("install", "test-root", "bin", "asrfrb")
-  primary_version = run_command(primary_launcher, "version", unbundled: true).strip
-  alias_version = run_command(alias_launcher, "version", unbundled: true).strip
+  primary_version = run_command(primary_launcher, "--version", unbundled: true).strip
+  alias_version = run_command(alias_launcher, "--version", unbundled: true).strip
 end
 
 assert(primary_version == version, "Installed primary launcher reported #{primary_version.inspect}.")

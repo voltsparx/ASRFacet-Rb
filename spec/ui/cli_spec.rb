@@ -21,6 +21,10 @@ RSpec.describe ASRFacet::UI::CLI do
       expect { described_class.start(["v"]) }.to output("#{ASRFacet::VERSION}\n").to_stdout
     end
 
+    it "prints the version through the long flag" do
+      expect { described_class.start(["--version"]) }.to output("#{ASRFacet::VERSION}\n").to_stdout
+    end
+
     it "routes help aliases to topic help" do
       expect { described_class.start(["h", "scan"]) }.to output(include("Explain: scan")).to_stdout
     end

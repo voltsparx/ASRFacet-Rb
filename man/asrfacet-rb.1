@@ -1,4 +1,4 @@
-.TH ASRFACET-RB 1 "April 2026" "ASRFacet-Rb 0.1.0" "User Commands"
+.TH ASRFACET-RB 1 "April 2026" "ASRFacet-Rb 1.5.0" "User Commands"
 .SH NAME
 asrfacet-rb \- authorized attack surface reconnaissance and security mapping framework
 .SH SYNOPSIS
@@ -6,10 +6,22 @@ asrfacet-rb \- authorized attack surface reconnaissance and security mapping fra
 <command> [arguments] [options]
 .br
 .B asrfacet-rb
+--version
+.br
+.B asrfacet-rb
 --console
 .br
 .B asrfacet-rb
+--web-session
+.br
+.B asrfacet-rb
 manual [section]
+.br
+.B man
+asrfacet-rb
+.br
+.B man
+asrfrb
 .SH DESCRIPTION
 ASRFacet-Rb is a Ruby 3.2+ framework for authorized attack surface reconnaissance.
 It combines passive discovery, recursive DNS and certificate enrichment, service mapping,
@@ -34,6 +46,9 @@ Collect DNS records only. Aliases: d, dn.
 .TP
 .B console
 Launch the framework console. Aliases: c, con, shell.
+.TP
+.B web
+Launch the local web control panel. Aliases: w, ui.
 .TP
 .B interactive
 Launch the standalone guided workflow. Aliases: i, int.
@@ -60,6 +75,14 @@ man
 wizard
 .PP
 Normal framework commands can also be run directly inside the console.
+.SH WEB SESSION
+Web session mode starts a local browser-facing control panel, bound to 127.0.0.1:4567
+by default unless overridden.
+It keeps saved sessions, live activity, report links, and built-in docs in one shell.
+.PP
+The web UI is local, not hosted. Drafts are stored under
+.I ~/.asrfacet_rb/web_sessions/
+and runs still use the same underlying reconnaissance pipeline as the CLI.
 .SH WIZARD
 The console-only wizard asks what you are trying to achieve, how careful you want to be,
 what format you want, and whether monitoring or memory should be enabled.
@@ -88,10 +111,18 @@ Offline report with findings, graph relationships, and top targets.
 .TP
 .B txt
 Plain-text export.
+.PP
+Automatic report bundles are stored under
+.I ~/.asrfacet_rb/output/reports/<target>/<timestamp>/
+and event streams may be written under
+.I ~/.asrfacet_rb/output/streams/ .
 .SH FILES
 .TP
 .I bin/asrfacet-rb
 Primary executable.
+.TP
+.I bin/asrfrb
+Short alias executable.
 .TP
 .I config/default.yml
 Project defaults.
@@ -102,8 +133,25 @@ User configuration overrides.
 .I ~/.asrfacet_rb/memory/
 Per-target scan memory.
 .TP
+.I ~/.asrfacet_rb/output/
+Stored reports and generated artifacts.
+.TP
+.I ~/.asrfacet_rb/web_sessions/
+Persistent web-session drafts and recovered state.
+.TP
 .I man/asrfacet-rb.1
-Manual page source.
+Primary manual page source.
+.TP
+.I man/asrfrb.1
+Alias manual page source.
+.SH TRANSPARENCY
+Active modes make real DNS, TCP, HTTP, and related requests to the targets you configure.
+Passive results are lead generation, not guaranteed truth. They may include stale records,
+shared infrastructure, or inherited services that are not automatically authorized.
+.PP
+Findings, scores, and recommendations help operators prioritize review, but they do not
+prove exploitability, ownership, or business impact on their own.
+ASRFacet-Rb does not claim stealth, evasion, or guaranteed completeness.
 .SH EXAMPLES
 .TP
 .B asrfacet-rb scan example.com --format html --output report.html
@@ -112,12 +160,19 @@ Run a full scan and save an HTML report.
 .B asrfacet-rb passive example.com --format json --output passive.json
 Run passive discovery only and save JSON output.
 .TP
-.B asrfacet-rb --console
-Open the framework console.
+.B asrfacet-rb --web-session
+Open the local control panel.
+.TP
+.B asrfacet-rb --version
+Print the installed version.
+.TP
+.B man asrfrb
+Open the alias manual page.
 .SH SAFETY
 Only use ASRFacet-Rb on systems you own or have explicit written permission to test.
 Use scope controls and exclusions to keep the target boundary explicit.
 .SH SEE ALSO
-.B asrfacet-rb manual
+.BR asrfrb (1),
+.BR "asrfacet-rb manual"
 .SH AUTHOR
 voltsparx <voltsparx@gmail.com>

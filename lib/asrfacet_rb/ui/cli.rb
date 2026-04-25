@@ -62,14 +62,17 @@ module ASRFacet
           if args.delete("--web-session")
             return super(["web", *args], config)
           end
-          if args.delete("--about")
-            return super(["about", *args], config)
-          end
-          if (index = args.index("--explain"))
-            topic = args[index + 1].to_s
-            args.slice!(index, 2)
-            return super(["explain", topic, *args], config)
-          end
+        if args.delete("--about")
+          return super(["about", *args], config)
+        end
+        if args.delete("--version")
+          return super(["version", *args], config)
+        end
+        if (index = args.index("--explain"))
+          topic = args[index + 1].to_s
+          args.slice!(index, 2)
+          return super(["explain", topic, *args], config)
+        end
 
           super(args, config)
         rescue StandardError
