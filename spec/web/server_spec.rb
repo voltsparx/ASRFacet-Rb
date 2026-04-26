@@ -12,6 +12,7 @@
 # and conditions defined in the LICENSE file.
 
 require "spec_helper"
+require "json"
 
 RSpec.describe ASRFacet::Web::Server do
   it "renders the branded dashboard shell with external assets and workspace views" do
@@ -25,5 +26,43 @@ RSpec.describe ASRFacet::Web::Server do
     expect(html).to include("Activity Drawer")
     expect(html).to include("About ASRFacet-Rb")
     expect(html).to include("Documentation")
+  end
+
+  it "starts a saved session when the run id is passed in the POST query string" do
+    session_store = instance_double(ASRFacet::Web::SessionStore)
+    session_runner = instance_double(ASRFacet::Web::SessionRunner)
+    response_class = Class.new do
+      attr_accessor :status, :body
+
+      def initialize
+        @headers = {}
+      end
+
+      def []=(key, value)
+        @headers[key] = value
+      end
+
+      def [](key)
+        @headers[key]
+      end
+    end
+    request = Struct.new(:request_method, :query, :query_string, :request_uri, :body).new(
+      "POST",
+      {},
+      "id=session-123",
+      URI("http://127.0.0.1/api/run?id=session-123"),
+      ""
+    )
+    response = response_class.new
+
+    allow(session_store).to receive(:fetch).with("session-123").and_return({ id: "session-123" })
+    allow(session_store).to receive(:append_event)
+    allow(session_runner).to receive(:start).with("session-123").and_return(true)
+
+    described_class.new(session_store: session_store, session_runner: session_runner).send(:handle_run, request, response)
+
+    expect(response.status).to eq(200)
+    expect(JSON.parse(response.body)).to include("ok" => true, "session_id" => "session-123")
+    expect(session_store).to have_received(:append_event).with("session-123", hash_including(type: "system"))
   end
 end

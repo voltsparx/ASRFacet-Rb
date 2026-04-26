@@ -79,4 +79,16 @@ RSpec.describe ASRFacet::Web::SessionStore do
       )
     end
   end
+
+  it "preserves array and nil session fields when persisting to disk" do
+    Dir.mktmpdir do |dir|
+      store = described_class.new(root: dir)
+      session = store.create_or_update(name: "Shape check", config: { target: "example.com" })
+      recovered = store.fetch(session[:id])
+
+      expect(recovered[:events]).to eq([])
+      expect(recovered[:error]).to be_nil
+      expect(recovered[:last_heartbeat_at]).to be_nil
+    end
+  end
 end

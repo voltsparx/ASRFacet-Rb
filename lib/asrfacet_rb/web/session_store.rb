@@ -244,7 +244,7 @@ module ASRFacet
       def load_file(path)
         return nil unless File.file?(path)
 
-        symbolize(JSON.parse(File.read(path)))
+        hydrate_session(symbolize(JSON.parse(File.read(path))))
       rescue StandardError
         nil
       end
@@ -270,12 +270,14 @@ module ASRFacet
       end
 
       def normalize(value)
-        if value.respond_to?(:to_h) && !value.is_a?(Hash)
-          normalize(value.to_h)
-        elsif value.is_a?(Hash)
+        if value.is_a?(Hash)
           value.each_with_object({}) { |(key, nested), memo| memo[key.to_sym] = normalize(nested) }
         elsif value.is_a?(Array)
           value.map { |entry| normalize(entry) }
+        elsif value.nil?
+          nil
+        elsif value.respond_to?(:to_h) && !value.is_a?(Hash)
+          normalize(value.to_h)
         else
           value
         end
@@ -346,6 +348,16 @@ module ASRFacet
           details: message.to_s,
           recommendation: "Review the session activity log and rerun with a healthier framework or target configuration."
         }
+      end
+
+      def hydrate_session(session)
+        item = symbolize(session)
+        item[:events] = [] if item[:events].is_a?(Hash) && item[:events].empty?
+        item[:error] = nil if item[:error].is_a?(Hash) && item[:error].empty?
+        item[:last_heartbeat_at] = nil if item[:last_heartbeat_at].is_a?(Hash) && item[:last_heartbeat_at].empty?
+        item
+      rescue StandardError
+        session
       end
     end
   end

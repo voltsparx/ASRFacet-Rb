@@ -12,6 +12,7 @@
 # and conditions defined in the LICENSE file.
 
 require "json"
+require "uri"
 require "webrick"
 
 module ASRFacet
@@ -122,7 +123,7 @@ module ASRFacet
       end
 
       def handle_session_lookup(req, res)
-        session = @session_store.fetch(req.query["id"].to_s)
+        session = @session_store.fetch(request_param(req, "id").to_s)
         session ? respond_json(res, { session: session }) : respond_json(res, { error: "not_found" }, status: 404)
       rescue StandardError
         respond_json(res, { error: "lookup_failed" }, status: 500)
@@ -131,7 +132,7 @@ module ASRFacet
       def handle_run(req, res)
         return respond_json(res, { error: "method_not_allowed" }, status: 405) unless req.request_method == "POST"
 
-        session_id = req.query["id"].to_s
+        session_id = request_param(req, "id").to_s
         return respond_json(res, { error: "not_found" }, status: 404) if @session_store.fetch(session_id).nil?
 
         if @session_runner.start(session_id)
@@ -274,6 +275,24 @@ module ASRFacet
         JSON.parse(req.body)
       rescue StandardError
         {}
+      end
+
+      def request_param(req, key)
+        key_name = key.to_s
+        from_query = req.query[key_name].to_s
+        return from_query unless from_query.empty?
+
+        query_string = req.query_string.to_s
+        if query_string.empty?
+          request_uri = req.request_uri
+          query_string = request_uri.query.to_s if request_uri.respond_to?(:query)
+          query_string = request_uri.to_s.split("?", 2).last.to_s if query_string.empty? && request_uri.to_s.include?("?")
+        end
+        return nil if query_string.empty?
+
+        URI.decode_www_form(query_string).to_h[key_name]
+      rescue StandardError
+        nil
       end
 
       def respond_json(res, payload, status: 200)
