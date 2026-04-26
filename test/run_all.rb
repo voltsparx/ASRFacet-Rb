@@ -16,6 +16,7 @@ require_relative "support/smoke_helper"
 include ASRFacet::TestSupport
 
 scripts = %w[
+  smoke_version.rb
   smoke_cli.rb
   smoke_web.rb
   smoke_lab.rb

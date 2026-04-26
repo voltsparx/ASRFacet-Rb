@@ -35,6 +35,11 @@ namespace :test do
   desc "Run the RSpec suite"
   task spec: :spec
 
+  desc "Verify version alignment across runtime, docs, and packaged assets"
+  task :version do
+    ruby_exec(File.join("test", "smoke_version.rb"))
+  end
+
   desc "Run CLI smoke tests"
   task :cli do
     ruby_exec(File.join("test", "smoke_cli.rb"))
@@ -81,6 +86,6 @@ namespace :build do
 end
 
 desc "Run the full release verification pass"
-task verify: ["test:spec", "test:cli", "test:web", "test:lab", "test:deploy", "test:install", "test:website_installers", "build:gem"]
+task verify: ["test:spec", "test:version", "test:cli", "test:web", "test:lab", "test:deploy", "test:install", "test:website_installers", "build:gem"]
 
 task default: :verify

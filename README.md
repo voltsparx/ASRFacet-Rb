@@ -5,10 +5,12 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/tests-52%2F52%20passing-2E8B57?style=for-the-badge" alt="Tests Passing">
+  <img src="https://img.shields.io/badge/version-2.0.0-1F6FEB?style=for-the-badge" alt="Version 2.0.0">
+  <img src="https://img.shields.io/badge/tests-241%20examples%20passing-2E8B57?style=for-the-badge" alt="Tests Passing">
   <img src="https://img.shields.io/badge/verify-bundle%20exec%20rake%20passing-2E8B57?style=for-the-badge" alt="Rake Verify Passing">
   <br>
   <img src="https://img.shields.io/badge/status-stable-4C956C?style=for-the-badge" alt="Status Stable">
+  <img src="https://img.shields.io/badge/version%20check-rake%20test%3Aversion%20passing-1D8348?style=for-the-badge" alt="Version Check Passing">
   <img src="https://img.shields.io/badge/license-Proprietary-8B0000?style=for-the-badge" alt="License">
   <br>
   <a href="https://github.com/voltsparx/ASRFacet-Rb/actions/workflows/ci.yml"><img src="https://github.com/voltsparx/ASRFacet-Rb/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
@@ -272,9 +274,10 @@ bundle exec rake test:website_installers
 
 Verification snapshot:
 
-- Date: `2026-04-09`
+- Date: `2026-04-27`
 - Result: `241 examples, 0 failures`
 - Full verify gate: `bundle exec rake` passed
+- Version alignment gate: `bundle exec rake test:version` passed for `2.0.0`
 
 ## Troubleshooting Guide
 

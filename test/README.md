@@ -16,6 +16,7 @@ having to remember a long set of manual commands.
 ## Targeted checks
 
 - `bundle exec rake spec`: run the RSpec suite
+- `bundle exec rake test:version`: verify that the project version is aligned across code, CLI, docs, and packaged assets
 - `bundle exec rake test:cli`: verify CLI entrypoints
 - `bundle exec rake test:web`: verify web-session startup and routes
 - `bundle exec rake test:lab`: verify the local validation lab
@@ -30,5 +31,5 @@ README verification notes.
 Latest verified repository result:
 
 - `bundle exec rake` passed
-- `52 examples, 0 failures`
-- CLI, web-session, lab, installer, website-installer, and gem-build smoke checks all passed
+- `241 examples, 0 failures`
+- Version, CLI, web-session, lab, installer, website-installer, and gem-build smoke checks all passed
