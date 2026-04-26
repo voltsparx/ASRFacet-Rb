@@ -1,3 +1,6 @@
+# frozen_string_literal: true
+# For use only on systems you own or have explicit
+# written authorization to test.
 # SPDX-License-Identifier: Proprietary
 #
 # ASRFacet-Rb: Attack Surface Reconnaissance Framework
@@ -20,8 +23,146 @@ module ASRFacet
   module Web
     class SessionStore
       HEARTBEAT_STALE_SECONDS = 15
+      VALID_MODES = %w[scan passive dns ports portscan].freeze
+      VALID_FORMATS = %w[cli json html txt csv pdf docx all sarif].freeze
+      VALID_SCAN_TYPES = %w[connect syn udp ack fin null xmas window maimon ping service].freeze
+      VALID_WEBHOOK_PLATFORMS = %w[slack discord].freeze
+      DEFAULT_CONFIG = {
+        mode: "scan",
+        target: "",
+        ports: "top100",
+        threads: 50,
+        timeout: 10,
+        scope: "",
+        exclude: "",
+        monitor: true,
+        memory: true,
+        headless: false,
+        verbose: true,
+        delay: 0,
+        adaptive_rate: true,
+        format: "html",
+        webhook_url: "",
+        webhook_platform: "slack",
+        shodan_key: "",
+        scan_type: "connect",
+        scan_timing: 3,
+        scan_version: false,
+        scan_os: false,
+        scan_intensity: 7
+      }.freeze
 
       attr_reader :root
+
+      class << self
+        def default_config
+          deep_dup(DEFAULT_CONFIG)
+        end
+
+        def normalize_config(config)
+          item = symbolize(config || {})
+          {
+            mode: normalize_mode(item[:mode]),
+            target: item[:target].to_s.strip,
+            ports: normalize_ports(item[:ports]),
+            threads: bounded_integer(item[:threads], 50, min: 1, max: 1_000),
+            timeout: bounded_integer(item[:timeout], 10, min: 1, max: 300),
+            scope: item[:scope].to_s.strip,
+            exclude: item[:exclude].to_s.strip,
+            monitor: normalize_boolean(item[:monitor], default: true),
+            memory: normalize_boolean(item[:memory], default: true),
+            headless: normalize_boolean(item[:headless], default: false),
+            verbose: normalize_boolean(item[:verbose], default: true),
+            delay: bounded_integer(item[:delay], 0, min: 0, max: 600_000),
+            adaptive_rate: normalize_boolean(item[:adaptive_rate], default: true),
+            format: normalize_format(item[:format]),
+            webhook_url: item[:webhook_url].to_s.strip,
+            webhook_platform: normalize_webhook_platform(item[:webhook_platform]),
+            shodan_key: item[:shodan_key].to_s.strip,
+            scan_type: normalize_scan_type(item[:scan_type]),
+            scan_timing: bounded_integer(item[:scan_timing], 3, min: 0, max: 5),
+            scan_version: normalize_boolean(item[:scan_version], default: false),
+            scan_os: normalize_boolean(item[:scan_os], default: false),
+            scan_intensity: bounded_integer(item[:scan_intensity], 7, min: 0, max: 9)
+          }
+        rescue StandardError
+          default_config
+        end
+
+        private
+
+        def normalize_mode(value)
+          mode = value.to_s.strip.downcase
+          VALID_MODES.include?(mode) ? mode : DEFAULT_CONFIG[:mode]
+        end
+
+        def normalize_format(value)
+          format = value.to_s.strip.downcase
+          VALID_FORMATS.include?(format) ? format : DEFAULT_CONFIG[:format]
+        end
+
+        def normalize_scan_type(value)
+          scan_type = value.to_s.strip.downcase
+          VALID_SCAN_TYPES.include?(scan_type) ? scan_type : DEFAULT_CONFIG[:scan_type]
+        end
+
+        def normalize_webhook_platform(value)
+          platform = value.to_s.strip.downcase
+          VALID_WEBHOOK_PLATFORMS.include?(platform) ? platform : DEFAULT_CONFIG[:webhook_platform]
+        end
+
+        def normalize_ports(value)
+          cleaned = value.to_s.strip.downcase
+          return DEFAULT_CONFIG[:ports] if cleaned.empty?
+
+          cleaned
+        end
+
+        def bounded_integer(value, fallback, min:, max:)
+          parsed = Integer(value)
+          [[parsed, min].max, max].min
+        rescue StandardError
+          fallback
+        end
+
+        def normalize_boolean(value, default:)
+          return default if value.nil?
+          return value if value == true || value == false
+
+          case value.to_s.strip.downcase
+          when "1", "true", "yes", "on" then true
+          when "0", "false", "no", "off" then false
+          else
+            default
+          end
+        end
+
+        def symbolize(value)
+          case value
+          when Hash
+            value.each_with_object({}) do |(key, nested), memo|
+              memo[key.to_sym] = symbolize(nested)
+            end
+          when Array
+            value.map { |entry| symbolize(entry) }
+          else
+            value
+          end
+        rescue StandardError
+          {}
+        end
+
+        def deep_dup(value)
+          case value
+          when Hash
+            value.each_with_object({}) { |(key, nested), memo| memo[key] = deep_dup(nested) }
+          when Array
+            value.map { |entry| deep_dup(entry) }
+          else
+            value
+          end
+        end
+      end
 
       def initialize(root: File.expand_path("~/.asrfacet_rb/web_sessions"))
         @root = root
@@ -57,6 +198,8 @@ module ASRFacet
         session[:id] = data[:id].to_s.empty? ? SecureRandom.hex(8) : data[:id].to_s
         existing = fetch(session[:id]) || {}
         session = deep_merge(existing, session)
+        session[:name] = session[:name].to_s.strip.empty? ? "Untitled session" : session[:name].to_s.strip
+        session[:config] = self.class.normalize_config(session[:config] || {})
         session[:updated_at] = Time.now.utc.iso8601
         @mutex.synchronize do
           atomic_write(path_for(session[:id]), JSON.pretty_generate(normalize(session)))
@@ -198,22 +341,7 @@ module ASRFacet
           name: "Untitled session",
           status: "idle",
           running: false,
-          config: {
-            mode: "scan",
-            target: "",
-            ports: "top100",
-            threads: 50,
-            timeout: 10,
-            scope: "",
-            exclude: "",
-            monitor: true,
-            memory: true,
-            headless: false,
-            verbose: true,
-            delay: 0,
-            adaptive_rate: true,
-            format: "html"
-          },
+          config: self.class.default_config,
           summary: {},
           integrity: {},
           artifacts: {},
@@ -352,6 +480,7 @@ module ASRFacet
 
       def hydrate_session(session)
         item = symbolize(session)
+        item[:config] = self.class.normalize_config(item[:config] || {})
         item[:events] = [] if item[:events].is_a?(Hash) && item[:events].empty?
         item[:error] = nil if item[:error].is_a?(Hash) && item[:error].empty?
         item[:last_heartbeat_at] = nil if item[:last_heartbeat_at].is_a?(Hash) && item[:last_heartbeat_at].empty?

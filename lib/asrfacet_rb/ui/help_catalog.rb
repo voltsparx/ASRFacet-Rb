@@ -47,12 +47,24 @@ module ASRFacet
           summary: "Run a focused TCP port scan against a host or IP.",
           usage: "asrfacet-rb ports HOST [--ports top100|top1000|1-1000|80,443]",
           details: [
-            "Use this command when you only need network exposure and service banners.",
+            "Use this command when you only need a quick connectivity pass through the scanner engine without version or OS fingerprinting.",
             "The port selector accepts named ranges, numeric ranges, or comma-separated custom lists."
           ],
           examples: [
             "asrfacet-rb ports 192.0.2.10",
             "asrfacet-rb ports app.example.com --ports 22,80,443,8080"
+          ]
+        },
+        "portscan" => {
+          summary: "Run the full scanner engine directly with explicit scan type, timing, and optional fingerprinting.",
+          usage: "asrfacet-rb portscan TARGET --type connect|syn|udp|ack|fin|null|xmas|window|maimon|ping|service [--timing 0-5] [--version] [--os]",
+          details: [
+            "Use this command when you want direct control over the scanner engine instead of the simpler `ports` wrapper.",
+            "Timing templates mirror the scanner timing profiles and the command can also render PDF, DOCX, CSV, JSON, HTML, TXT, CLI, ALL, or SARIF output."
+          ],
+          examples: [
+            "asrfacet-rb portscan 192.0.2.10 --type syn --timing 4 --ports 1-1024",
+            "asrfacet-rb portscan app.example.com --type service --version --intensity 9 --format json"
           ]
         },
         "dns" => {
@@ -121,7 +133,7 @@ module ASRFacet
           details: [
             "Web session mode starts a local-only dashboard for recon planning, saved sessions, run history, report browsing, and live stage updates.",
             "Session drafts are autosaved to disk so configuration survives accidental browser closes, process crashes, and power loss.",
-            "The dashboard uses the same pipeline, memory, monitoring, headless, webhook, and rate-control options as the CLI."
+            "The dashboard uses the same pipeline, scanner engine, memory, monitoring, headless, webhook, rate-control, and multi-format reporting options as the CLI."
           ],
           examples: [
             "asrfacet-rb --web-session",
@@ -133,13 +145,14 @@ module ASRFacet
           usage: "--format cli|json|html|txt and --output PATH",
           details: [
             "CLI output prints directly to the terminal and is best for quick inspection.",
-            "JSON is best for scripting, HTML is best for sharing a styled offline report, and TXT is a plain-text export.",
+            "JSON and SARIF are best for scripting, HTML and PDF are best for polished sharing, DOCX is best for editable handoff, TXT is a plain-text export, and CSV creates flat data slices.",
             "ASRFacet-Rb also stores a full report bundle automatically under ~/.asrfacet_rb/output/reports/<target>/<timestamp>/ so installed users can find earlier runs easily.",
-            "Use `--output` when you want an additional custom file path alongside the stored report bundle."
+            "Use `--output` when you want an additional custom file path alongside the stored report bundle. Use `--format all` when you want the framework to emit every supported report flavor in one request."
           ],
           examples: [
             "asrfacet-rb scan example.com --format html --output report.html",
-            "asrfacet-rb passive example.com --format json --output passive.json"
+            "asrfacet-rb passive example.com --format json --output passive.json",
+            "asrfacet-rb portscan 192.0.2.10 --format pdf --output service-map.pdf"
           ]
         },
         "scope" => {
@@ -465,6 +478,7 @@ module ASRFacet
           "  scan DOMAIN        Full reconnaissance pipeline        Aliases: s, sc",
           "  passive DOMAIN     Passive subdomain discovery only    Aliases: p, pa",
           "  ports HOST         Focused TCP port scan               Aliases: pt, po",
+          "  portscan TARGET    Direct scanner engine control       Aliases: none",
           "  dns DOMAIN         DNS record collection only          Aliases: d, dn",
           "  lab                Start the local validation lab      Aliases: none",
           "  interactive        Guided beginner workflow            Aliases: i, int",
@@ -478,7 +492,7 @@ module ASRFacet
           "",
           "Global options:",
           "  -o, --output PATH  Save output to a file instead of printing",
-          "  -f, --format TYPE  cli, json, html, or txt",
+          "  -f, --format TYPE  cli, json, html, txt, csv, pdf, docx, all, or sarif",
           "  -v, --verbose      Print stage-by-stage status messages",
           "  -t, --threads N    Worker concurrency for threaded engines",
           "      --timeout SEC  Network timeout for active requests",
@@ -503,6 +517,7 @@ module ASRFacet
           "  #{executable} scan example.com --ports top1000 --format html --output report.html",
           "  #{executable} passive example.com --format json",
           "  #{executable} ports api.example.com --ports 80,443,8443",
+          "  #{executable} portscan 192.0.2.10 --type syn --timing 4 --ports 1-1024",
           "  #{executable} lab",
           "  #{executable} about",
           "  #{executable} help scan",

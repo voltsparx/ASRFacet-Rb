@@ -1,3 +1,6 @@
+# frozen_string_literal: true
+# For use only on systems you own or have explicit
+# written authorization to test.
 # SPDX-License-Identifier: Proprietary
 #
 # ASRFacet-Rb: Attack Surface Reconnaissance Framework
@@ -20,8 +23,6 @@ module ASRFacet
     class Server
       DEFAULT_HOST = "127.0.0.1"
       DEFAULT_PORT = 4567
-      ARTIFACT_KEYS = %w[cli_report txt_report html_report json_report].freeze
-
       def initialize(host: DEFAULT_HOST, port: DEFAULT_PORT, session_store: nil, session_runner: nil)
         @host = host.to_s.strip.empty? ? DEFAULT_HOST : host.to_s.strip
         @port = port.to_i.positive? ? port.to_i : DEFAULT_PORT
@@ -99,6 +100,7 @@ module ASRFacet
               framework_icon: "/assets/icon"
             },
             defaults: default_config,
+            capabilities: capability_payload,
             sessions: @session_store.list_sessions.map { |session| summarize_session(session) },
             about: ASRFacet::UI::About.plain_text,
             first_run: !ASRFacet::UI::FirstRunGuide.seen?,
@@ -151,9 +153,8 @@ module ASRFacet
 
         session_id = parts[1]
         key = parts[2]
-        return respond_json(res, { error: "forbidden" }, status: 403) unless ARTIFACT_KEYS.include?(key)
-
-        path = @session_store.fetch(session_id).to_h.dig(:artifacts, key.to_sym).to_s
+        session = @session_store.fetch(session_id)
+        path = session.to_h.dig(:artifacts, key.to_sym).to_s
         return respond_json(res, { error: "not_found" }, status: 404) unless File.file?(path)
 
         res.status = 200
@@ -202,7 +203,7 @@ module ASRFacet
       def normalize_session_payload(payload)
         item = symbolize(payload)
         item[:name] = item[:name].to_s.strip.empty? ? "Untitled session" : item[:name].to_s.strip
-        item[:config] = default_config.merge(symbolize(item[:config] || {}))
+        item[:config] = ASRFacet::Web::SessionStore.normalize_config(default_config.merge(symbolize(item[:config] || {})))
         item
       rescue StandardError
         { name: "Untitled session", config: default_config }
@@ -231,24 +232,19 @@ module ASRFacet
       end
 
       def default_config
+        ASRFacet::Web::SessionStore.default_config
+      rescue StandardError
+        {}
+      end
+
+      def capability_payload
         {
-          mode: "scan",
-          target: "",
-          ports: "top100",
-          threads: 50,
-          timeout: 10,
-          scope: "",
-          exclude: "",
-          format: "html",
-          delay: 0,
-          monitor: true,
-          memory: true,
-          headless: false,
-          verbose: true,
-          adaptive_rate: true,
-          webhook_url: "",
-          webhook_platform: "slack",
-          shodan_key: ""
+          modes: ASRFacet::Web::SessionStore::VALID_MODES,
+          formats: ASRFacet::Web::SessionStore::VALID_FORMATS,
+          scan_types: ASRFacet::Web::SessionStore::VALID_SCAN_TYPES,
+          scan_timings: (0..5).to_a,
+          port_presets: %w[top100 top1000 top65535 common],
+          webhook_platforms: ASRFacet::Web::SessionStore::VALID_WEBHOOK_PLATFORMS
         }
       rescue StandardError
         {}
@@ -316,6 +312,10 @@ module ASRFacet
       def content_type_for(path)
         return "text/html; charset=utf-8" if path.end_with?(".html")
         return "application/json; charset=utf-8" if path.end_with?(".json")
+        return "application/json; charset=utf-8" if path.end_with?(".sarif")
+        return "application/pdf" if path.end_with?(".pdf")
+        return "application/vnd.openxmlformats-officedocument.wordprocessingml.document" if path.end_with?(".docx")
+        return "text/csv; charset=utf-8" if path.end_with?(".csv")
 
         "text/plain; charset=utf-8"
       rescue StandardError

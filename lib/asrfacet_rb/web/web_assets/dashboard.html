@@ -255,7 +255,7 @@
                 <div class="form-grid">
                   <label class="field"><span>Session Name</span><input id="name" placeholder="Production perimeter review"></label>
                   <label class="field"><span>Target</span><input id="target" placeholder="example.com or 10.0.0.5"></label>
-                  <label class="field"><span>Mode</span><select id="mode"><option value="scan">Full scan</option><option value="passive">Passive</option><option value="dns">DNS only</option><option value="ports">Ports only</option></select></label>
+                  <label class="field"><span>Mode</span><select id="mode"><option value="scan">Full scan</option><option value="passive">Passive</option><option value="dns">DNS only</option><option value="ports">Ports only</option><option value="portscan">Scanner engine</option></select></label>
                   <label class="field"><span>Allowlist Scope</span><input id="scope" placeholder="example.com,*.example.com"></label>
                   <label class="field"><span>Excluded Targets</span><input id="exclude" placeholder="dev.example.com"></label>
                   <label class="field"><span>Preferred Report</span><select id="format"><option value="html">HTML</option><option value="txt">TXT</option><option value="json">JSON</option><option value="cli">CLI</option></select></label>
@@ -268,6 +268,9 @@
                   <label class="field"><span>Threads</span><input id="threads" type="number" min="1"></label>
                   <label class="field"><span>Timeout (seconds)</span><input id="timeout" type="number" min="1"></label>
                   <label class="field"><span>Base Delay (ms)</span><input id="delay" type="number" min="0"></label>
+                  <label class="field scanner-only"><span>Scan Type</span><select id="scan-type"><option value="connect">connect</option><option value="syn">syn</option><option value="udp">udp</option><option value="ack">ack</option><option value="fin">fin</option><option value="null">null</option><option value="xmas">xmas</option><option value="window">window</option><option value="maimon">maimon</option><option value="ping">ping</option><option value="service">service</option></select></label>
+                  <label class="field scanner-only"><span>Timing Template (T0-T5)</span><select id="scan-timing"><option value="0">T0</option><option value="1">T1</option><option value="2">T2</option><option value="3">T3</option><option value="4">T4</option><option value="5">T5</option></select></label>
+                  <label class="field scanner-only"><span>Version Intensity (0-9)</span><input id="scan-intensity" type="number" min="0" max="9"></label>
                 </div>
                 <div class="check-grid">
                   <label class="check-card"><input id="monitor" type="checkbox"><span>Change monitoring</span></label>
@@ -275,7 +278,10 @@
                   <label class="check-card"><input id="headless" type="checkbox"><span>Headless SPA probing</span></label>
                   <label class="check-card"><input id="verbose" type="checkbox"><span>Live verbose events</span></label>
                   <label class="check-card"><input id="adaptive-rate" type="checkbox"><span>Adaptive rate control</span></label>
+                  <label class="check-card scanner-only"><input id="scan-version" type="checkbox"><span>Version detection</span></label>
+                  <label class="check-card scanner-only"><input id="scan-os" type="checkbox"><span>OS detection</span></label>
                 </div>
+                <div class="notice scanner-only" id="scanner-note">Scanner engine settings apply to <code>portscan</code> sessions. Timeout is in seconds and delay is in milliseconds.</div>
               </div>
 
               <div class="form-panel" data-form-panel="integrations">

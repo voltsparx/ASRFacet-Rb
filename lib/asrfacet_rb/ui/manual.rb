@@ -80,7 +80,10 @@ module ASRFacet
             "  This is the lowest-noise way to inventory subdomains before active validation.",
             "ports HOST",
             "  Run a focused TCP scan against a host or IP. Aliases: pt, po.",
-            "  Use this when you want network exposure without the full web workflow.",
+            "  Use this when you want a simpler scanner-engine connectivity pass without version or OS fingerprinting.",
+            "portscan TARGET",
+            "  Run the scanner engine directly with explicit scan type, timing, and optional fingerprinting.",
+            "  Use this when you need control over SYN, UDP, ACK, FIN, NULL, XMAS, WINDOW, MAIMON, ping, or service detection behavior.",
             "dns DOMAIN",
             "  Collect DNS records and basic resolution data only. Aliases: d, dn.",
             "console",
@@ -106,6 +109,7 @@ module ASRFacet
           body: [
             "The console is the primary operator interface. It supports framework-style commands such as `show commands`, `show options`, `show workflow`, `show config`, `info recon`, `man`, and `wizard`.",
             "You can also run normal commands directly inside it, for example `scan example.com`, `passive example.com`, `dns example.com`, or `ports 192.0.2.10 --ports top1000`.",
+            "For deeper connectivity work, run `portscan 192.0.2.10 --type syn --timing 4 --ports 1-1024 --version` directly from the console.",
             "Console-only helpers like `wizard`, `banner`, `about`, and `clear` exist to make the shell friendlier for first-time users."
           ]
         },
@@ -164,10 +168,18 @@ module ASRFacet
             "  Machine-readable output for automation and downstream tooling.",
             "html",
             "  Offline report with findings, top targets, graph relationships, JavaScript coverage, tables, charts, explanations, and recommendations.",
+            "pdf",
+            "  Dark-theme printable report for review decks, evidence capture, and offline sharing.",
+            "docx",
+            "  Editable document export for formal reporting workflows.",
             "txt",
             "  Detailed plain-text export with summary, findings, explanations, recommendations, and stored artifact paths.",
+            "csv",
+            "  Flat exports for subdomains, IPs, ports, findings, and JavaScript endpoints.",
+            "sarif",
+            "  Structured security-tooling export for CI systems and downstream evidence pipelines.",
             "Automatic report bundle",
-            "  Every run also stores CLI, TXT, HTML, and JSON reports under ~/.asrfacet_rb/output/reports/<target>/<timestamp>/ for later review."
+            "  Every run also stores CLI, TXT, HTML, and JSON reports under ~/.asrfacet_rb/output/reports/<target>/<timestamp>/ for later review, and direct scanner or web-session runs can additionally emit CSV, PDF, DOCX, SARIF, or all formats on request."
           ]
         },
         "files" => {
@@ -222,6 +234,7 @@ module ASRFacet
             "asrfacet-rb scan example.com --format html --output report.html",
             "asrfacet-rb passive example.com --format json --output passive.json",
             "asrfacet-rb ports api.example.com --ports 80,443,8443 --threads 50",
+            "asrfacet-rb portscan 192.0.2.10 --type syn --timing 4 --ports 1-1024 --version",
             "asrfacet-rb lab --port 9393",
             "asrfacet-rb about",
             "asrfacet-rb --explain scope",

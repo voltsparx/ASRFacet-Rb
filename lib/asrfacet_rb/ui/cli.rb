@@ -182,19 +182,20 @@ module ASRFacet
         def start(given_args = ARGV, config = {})
           args = Array(given_args).dup
           ASRFacet::UI::FirstRunGuide.maybe_print(args)
-          if args.delete("--console") || args.delete("-C")
+          explicit_command = args.first.to_s.match?(/\A[^-]/)
+          if !explicit_command && (args.delete("--console") || args.delete("-C"))
             return super(["console", *args], config)
           end
-          if args.delete("--web-session")
+          if !explicit_command && args.delete("--web-session")
             return super(["web", *args], config)
           end
-          if args.delete("--about")
+          if !explicit_command && args.delete("--about")
             return super(["about", *args], config)
           end
-          if args.delete("--version")
+          if !explicit_command && args.delete("--version")
             return super(["version", *args], config)
           end
-          if (index = args.index("--explain"))
+          if !explicit_command && (index = args.index("--explain"))
             topic = args[index + 1].to_s
             args.slice!(index, 2)
             return super(["explain", topic, *args], config)
@@ -258,13 +259,16 @@ module ASRFacet
       def ports(host)
         return unless ensure_framework_ready!
 
-        store = ASRFacet::ResultStore.new
-        ASRFacet::Core::ThreadSafe.print_status("Starting focused port discovery against #{host}") if options[:verbose]
-        ASRFacet::Engines::PortEngine.new.scan(host, options[:ports] || "top100", workers: options[:threads]).each do |entry|
-          store.add(:open_ports, entry)
-          announce_event(:open_port, entry.merge(host: host)) if options[:verbose]
-        end
-        output_results({ store: store, top_assets: [], summary: store.summary }, host)
+        scan_result = ASRFacet::Scanner::ScanEngine.new(
+          scan_type: "connect",
+          timing: 3,
+          verbosity: options[:verbose] ? 1 : 0,
+          version_detection: false,
+          os_detection: false,
+          version_intensity: 7,
+          ports: options[:ports] || "top100"
+        ).scan(host)
+        output_results(ASRFacet::Scanner::ResultAdapter.to_payload(scan_result, target: host), host)
       rescue ASRFacet::Error => e
         report_exception("ports", e)
       end
@@ -280,7 +284,7 @@ module ASRFacet
       def portscan(target)
         return unless ensure_framework_ready!
 
-        engine = ASRFacet::Scanner::ScanEngine.new(
+        scan_result = ASRFacet::Scanner::ScanEngine.new(
           scan_type: options[:type],
           timing: options[:timing],
           verbosity: options[:verbosity],
@@ -288,15 +292,8 @@ module ASRFacet
           os_detection: options[:os],
           version_intensity: options[:intensity],
           ports: options[:ports]
-        )
-        result = engine.scan(target)
-        payload = JSON.pretty_generate(result.to_h)
-        if options[:output].to_s.empty?
-          puts(payload) if options[:format].to_s == "json"
-        else
-          File.write(options[:output], payload)
-          puts(options[:output])
-        end
+        ).scan(target)
+        output_results(ASRFacet::Scanner::ResultAdapter.to_payload(scan_result, target: target), target)
       rescue ASRFacet::Error => e
         report_exception("portscan", e)
       end

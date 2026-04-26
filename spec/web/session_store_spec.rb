@@ -91,4 +91,57 @@ RSpec.describe ASRFacet::Web::SessionStore do
       expect(recovered[:last_heartbeat_at]).to be_nil
     end
   end
+
+  it "normalizes web session config values for units, booleans, and scanner options" do
+    Dir.mktmpdir do |dir|
+      store = described_class.new(root: dir)
+      session = store.create_or_update(
+        name: "Normalizer",
+        config: {
+          target: " example.com ",
+          mode: "PORTSCAN",
+          format: "PDF",
+          ports: " 22,80,443 ",
+          threads: "5000",
+          timeout: "0",
+          delay: "700000",
+          monitor: "off",
+          memory: "yes",
+          headless: "true",
+          verbose: "1",
+          adaptive_rate: "0",
+          webhook_platform: "teams",
+          scan_type: "SYN",
+          scan_timing: "9",
+          scan_version: "yes",
+          scan_os: "true",
+          scan_intensity: "-4"
+        }
+      )
+
+      recovered = store.fetch(session[:id])
+      config = recovered[:config]
+
+      expect(config).to include(
+        target: "example.com",
+        mode: "portscan",
+        format: "pdf",
+        ports: "22,80,443",
+        threads: 1_000,
+        timeout: 1,
+        delay: 600_000,
+        monitor: false,
+        memory: true,
+        headless: true,
+        verbose: true,
+        adaptive_rate: false,
+        webhook_platform: "slack",
+        scan_type: "syn",
+        scan_timing: 5,
+        scan_version: true,
+        scan_os: true,
+        scan_intensity: 0
+      )
+    end
+  end
 end

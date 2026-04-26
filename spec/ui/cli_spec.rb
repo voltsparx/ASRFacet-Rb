@@ -72,7 +72,7 @@ RSpec.describe ASRFacet::UI::CLI do
     end
 
     it "shows the new adaptive and headless flags in the help output" do
-      expect { described_class.start(["help"]) }.to output(include("--headless", "--webhook-url", "--delay", "--adaptive-rate", "--web-session", "--about", "--explain", "lab")).to_stdout
+      expect { described_class.start(["help"]) }.to output(include("--headless", "--webhook-url", "--delay", "--adaptive-rate", "--web-session", "--about", "--explain", "lab", "portscan")).to_stdout
     end
 
     it "prints a dry-run plan without starting the pipeline" do
@@ -133,6 +133,82 @@ RSpec.describe ASRFacet::UI::CLI do
         expect(Dir.glob(File.join(dir, "reports", "example_com", "*", "report.json"))).not_to be_empty
         expect(Dir.glob(File.join(dir, "reports", "example_com", "*", "report.txt"))).not_to be_empty
         expect(Dir.glob(File.join(dir, "reports", "example_com", "*", "report.cli.txt"))).not_to be_empty
+      end
+    end
+
+    it "routes the ports command through the scanner engine connect scan" do
+      Dir.mktmpdir do |dir|
+        scan_engine = instance_double(ASRFacet::Scanner::ScanEngine, scan: :scan_result)
+        payload_store = ASRFacet::ResultStore.new
+        payload_store.add(:open_ports, { host: "example.com", port: 443, service: "https" })
+
+        allow(ASRFacet::Config).to receive(:fetch).and_call_original
+        allow(ASRFacet::Config).to receive(:fetch).with("output", "directory").and_return(dir)
+        allow(ASRFacet::Scanner::ScanEngine).to receive(:new).with(
+          hash_including(
+            scan_type: "connect",
+            version_detection: false,
+            os_detection: false,
+            ports: "80,443"
+          )
+        ).and_return(scan_engine)
+        allow(ASRFacet::Scanner::ResultAdapter).to receive(:to_payload).with(:scan_result, target: "example.com").and_return(
+          {
+            store: payload_store,
+            top_assets: [],
+            summary: payload_store.summary
+          }
+        )
+
+        output = capture_stdout { described_class.start(["ports", "example.com", "--ports", "80,443"]) }
+
+        expect(output).to include("Stored reports in")
+        expect(ASRFacet::Scanner::ScanEngine).to have_received(:new).with(hash_including(scan_type: "connect", ports: "80,443"))
+      end
+    end
+
+    it "runs the direct portscan command through the scanner engine with operator options" do
+      Dir.mktmpdir do |dir|
+        scan_engine = instance_double(ASRFacet::Scanner::ScanEngine, scan: :scan_result)
+        payload_store = ASRFacet::ResultStore.new
+        payload_store.add(:open_ports, { host: "example.com", port: 22, service: "ssh" })
+
+        allow(ASRFacet::Config).to receive(:fetch).and_call_original
+        allow(ASRFacet::Config).to receive(:fetch).with("output", "directory").and_return(dir)
+        allow(ASRFacet::Scanner::ScanEngine).to receive(:new).with(
+          hash_including(
+            scan_type: "syn",
+            timing: 4,
+            version_detection: true,
+            os_detection: true,
+            version_intensity: 9,
+            ports: "1-1024"
+          )
+        ).and_return(scan_engine)
+        allow(ASRFacet::Scanner::ResultAdapter).to receive(:to_payload).with(:scan_result, target: "example.com").and_return(
+          {
+            store: payload_store,
+            top_assets: [],
+            summary: payload_store.summary
+          }
+        )
+
+        output = capture_stdout do
+          described_class.start([
+            "portscan", "example.com",
+            "--type", "syn",
+            "--timing", "4",
+            "--ports", "1-1024",
+            "--version",
+            "--os",
+            "--intensity", "9"
+          ])
+        end
+
+        expect(output).to include("Stored reports in")
+        expect(ASRFacet::Scanner::ScanEngine).to have_received(:new).with(
+          hash_including(scan_type: "syn", timing: 4, version_detection: true, os_detection: true, version_intensity: 9, ports: "1-1024")
+        )
       end
     end
 

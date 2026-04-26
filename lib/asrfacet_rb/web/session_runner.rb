@@ -1,3 +1,6 @@
+# frozen_string_literal: true
+# For use only on systems you own or have explicit
+# written authorization to test.
 # SPDX-License-Identifier: Proprietary
 #
 # ASRFacet-Rb: Attack Surface Reconnaissance Framework
@@ -65,7 +68,7 @@ module ASRFacet
         session = @session_store.fetch(session_id)
         raise "Session not found." if session.nil?
 
-        config = symbolize(session[:config] || {})
+        config = ASRFacet::Web::SessionStore.normalize_config(symbolize(session[:config] || {}))
         target = config[:target].to_s.strip
         raise "A target is required before starting a session." if target.empty?
         integrity = ASRFacet::Core::IntegrityChecker.check(output_root: output_root)
@@ -92,7 +95,15 @@ module ASRFacet
         payload[:summary] ||= payload[:store].respond_to?(:summary) ? payload[:store].summary : {}
         payload[:meta] = build_meta(target)
         payload[:integrity] ||= integrity
-        payload[:artifacts] = save_report_bundle(target, payload)
+        payload[:artifacts] = save_report_bundle(target, payload, requested_format: config[:format])
+        Array(payload.dig(:artifacts, :report_errors)).each do |entry|
+          @session_store.append_event(
+            session_id,
+            type: "warning",
+            message: "Report render warning for #{entry[:format]}: #{entry[:message]}",
+            data: entry
+          )
+        end
         @session_store.mark_completed(session_id, payload)
       rescue StandardError => e
         @session_store.mark_failed(
@@ -118,6 +129,8 @@ module ASRFacet
           run_passive(session_id, target, config, integrity: integrity)
         when "dns"
           run_dns(session_id, target, integrity: integrity)
+        when "portscan"
+          run_portscan(session_id, target, config, integrity: integrity)
         when "ports"
           run_ports(session_id, target, config, integrity: integrity)
         else
@@ -181,14 +194,49 @@ module ASRFacet
       end
 
       def run_ports(session_id, target, config, integrity:)
-        store = ASRFacet::ResultStore.new
-        @session_store.update_stage(session_id, index: 1, name: "Port scanning", phase: :start, snapshot: {})
-        ASRFacet::Engines::PortEngine.new.scan(target, config[:ports] || "top100", workers: config[:threads]).each do |entry|
-          store.add(:open_ports, entry)
-          capture_event(session_id, :open_port, entry.merge(host: target))
+        run_scanner_mode(
+          session_id,
+          target,
+          config.merge(scan_type: "connect", scan_version: false, scan_os: false),
+          integrity: integrity,
+          stage_name: "Focused port scanning"
+        )
+      end
+
+      def run_portscan(session_id, target, config, integrity:)
+        run_scanner_mode(session_id, target, config, integrity: integrity, stage_name: "Scanner engine")
+      end
+
+      def run_scanner_mode(session_id, target, config, integrity:, stage_name:)
+        @session_store.update_stage(session_id, index: 1, name: stage_name, phase: :start, snapshot: {})
+        scan_result = ASRFacet::Scanner::ScanEngine.new(
+          scan_type: config[:scan_type],
+          timing: config[:scan_timing],
+          verbosity: config[:verbose] ? 1 : 0,
+          version_detection: config[:scan_version],
+          os_detection: config[:scan_os],
+          version_intensity: config[:scan_intensity],
+          ports: config[:ports]
+        ).scan(target)
+        payload = ASRFacet::Scanner::ResultAdapter.to_payload(scan_result, target: target)
+        store = payload[:store]
+        store.all(:open_ports).each do |entry|
+          capture_event(session_id, :open_port, entry.merge(host: entry[:host] || target))
         end
-        @session_store.update_stage(session_id, index: 1, name: "Port scanning", phase: :complete, snapshot: { open_ports: store.all(:open_ports).size })
-        { store: store, top_assets: [], summary: store.summary, execution: { stages: [], failures: [], integrity: integrity } }
+        @session_store.update_stage(
+          session_id,
+          index: 1,
+          name: stage_name,
+          phase: :complete,
+          snapshot: {
+            open_ports: store.all(:open_ports).size,
+            filtered_ports: store.all(:filtered_ports).size,
+            subdomains: store.all(:subdomains).size,
+            ips: store.all(:ips).size
+          }
+        )
+        payload[:execution] = { stages: [], failures: [], integrity: integrity }
+        payload
       end
 
       def capture_event(session_id, event_type, data)
@@ -221,6 +269,7 @@ module ASRFacet
           delay: config[:delay],
           adaptive_rate: config[:adaptive_rate],
           verbose: config[:verbose],
+          format: config[:format],
           api_keys: api_keys(config)
         }
       rescue StandardError
@@ -243,7 +292,7 @@ module ASRFacet
         { target: target.to_s, generated_at: Time.now.utc.iso8601, output_directory: output_root }
       end
 
-      def save_report_bundle(target, payload)
+      def save_report_bundle(target, payload, requested_format:)
         safe_target = safe_name(target)
         stamp = payload.dig(:meta, :generated_at).to_s.gsub(":", "-")
         report_dir = File.join(output_root, "reports", safe_target, stamp)
@@ -259,9 +308,82 @@ module ASRFacet
         ASRFacet::Output::TxtFormatter.new.save(payload, artifacts[:txt_report])
         ASRFacet::Output::HtmlFormatter.new.save(payload, artifacts[:html_report])
         ASRFacet::Output::JsonFormatter.new.save(payload, artifacts[:json_report])
+        artifacts.merge!(render_requested_artifacts(target, payload, report_dir, requested_format))
         artifacts
       rescue StandardError
         {}
+      end
+
+      def render_requested_artifacts(target, payload, report_dir, requested_format)
+        format = requested_format.to_s.downcase.strip
+        return {} if format.empty? || %w[cli txt html json].include?(format)
+
+        artifacts = {}
+        router = ASRFacet::Output::OutputRouter.new(
+          payload[:store],
+          target,
+          charts: payload[:charts] || {}
+        )
+        case format
+        when "csv"
+          merge_artifact_result!(artifacts, render_csv_artifacts(router, report_dir))
+        when "pdf"
+          merge_artifact_result!(artifacts, render_single_router_artifact(router, "pdf", File.join(report_dir, "report.pdf"), :pdf_report))
+        when "docx"
+          merge_artifact_result!(artifacts, render_single_router_artifact(router, "docx", File.join(report_dir, "report.docx"), :docx_report))
+        when "sarif"
+          merge_artifact_result!(artifacts, render_sarif_artifact(payload, report_dir))
+        when "all"
+          merge_artifact_result!(artifacts, render_csv_artifacts(router, report_dir))
+          merge_artifact_result!(artifacts, render_single_router_artifact(router, "pdf", File.join(report_dir, "report.pdf"), :pdf_report))
+          merge_artifact_result!(artifacts, render_single_router_artifact(router, "docx", File.join(report_dir, "report.docx"), :docx_report))
+          merge_artifact_result!(artifacts, render_sarif_artifact(payload, report_dir))
+        end
+        artifacts
+      rescue ASRFacet::Error => e
+        { report_errors: [{ format: format, message: e.message }] }
+      rescue StandardError => e
+        { report_errors: [{ format: format, message: e.message }] }
+      end
+
+      def merge_artifact_result!(artifacts, result)
+        errors = Array(artifacts[:report_errors]) + Array(result.delete(:report_errors))
+        artifacts.merge!(result)
+        artifacts[:report_errors] = errors unless errors.empty?
+        artifacts
+      rescue StandardError
+        artifacts
+      end
+
+      def render_single_router_artifact(router, format, path, artifact_key)
+        router.render(format, path)
+        { artifact_key => path }
+      rescue ASRFacet::Error => e
+        { report_errors: [{ format: format, message: e.message }] }
+      end
+
+      def render_csv_artifacts(router, report_dir)
+        base = File.join(report_dir, "report.csv")
+        router.render("csv", base)
+        {
+          csv_subdomains_report: File.join(report_dir, "report_subdomains.csv"),
+          csv_ips_report: File.join(report_dir, "report_ips.csv"),
+          csv_ports_report: File.join(report_dir, "report_ports.csv"),
+          csv_findings_report: File.join(report_dir, "report_findings.csv"),
+          csv_js_endpoints_report: File.join(report_dir, "report_js_endpoints.csv")
+        }
+      rescue ASRFacet::Error => e
+        { report_errors: [{ format: "csv", message: e.message }] }
+      end
+
+      def render_sarif_artifact(payload, report_dir)
+        path = File.join(report_dir, "report.sarif")
+        saved_path = ASRFacet::Output::SarifFormatter.new.save(payload, path)
+        raise ASRFacet::Error, "SARIF render failed" if saved_path.to_s.empty? || !File.file?(path)
+
+        { sarif_report: path }
+      rescue ASRFacet::Error => e
+        { report_errors: [{ format: "sarif", message: e.message }] }
       end
 
       def output_root

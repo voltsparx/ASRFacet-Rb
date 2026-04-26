@@ -1031,6 +1031,10 @@ tbody tr:hover td {
   display: none;
 }
 
+.hidden {
+  display: none !important;
+}
+
 .mobile-only {
   display: none;
 }

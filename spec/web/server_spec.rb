@@ -26,6 +26,34 @@ RSpec.describe ASRFacet::Web::Server do
     expect(html).to include("Activity Drawer")
     expect(html).to include("About ASRFacet-Rb")
     expect(html).to include("Documentation")
+    expect(html).to include("Scanner engine")
+    expect(html).to include("Scan Type")
+    expect(html).to include("Version Intensity (0-9)")
+  end
+
+  it "exposes scanner and multi-format capabilities through bootstrap" do
+    session_store = instance_double(ASRFacet::Web::SessionStore, root: "/tmp/sessions", list_sessions: [])
+    response_class = Class.new do
+      attr_accessor :status, :body
+
+      def initialize
+        @headers = {}
+      end
+
+      def []=(key, value)
+        @headers[key] = value
+      end
+    end
+    response = response_class.new
+
+    described_class.new(session_store: session_store).send(:handle_bootstrap, response)
+    payload = JSON.parse(response.body)
+
+    expect(response.status).to eq(200)
+    expect(payload.dig("capabilities", "modes")).to include("portscan")
+    expect(payload.dig("capabilities", "formats")).to include("pdf", "docx", "all", "sarif")
+    expect(payload.dig("capabilities", "scan_types")).to include("syn", "udp", "service")
+    expect(payload.dig("capabilities", "scan_timings")).to eq([0, 1, 2, 3, 4, 5])
   end
 
   it "starts a saved session when the run id is passed in the POST query string" do
@@ -55,6 +83,7 @@ RSpec.describe ASRFacet::Web::Server do
     )
     response = response_class.new
 
+    allow(session_store).to receive(:root).and_return("/tmp/sessions")
     allow(session_store).to receive(:fetch).with("session-123").and_return({ id: "session-123" })
     allow(session_store).to receive(:append_event)
     allow(session_runner).to receive(:start).with("session-123").and_return(true)

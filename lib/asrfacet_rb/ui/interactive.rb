@@ -1,4 +1,6 @@
 # frozen_string_literal: true
+# For use only on systems you own or have explicit
+# written authorization to test.
 # SPDX-License-Identifier: Proprietary
 #
 # ASRFacet-Rb: Attack Surface Reconnaissance Framework
@@ -25,11 +27,23 @@ module ASRFacet
 
       def start
         target = @prompt.ask("Target domain:") { |q| q.required(true) }
-        mode = @prompt.select("Scan mode:", ["Full", "Passive", "Ports", "DNS"])
+        mode = @prompt.select("Scan mode:", ["Full", "Passive", "Ports", "Portscan", "DNS"])
         port_range = nil
-        if %w[Full Ports].include?(mode)
+        scan_type = "connect"
+        timing = 3
+        version_detection = false
+        os_detection = false
+        intensity = 7
+        if %w[Full Ports Portscan].include?(mode)
           port_choice = @prompt.select("Port range:", ["Top100", "Top1000", "Custom"])
           port_range = port_choice == "Custom" ? @prompt.ask("Custom port range:") : port_choice.downcase
+        end
+        if mode == "Portscan"
+          scan_type = @prompt.select("Scan type:", %w[connect syn udp ack fin null xmas window maimon ping service])
+          timing = @prompt.select("Timing template:", (0..5).to_a)
+          version_detection = @prompt.yes?("Enable version detection?")
+          os_detection = @prompt.yes?("Enable OS detection?")
+          intensity = @prompt.select("Version intensity:", (0..9).to_a) if version_detection
         end
         output_format = @prompt.select("Output format:", ["CLI", "JSON", "HTML", "TXT"]).downcase
         shodan_key = @prompt.yes?("Add a Shodan key?") ? @prompt.mask("Shodan API key:") : nil
@@ -38,12 +52,23 @@ module ASRFacet
           "Target: #{target}",
           "Mode: #{mode}",
           "Ports: #{port_range || 'n/a'}",
+          "Scan type: #{mode == 'Portscan' ? scan_type : 'n/a'}",
           "Format: #{output_format}",
           "Shodan: #{shodan_key.to_s.empty? ? 'no' : 'yes'}"
         ].join(" | ")
         return nil unless @prompt.yes?("Run scan? #{summary}")
 
-        result = run_with_spinners(target, mode, port_range, shodan_key)
+        result = run_with_spinners(
+          target,
+          mode,
+          port_range,
+          shodan_key,
+          scan_type: scan_type,
+          timing: timing,
+          version_detection: version_detection,
+          os_detection: os_detection,
+          intensity: intensity
+        )
         render_output(result, output_format)
       rescue StandardError => e
         ASRFacet::Core::ThreadSafe.print_error(e.message)
@@ -52,7 +77,7 @@ module ASRFacet
 
       private
 
-      def run_with_spinners(target, mode, port_range, shodan_key)
+      def run_with_spinners(target, mode, port_range, shodan_key, scan_type:, timing:, version_detection:, os_detection:, intensity:)
         case mode
         when "Full"
           dashboard = ASRFacet::ProgressDashboard.new
@@ -81,12 +106,30 @@ module ASRFacet
           { store: store, top_assets: [] }
         when "Ports"
           ASRFacet::Core::ThreadSafe.print_status("Running port scan")
-          store = ASRFacet::ResultStore.new
-          ASRFacet::Engines::PortEngine.new.scan(target, port_range || "top100").each do |entry|
-            store.add(:open_ports, entry)
-          end
+          scan_result = ASRFacet::Scanner::ScanEngine.new(
+            scan_type: :connect,
+            timing: 3,
+            verbosity: 0,
+            version_detection: false,
+            os_detection: false,
+            version_intensity: 7,
+            ports: port_range || "top100"
+          ).scan(target)
           ASRFacet::Core::ThreadSafe.print_good("Port scan complete")
-          { store: store, top_assets: [] }
+          ASRFacet::Scanner::ResultAdapter.to_payload(scan_result, target: target)
+        when "Portscan"
+          ASRFacet::Core::ThreadSafe.print_status("Running scanner engine")
+          scan_result = ASRFacet::Scanner::ScanEngine.new(
+            scan_type: scan_type,
+            timing: timing,
+            verbosity: 0,
+            version_detection: version_detection,
+            os_detection: os_detection,
+            version_intensity: intensity,
+            ports: port_range || "top100"
+          ).scan(target)
+          ASRFacet::Core::ThreadSafe.print_good("Scanner engine complete")
+          ASRFacet::Scanner::ResultAdapter.to_payload(scan_result, target: target)
         else
           ASRFacet::Core::ThreadSafe.print_status("Collecting DNS records")
           store = ASRFacet::ResultStore.new
