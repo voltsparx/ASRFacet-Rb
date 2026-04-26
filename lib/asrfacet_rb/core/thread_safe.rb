@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 # SPDX-License-Identifier: Proprietary
 #
 # ASRFacet-Rb: Attack Surface Reconnaissance Framework
@@ -11,13 +12,14 @@
 # This file is part of ASRFacet-Rb and is subject to the terms
 # and conditions defined in the LICENSE file.
 
-require "colorize"
+require "pastel"
 require "thread"
 
 module ASRFacet
   module Core
     module ThreadSafe
       @mutex = Mutex.new
+      @pastel = Pastel.new
 
       class << self
         attr_reader :mutex
@@ -41,7 +43,7 @@ module ASRFacet
         end
 
         def print_status(msg)
-          line = "[*] #{msg}".colorize(ASRFacet::Colors.terminal(:primary))
+          line = decorate("[*] #{msg}", ASRFacet::Colors.terminal(:primary))
           puts(line)
           line
         rescue StandardError
@@ -49,7 +51,7 @@ module ASRFacet
         end
 
         def print_good(msg)
-          line = "[+] #{msg}".colorize(ASRFacet::Colors.terminal(:success))
+          line = decorate("[+] #{msg}", ASRFacet::Colors.terminal(:success))
           puts(line)
           line
         rescue StandardError
@@ -57,7 +59,7 @@ module ASRFacet
         end
 
         def print_error(msg)
-          line = "[-] #{msg}".colorize(ASRFacet::Colors.terminal(:danger))
+          line = decorate("[-] #{msg}", ASRFacet::Colors.terminal(:danger))
           puts(line)
           line
         rescue StandardError
@@ -65,11 +67,17 @@ module ASRFacet
         end
 
         def print_warning(msg)
-          line = "[!] #{msg}".colorize(ASRFacet::Colors.terminal(:warning))
+          line = decorate("[!] #{msg}", ASRFacet::Colors.terminal(:warning))
           puts(line)
           line
         rescue StandardError
           nil
+        end
+
+        private
+
+        def decorate(text, color)
+          @pastel.decorate(text.to_s, *Array(color))
         end
       end
     end

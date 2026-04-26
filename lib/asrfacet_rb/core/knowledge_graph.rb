@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 # SPDX-License-Identifier: Proprietary
 #
 # ASRFacet-Rb: Attack Surface Reconnaissance Framework
@@ -11,6 +12,7 @@
 # This file is part of ASRFacet-Rb and is subject to the terms
 # and conditions defined in the LICENSE file.
 
+require "json"
 require "time"
 
 module ASRFacet
@@ -122,6 +124,42 @@ module ASRFacet
         end
       rescue StandardError
         { nodes: [], edges: [] }
+      end
+
+      def nodes
+        to_h[:nodes].map do |node|
+          duplicate_value(node).merge(value: node[:data].to_h[:title] || node[:id])
+        end
+      rescue StandardError
+        []
+      end
+
+      def edges
+        to_h[:edges].map do |edge|
+          duplicate_value(edge).merge(rel: edge[:relation])
+        end
+      rescue StandardError
+        []
+      end
+
+      def self.load(target, output_root: nil)
+        root = output_root || File.expand_path((ASRFacet::Config.fetch("output", "directory") || "~/.asrfacet_rb/output").to_s)
+        safe_target = target.to_s.downcase.gsub(/[^a-z0-9.\-_]+/, "_").tr(".", "_")
+        report = Dir.glob(File.join(root, "reports", safe_target, "*", "report.json")).max_by { |path| File.mtime(path) }
+        return new if report.nil?
+
+        payload = JSON.parse(File.read(report), symbolize_names: true)
+        graph = new
+        normalized = payload[:graph].to_h
+        Array(normalized[:nodes]).each do |node|
+          graph.add_node(node[:id], type: node[:type], data: node[:data] || {})
+        end
+        Array(normalized[:edges]).each do |edge|
+          graph.add_edge(edge[:from], edge[:to], relation: edge[:relation] || edge[:rel])
+        end
+        graph
+      rescue StandardError
+        new
       end
 
       private

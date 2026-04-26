@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 # SPDX-License-Identifier: Proprietary
 #
 # ASRFacet-Rb: Attack Surface Reconnaissance Framework
@@ -13,6 +14,7 @@
 
 require "cgi"
 require "json"
+require "pastel"
 require "time"
 
 module ASRFacet
@@ -20,8 +22,10 @@ module ASRFacet
     class ChangeTracker
       def initialize(domain)
         @monitor = ASRFacet::Engines::MonitoringEngine.new(domain)
+        @pastel = Pastel.new
       rescue StandardError
         @monitor = ASRFacet::Engines::MonitoringEngine.new(domain.to_s)
+        @pastel = Pastel.new
       end
 
       def generate_diff_report(current_results, format: :cli)
@@ -92,7 +96,7 @@ module ASRFacet
 
       def color_block(title, lines, color)
         body = Array(lines).empty? ? "(none)" : Array(lines).map(&:to_s).join("\n")
-        "#{title.to_s.colorize(color)}\n#{body}"
+        "#{@pastel.decorate(title.to_s, *Array(color))}\n#{body}"
       rescue StandardError
         ""
       end

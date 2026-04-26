@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 # SPDX-License-Identifier: Proprietary
 #
 # ASRFacet-Rb: Attack Surface Reconnaissance Framework
@@ -17,6 +18,55 @@ require "time"
 
 module ASRFacet
   module UI
+    class KeysCLI < Thor
+      desc "set SOURCE VALUE", "Store an API key for a source"
+      def set(source, value)
+        ASRFacet::KeyStore.new.set(source, value)
+        puts "[ok] Key stored for: #{source}"
+      end
+
+      desc "get SOURCE", "Retrieve an API key"
+      def get(source)
+        value = ASRFacet::KeyStore.new.get(source)
+        value ? puts(value) : puts("[!] No key found for: #{source}")
+      end
+
+      desc "list", "List all stored source names"
+      def list
+        keys = ASRFacet::KeyStore.new.list
+        keys.empty? ? puts("[i] No keys stored yet") : keys.each { |key| puts("  #{key}") }
+      end
+
+      desc "delete SOURCE", "Remove a stored key"
+      def delete(source)
+        ASRFacet::KeyStore.new.delete(source)
+        puts "[ok] Key removed for: #{source}"
+      end
+    end
+
+    class GraphCLI < Thor
+      desc "dot TARGET", "Export graph as Graphviz DOT"
+      option :output, aliases: "-o", desc: "Output file path"
+      def dot(target)
+        out = ASRFacet::Graph::Exporter.new(ASRFacet::Core::KnowledgeGraph.load(target)).to_dot
+        options[:output] ? File.write(options[:output], out) : puts(out)
+      end
+
+      desc "json TARGET", "Export graph as JSON nodes+edges"
+      option :output, aliases: "-o", desc: "Output file path"
+      def json(target)
+        out = ASRFacet::Graph::Exporter.new(ASRFacet::Core::KnowledgeGraph.load(target)).to_json_graph
+        options[:output] ? File.write(options[:output], out) : puts(out)
+      end
+
+      desc "mermaid TARGET", "Export graph as Mermaid diagram"
+      option :output, aliases: "-o", desc: "Output file path"
+      def mermaid(target)
+        out = ASRFacet::Graph::Exporter.new(ASRFacet::Core::KnowledgeGraph.load(target)).to_mermaid
+        options[:output] ? File.write(options[:output], out) : puts(out)
+      end
+    end
+
     class CLI < Thor
       default_task :help
       map %w[s sc] => :scan
@@ -31,9 +81,13 @@ module ASRFacet
       map %w[x exp] => :explain
       map %w[m man] => :manual
       map %w[v ver] => :version
+      desc "keys SUBCOMMAND", "Manage encrypted API keys"
+      subcommand "keys", KeysCLI
+      desc "graph SUBCOMMAND", "Export the knowledge graph"
+      subcommand "graph", GraphCLI
 
       class_option :output, aliases: "-o", type: :string, desc: "Output file path"
-      class_option :format, aliases: "-f", type: :string, default: "cli", enum: %w[cli json html txt], desc: "Output format"
+      class_option :format, aliases: "-f", type: :string, default: "cli", enum: %w[cli json html txt sarif], desc: "Output format"
       class_option :verbose, aliases: "-v", type: :boolean, default: false, desc: "Verbose output"
       class_option :threads, aliases: "-t", type: :numeric, default: 100, desc: "Worker count"
       class_option :timeout, type: :numeric, default: 10, desc: "Network timeout"
@@ -62,17 +116,17 @@ module ASRFacet
           if args.delete("--web-session")
             return super(["web", *args], config)
           end
-        if args.delete("--about")
-          return super(["about", *args], config)
-        end
-        if args.delete("--version")
-          return super(["version", *args], config)
-        end
-        if (index = args.index("--explain"))
-          topic = args[index + 1].to_s
-          args.slice!(index, 2)
-          return super(["explain", topic, *args], config)
-        end
+          if args.delete("--about")
+            return super(["about", *args], config)
+          end
+          if args.delete("--version")
+            return super(["version", *args], config)
+          end
+          if (index = args.index("--explain"))
+            topic = args[index + 1].to_s
+            args.slice!(index, 2)
+            return super(["explain", topic, *args], config)
+          end
 
           super(args, config)
         rescue StandardError
@@ -85,16 +139,28 @@ module ASRFacet
       method_option :passive_only, type: :boolean, default: false, desc: "Only run passive recon"
       method_option :wordlist, aliases: "-w", type: :string, desc: "Wordlist path"
       method_option :shodan_key, type: :string, desc: "Shodan API key"
+      method_option :dry_run, type: :boolean, default: false, aliases: "--dry-run", desc: "Show what would run without touching the network"
+      method_option :profile, type: :string, desc: "Apply a named scan profile"
       def scan(domain)
+        merged_options = build_scan_options
+        if options[:dry_run]
+          puts ASRFacet::DryRunPrinter.new(domain, merged_options.merge(output: options[:output], format: options[:format])).print
+          return
+        end
+
         return unless ensure_framework_ready!
 
         result = if options[:passive_only]
                    passive_payload(domain)
                  else
+                   dashboard = interactive_terminal? ? ASRFacet::ProgressDashboard.new : nil
                    pipeline = ASRFacet::Pipeline.new(
                      domain,
-                     build_options.merge(
-                       stage_callback: method(:announce_stage),
+                     merged_options.merge(
+                       stage_callback: lambda do |index, name, phase = :start, snapshot = {}|
+                         announce_stage(index, name, phase, snapshot)
+                         update_dashboard(dashboard, index, name, phase, snapshot)
+                       end,
                        event_callback: method(:announce_event)
                      )
                    )
@@ -312,6 +378,25 @@ module ASRFacet
         {}
       end
 
+      def build_scan_options
+        merged_options = build_options
+        profile_name = options[:profile]
+        return merged_options if profile_name.to_s.strip.empty?
+
+        profile_defaults = {}
+        %i[threads ports memory monitor timeout].each do |key|
+          profile_defaults[key] = nil if option_uses_default?(:scan, key)
+        end
+        ASRFacet.apply_profile(profile_name, profile_defaults)
+        profile_defaults.each do |key, value|
+          merged_options[key] = value unless value.nil?
+        end
+        merged_options
+      rescue ASRFacet::Error => e
+        report_exception("profile", e)
+        build_options
+      end
+
       def passive_payload(domain)
         ASRFacet::Core::ThreadSafe.print_status("Starting passive discovery for #{domain}") if options[:verbose]
         store = ASRFacet::ResultStore.new
@@ -375,6 +460,7 @@ module ASRFacet
         when "json" then ASRFacet::Output::JsonFormatter.new
         when "html" then ASRFacet::Output::HtmlFormatter.new
         when "txt" then ASRFacet::Output::TxtFormatter.new
+        when "sarif" then ASRFacet::Output::SarifFormatter.new
         else ASRFacet::Output::CliFormatter.new
         end
       rescue StandardError
@@ -476,6 +562,32 @@ module ASRFacet
         cleaned.empty? ? "scan" : cleaned.tr(".", "_")
       rescue StandardError
         "scan"
+      end
+
+      def update_dashboard(dashboard, index, _name, phase, snapshot)
+        return if dashboard.nil?
+
+        stage_index = index.to_i - 1
+        if phase.to_sym == :start
+          dashboard.start(stage_index)
+        else
+          dashboard.increment(stage_index, found: snapshot[:subdomains].to_i + snapshot[:open_ports].to_i + snapshot[:findings].to_i)
+          dashboard.finish(stage_index)
+        end
+      rescue StandardError
+        nil
+      end
+
+      def option_uses_default?(task_name, option_name)
+        task = self.class.tasks[task_name.to_s]
+        return true if task.nil?
+
+        definition = task.options[option_name.to_s]
+        return true if definition.nil?
+
+        options[option_name].to_s == definition.default.to_s
+      rescue StandardError
+        true
       end
 
       def interactive_terminal?

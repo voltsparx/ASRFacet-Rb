@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 # SPDX-License-Identifier: Proprietary
 #
 # ASRFacet-Rb: Attack Surface Reconnaissance Framework
@@ -11,7 +12,7 @@
 # This file is part of ASRFacet-Rb and is subject to the terms
 # and conditions defined in the LICENSE file.
 
-require "colorize"
+require "pastel"
 require "thread"
 
 module ASRFacet
@@ -19,9 +20,11 @@ module ASRFacet
     def initialize(stream = $stdout)
       @stream = stream
       @mutex = Mutex.new
+      @pastel = Pastel.new
     rescue StandardError
       @stream = $stdout
       @mutex = Mutex.new
+      @pastel = Pastel.new
     end
 
     def info(message)
@@ -52,7 +55,7 @@ module ASRFacet
 
     def write(message, color)
       @mutex.synchronize do
-        @stream.puts(message.to_s.colorize(color))
+        @stream.puts(@pastel.decorate(message.to_s, *Array(color)))
         @stream.flush
       end
     rescue StandardError

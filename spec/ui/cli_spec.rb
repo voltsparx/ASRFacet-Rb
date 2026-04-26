@@ -16,6 +16,10 @@ require "stringio"
 require "tmpdir"
 
 RSpec.describe ASRFacet::UI::CLI do
+  before do
+    allow(ASRFacet::Core::IntegrityChecker).to receive(:check).and_return(status: "ok", summary: "ok", issues: [], recommendations: [])
+  end
+
   describe "command aliases" do
     it "prints the version through the short alias" do
       expect { described_class.start(["v"]) }.to output("#{ASRFacet::VERSION}\n").to_stdout
@@ -69,6 +73,34 @@ RSpec.describe ASRFacet::UI::CLI do
 
     it "shows the new adaptive and headless flags in the help output" do
       expect { described_class.start(["help"]) }.to output(include("--headless", "--webhook-url", "--delay", "--adaptive-rate", "--web-session", "--about", "--explain", "lab")).to_stdout
+    end
+
+    it "prints a dry-run plan without starting the pipeline" do
+      allow(ASRFacet::Pipeline).to receive(:new)
+      allow(ASRFacet::Core::IntegrityChecker).to receive(:check).and_return(status: "ok", summary: "ok", issues: [], recommendations: [])
+
+      output = capture_stdout { described_class.start(["scan", "example.com", "--dry-run", "--profile", "cautious"]) }
+
+      expect(output).to include("DRY RUN")
+      expect(output).to include("Target:")
+      expect(ASRFacet::Pipeline).not_to have_received(:new)
+    end
+
+    it "stores keys through the keys subcommand" do
+      store = instance_double(ASRFacet::KeyStore, set: true)
+      allow(ASRFacet::KeyStore).to receive(:new).and_return(store)
+
+      expect { described_class.start(["keys", "set", "shodan", "abc123"]) }.to output(include("Key stored")).to_stdout
+      expect(store).to have_received(:set).with("shodan", "abc123")
+    end
+
+    it "exports graphs through the graph subcommand" do
+      graph = instance_double(ASRFacet::Core::KnowledgeGraph)
+      exporter = instance_double(ASRFacet::Graph::Exporter, to_dot: "digraph ASRFacet {}")
+      allow(ASRFacet::Core::KnowledgeGraph).to receive(:load).with("example.com").and_return(graph)
+      allow(ASRFacet::Graph::Exporter).to receive(:new).with(graph).and_return(exporter)
+
+      expect { described_class.start(["graph", "dot", "example.com"]) }.to output(include("digraph ASRFacet")).to_stdout
     end
 
     it "stores a full report bundle for scans" do
@@ -136,8 +168,6 @@ RSpec.describe ASRFacet::UI::CLI do
       }
       pipeline = instance_double(ASRFacet::Pipeline, run: result)
       allow(ASRFacet::Pipeline).to receive(:new).and_return(pipeline)
-      allow(ASRFacet::Core::IntegrityChecker).to receive(:check).and_return(status: "ok", summary: "ok", issues: [], recommendations: [])
-
       output = capture_stdout { described_class.start(["scan", "example.com"]) }
 
       expect(output).to include("Fault Isolation and Execution Notes")

@@ -21,9 +21,13 @@ port = 4589
 pid = nil
 stdout = nil
 stderr = nil
+home = File.join(TMP_ROOT, "web-home")
+FileUtils.rm_rf(home)
+FileUtils.mkdir_p(home)
+env = { "HOME" => home, "USERPROFILE" => home }
 
 begin
-  pid, stdout, stderr = spawn_command(*ruby_command("bin/asrfacet-rb", "--web-session", "--web-port", port.to_s), name: "web-session")
+  pid, stdout, stderr = spawn_command(*ruby_command("bin/asrfacet-rb", "--web-session", "--web-port", port.to_s), name: "web-session", env: env)
 
   root_response = wait_for_http("http://127.0.0.1:#{port}/")
   bootstrap_response = wait_for_http("http://127.0.0.1:#{port}/api/bootstrap")

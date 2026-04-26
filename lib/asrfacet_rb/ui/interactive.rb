@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 # SPDX-License-Identifier: Proprietary
 #
 # ASRFacet-Rb: Attack Surface Reconnaissance Framework
@@ -12,7 +13,6 @@
 # and conditions defined in the LICENSE file.
 
 require "tty-prompt"
-require "tty-spinner"
 
 module ASRFacet
   module UI
@@ -55,42 +55,40 @@ module ASRFacet
       def run_with_spinners(target, mode, port_range, shodan_key)
         case mode
         when "Full"
-          current_spinner = nil
+          dashboard = ASRFacet::ProgressDashboard.new
           pipeline = ASRFacet::Pipeline.new(
             target,
             ports: port_range || "top100",
             api_keys: { shodan: shodan_key },
-            stage_callback: lambda do |index, name|
-              current_spinner&.success("Completed stage #{index - 1}") if index > 1
-              current_spinner = TTY::Spinner.new("[:spinner] Stage #{index}/8 #{name}", format: :dots)
-              current_spinner.auto_spin
+            stage_callback: lambda do |index, name, phase = :start, snapshot = {}|
+              if phase.to_sym == :start
+                dashboard.start(index - 1)
+              else
+                dashboard.increment(index - 1, found: snapshot[:subdomains].to_i + snapshot[:open_ports].to_i + snapshot[:findings].to_i)
+                dashboard.finish(index - 1)
+              end
             end
           )
-          result = pipeline.run
-          current_spinner&.success("Completed stage 8")
-          result
+          pipeline.run
         when "Passive"
-          spinner = TTY::Spinner.new("[:spinner] Running passive enumeration", format: :dots)
-          spinner.auto_spin
+          ASRFacet::Core::ThreadSafe.print_status("Running passive enumeration")
           store = ASRFacet::ResultStore.new
           result = ASRFacet::Passive::Runner.new(target, { shodan: shodan_key }).run
           store.add(:subdomains, target)
           result[:subdomains].each { |subdomain| store.add(:subdomains, subdomain) }
           result[:errors].each { |error| store.add(:passive_errors, error) }
-          spinner.success("Passive enumeration complete")
+          ASRFacet::Core::ThreadSafe.print_good("Passive enumeration complete")
           { store: store, top_assets: [] }
         when "Ports"
-          spinner = TTY::Spinner.new("[:spinner] Running port scan", format: :dots)
-          spinner.auto_spin
+          ASRFacet::Core::ThreadSafe.print_status("Running port scan")
           store = ASRFacet::ResultStore.new
           ASRFacet::Engines::PortEngine.new.scan(target, port_range || "top100").each do |entry|
             store.add(:open_ports, entry)
           end
-          spinner.success("Port scan complete")
+          ASRFacet::Core::ThreadSafe.print_good("Port scan complete")
           { store: store, top_assets: [] }
         else
-          spinner = TTY::Spinner.new("[:spinner] Collecting DNS records", format: :dots)
-          spinner.auto_spin
+          ASRFacet::Core::ThreadSafe.print_status("Collecting DNS records")
           store = ASRFacet::ResultStore.new
           dns_result = ASRFacet::Engines::DnsEngine.new.run(target)
           dns_result[:data].each do |record_type, values|
@@ -98,7 +96,7 @@ module ASRFacet
 
             Array(values).each { |value| store.add(:dns, { host: target, type: record_type, value: value }) }
           end
-          spinner.success("DNS collection complete")
+          ASRFacet::Core::ThreadSafe.print_good("DNS collection complete")
           { store: store, top_assets: [] }
         end
       rescue StandardError

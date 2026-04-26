@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 # SPDX-License-Identifier: Proprietary
 #
 # ASRFacet-Rb: Attack Surface Reconnaissance Framework
@@ -11,21 +12,13 @@
 # This file is part of ASRFacet-Rb and is subject to the terms
 # and conditions defined in the LICENSE file.
 
-require_relative "support/smoke_helper"
-
-include ASRFacet::TestSupport
-
-scripts = %w[
-  smoke_cli.rb
-  smoke_web.rb
-  smoke_lab.rb
-  smoke_install.rb
-  smoke_website_installers.rb
-  smoke_v2.rb
-]
-
-announce("Standalone verification run started.")
-scripts.each do |script|
-  run_command(*ruby_command(File.join("test", script)))
+module ASRFacet
+  class Error < StandardError; end
+  class NetworkError < Error; end
+  class ScopeViolation < Error; end
+  class RateLimitError < Error; end
+  class SourceError < Error; end
+  class ParseError < Error; end
+  class KeyStoreError < Error; end
+  class PluginError < Error; end
 end
-announce("Standalone verification run passed.")

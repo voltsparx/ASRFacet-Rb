@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 # SPDX-License-Identifier: Proprietary
 #
 # ASRFacet-Rb: Attack Surface Reconnaissance Framework
@@ -11,12 +12,16 @@
 # This file is part of ASRFacet-Rb and is subject to the terms
 # and conditions defined in the LICENSE file.
 
-require "colorize"
+require "pastel"
 require "tty-table"
 
 module ASRFacet
   module Output
     class CliFormatter < BaseFormatter
+      def initialize
+        @pastel = Pastel.new
+      end
+
       def format(results)
         payload = payload_for(results)
         store = payload[:store]
@@ -69,8 +74,8 @@ module ASRFacet
           severity = finding[:severity].to_s.upcase
           color = ASRFacet::Core::Severity::COLORS[finding[:severity]] || ASRFacet::Colors.terminal(:white)
           [
-            finding[:title].to_s.colorize(color),
-            severity.colorize(color),
+            decorate(finding[:title], color),
+            decorate(severity, color),
             finding[:host],
             finding[:description],
             finding[:remediation]
@@ -159,9 +164,13 @@ module ASRFacet
       end
 
       def heading(text, color_name)
-        text.to_s.colorize(ASRFacet::Colors.terminal(color_name))
+        decorate(text, ASRFacet::Colors.terminal(color_name))
       rescue StandardError
         text.to_s
+      end
+
+      def decorate(text, color)
+        @pastel.decorate(text.to_s, *Array(color))
       end
 
       def render_table(headers: nil, rows:)

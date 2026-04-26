@@ -12,12 +12,17 @@
 # This file is part of ASRFacet-Rb and is subject to the terms
 # and conditions defined in the LICENSE file.
 
-module ASRFacet::Engines
-  class PermutationEngine
-    def generate(domain, known_subdomains = [])
-      ASRFacet::PermutationEngine.new(known_subdomains, domain).generate
-    rescue StandardError
-      []
-    end
+require "spec_helper"
+
+RSpec.describe ASRFacet::RateLimiter do
+  it "sleeps when a source is called faster than its configured qps" do
+    limiter = described_class.new(crtsh: 2.0)
+    allow(Process).to receive(:clock_gettime).and_return(100.0, 100.1)
+    allow(limiter).to receive(:sleep)
+
+    limiter.throttle(:crtsh)
+    limiter.throttle(:crtsh)
+
+    expect(limiter).to have_received(:sleep).with(be_within(0.01).of(0.4))
   end
 end

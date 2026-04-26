@@ -13,5 +13,14 @@
 # and conditions defined in the LICENSE file.
 
 module ASRFacet
-  VERSION = "2.0.0"
+  module Output
+    class SarifFormatter < BaseFormatter
+      def format(results)
+        payload = payload_for(results)
+        ASRFacet::Renderers::SarifRenderer.new(payload[:store], primary_target(payload[:store])).render
+      rescue ASRFacet::Error
+        ASRFacet::Renderers::SarifRenderer.new(ASRFacet::ResultStore.new, "target").render
+      end
+    end
+  end
 end

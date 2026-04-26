@@ -1,27 +1,37 @@
 # Changelog
 
-All notable changes to ASRFacet-Rb are documented in this file.
-
-## [1.5.0] - 2026-04-09
+## [2.0.0] - 2026
 
 ### Added
-
-- Pipeline-focused positioning in README and website home content.
-- `VERSION` file for direct release signal visibility.
-- `ROADMAP.md` for planned improvements and sequencing.
-- Website trust-signal links to changelog, roadmap, and version.
-- Website and README messaging around core idea, fit-check, and 30-second quick start.
-- Reporting docs sample output section for CLI, JSON, and relationship mapping.
+- Event-driven engine with EventBus, Dispatcher, PluginRegistry
+- Drop-in plugin architecture (plugins/ directory)
+- Per-source rate limiter (RateLimiter)
+- Encrypted API key store (KeyStore) with CLI subcommands
+- New passive sources: VirusTotal, URLScan.io, CommonCrawl, SecurityTrails
+- Wordlist permutation engine (PermutationEngine)
+- Live multi-stage progress dashboard (ProgressDashboard)
+- `--dry-run` flag for scan command
+- `--profile` flag (`cautious` / `balanced` / `deep`)
+- SARIF 2.1.0 output
+- Graph export: DOT, JSON, Mermaid (`graph` subcommand)
+- Structured JSON logger (StructuredLogger)
+- Proper error class hierarchy (`ASRFacet::Error` and subclasses)
+- `concurrent-ruby` for thread-safe result storage and data structures
+- Runtime dependency version constraints in the gemspec
+- GitHub Actions CI pipeline updates for matrix verification and linting
 
 ### Changed
-
-- Website installer docs and UX framing to emphasize why the framework exists.
-- Reporting verification text updated to latest verified run (`53 examples, 0 failures`).
-- Recommendation logic in formatter improved so integrity remediation is shown only for warning/critical integrity states.
+- ResultStore refactored to use concurrent collections while keeping the legacy category APIs
+- `colorize` replaced with `pastel`
+- Passive runner now supports key-backed and rate-limited v2 sources
+- All new Ruby source files include `# frozen_string_literal: true`
 
 ### Fixed
+- build:gem task now raises on silent failure
+- ferrum added to Gemfile development group
+- CLEAN glob anchored to `__dir__` in Rakefile
+- ruby_exec uses `system` instead of the Rake DSL `sh`
+- Web-session run/start and session persistence flow regressions
 
-- Windows website installer CMD wrapper argument parsing stability.
-- Windows website installer sparse-checkout argument handling and uninstall reliability.
-- Windows website installer temp workspace path shortened to reduce path-length gem extraction failures.
-- False integrity remediation recommendation for runs without integrity issues.
+## [1.0.0] - 2026
+- Initial release

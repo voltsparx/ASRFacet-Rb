@@ -38,3 +38,16 @@ http:
   follow_redirects: true
   max_redirects: 5
   verify_ssl: false
+rate_limits:
+  crtsh: 5.0
+  hackertarget: 2.0
+  wayback: 1.0
+  rapiddns: 2.0
+  alienvault: 2.0
+  shodan: 1.0
+  threatcrowd: 1.0
+  bufferover: 2.0
+  virustotal: 4.0
+  urlscan: 5.0
+  commoncrawl: 1.0
+  securitytrails: 2.0

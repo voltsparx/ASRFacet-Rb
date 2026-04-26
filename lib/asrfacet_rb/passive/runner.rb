@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 # SPDX-License-Identifier: Proprietary
 #
 # ASRFacet-Rb: Attack Surface Reconnaissance Framework
@@ -25,10 +26,14 @@ module ASRFacet
         AlienVault,
         Shodan,
         ThreatCrowd,
-        BufferOver
+        BufferOver,
+        ASRFacet::Sources::UrlscanSource,
+        ASRFacet::Sources::CommoncrawlSource,
+        ASRFacet::Sources::VirustotalSource,
+        ASRFacet::Sources::SecuritytrailsSource
       ].freeze
 
-      def initialize(domain, api_keys = {}, options = {})
+      def initialize(domain, api_keys = {}, options = {}, rate_limiter: ASRFacet::RateLimiter.new, key_store: ASRFacet::KeyStore.new, logger: nil)
         @domain = domain.to_s.downcase
         @api_keys = api_keys || {}
         @options = options || {}
@@ -36,25 +41,28 @@ module ASRFacet
         @errors = []
         @mutex = Mutex.new
         @breakers = {}
+        @rate_limiter = rate_limiter
+        @key_store = key_store
+        @logger = logger
       end
 
       def run
         pool = ASRFacet::ThreadPool.new(SOURCES.size, queue_size: SOURCES.size, timeout: source_timeout)
         SOURCES.each do |source_class|
           pool.enqueue(label: source_class.name, metadata: { source: source_class.name }) do
-            source = source_class.new
+            source = build_source(source_class)
             breaker = breaker_for(source)
             breaker.call do
-              found = source.run(@domain, @api_keys)
+              found = fetch_from_source(source)
               @mutex.synchronize do
                 found.each { |entry| @results << entry }
               end
             end
           rescue ASRFacet::Core::CircuitBreaker::CircuitOpenError
             @mutex.synchronize do
-              @errors << "#{source.name}: circuit open — skipped (rate limited)"
+              @errors << "#{source_class.name.split('::').last}: circuit open - skipped (rate limited)"
             end
-          rescue StandardError => e
+          rescue ASRFacet::Error, StandardError => e
             breaker&.record_failure rescue nil
             @mutex.synchronize do
               @errors << "#{source_class.name.split('::').last}: #{e.message}"
@@ -69,11 +77,37 @@ module ASRFacet
           errors: @errors,
           source_count: SOURCES.size
         }
-      rescue StandardError
+      rescue ASRFacet::Error, StandardError
         { subdomains: [], errors: [], source_count: SOURCES.size }
       end
 
       private
+
+      def build_source(source_class)
+        if source_class <= ASRFacet::Sources::BaseSource
+          source_class.new(rate_limiter: @rate_limiter, key_store: @key_store, logger: @logger)
+        else
+          source_class.new
+        end
+      rescue StandardError => e
+        raise ASRFacet::SourceError, e.message
+      end
+
+      def fetch_from_source(source)
+        if source.is_a?(ASRFacet::Sources::BaseSource)
+          source.fetch(@domain)
+        else
+          source.run(@domain, merged_api_keys)
+        end
+      rescue StandardError => e
+        raise ASRFacet::SourceError, e.message
+      end
+
+      def merged_api_keys
+        @api_keys.merge(@key_store.all.transform_keys(&:to_sym))
+      rescue ASRFacet::KeyStoreError
+        @api_keys
+      end
 
       def breaker_for(source)
         key = source.name.to_s

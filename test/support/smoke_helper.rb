@@ -17,6 +17,7 @@ require "json"
 require "net/http"
 require "open3"
 require "rbconfig"
+require "tempfile"
 require "timeout"
 require "uri"
 
@@ -42,11 +43,20 @@ module ASRFacet
       status = nil
 
       runner = proc do
-        stdout, stderr, status = if env
-                                   Open3.capture3(env, *command, chdir: chdir)
-                                 else
-                                   Open3.capture3(*command, chdir: chdir)
-                                 end
+        Dir.mktmpdir("asrfacet-smoke") do |dir|
+          stdout_file = Tempfile.new("stdout", dir)
+          stderr_file = Tempfile.new("stderr", dir)
+          begin
+            spawn_env = env || {}
+            pid = Process.spawn(spawn_env, *command, chdir: chdir, out: stdout_file.path, err: stderr_file.path)
+            _pid, status = Process.wait2(pid)
+            stdout = File.read(stdout_file.path)
+            stderr = File.read(stderr_file.path)
+          ensure
+            stdout_file.close!
+            stderr_file.close!
+          end
+        end
       end
 
       unbundled ? Bundler.with_unbundled_env(&runner) : runner.call
@@ -63,13 +73,13 @@ module ASRFacet
       ERROR
     end
 
-    def spawn_command(*command, name:, chdir: ROOT)
+    def spawn_command(*command, name:, chdir: ROOT, env: nil)
       FileUtils.mkdir_p(TMP_ROOT)
       stdout_path = File.join(TMP_ROOT, "#{name}.stdout.log")
       stderr_path = File.join(TMP_ROOT, "#{name}.stderr.log")
       stdout = File.open(stdout_path, "w")
       stderr = File.open(stderr_path, "w")
-      pid = Process.spawn(*command, chdir: chdir, out: stdout, err: stderr)
+      pid = Process.spawn(env || {}, *command, chdir: chdir, out: stdout, err: stderr)
       [pid, stdout, stderr]
     end
 

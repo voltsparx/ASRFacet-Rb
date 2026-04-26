@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 # SPDX-License-Identifier: Proprietary
 #
 # ASRFacet-Rb: Attack Surface Reconnaissance Framework
@@ -11,7 +12,7 @@
 # This file is part of ASRFacet-Rb and is subject to the terms
 # and conditions defined in the LICENSE file.
 
-require "colorize"
+require "pastel"
 require "shellwords"
 
 begin
@@ -104,8 +105,10 @@ module ASRFacet
 
       def initialize
         @history = []
+        @pastel = Pastel.new
       rescue StandardError
         @history = []
+        @pastel = Pastel.new
       end
 
       def start
@@ -225,7 +228,7 @@ module ASRFacet
       end
 
       def startup_line(prefix, text, tone)
-        "#{prefix} #{text}".colorize(ASRFacet::Colors.terminal(tone))
+        @pastel.decorate("#{prefix} #{text}", *Array(ASRFacet::Colors.terminal(tone)))
       rescue StandardError
         text.to_s
       end
@@ -310,8 +313,8 @@ module ASRFacet
       end
 
       def prompt
-        base = "asrfrb".colorize(ASRFacet::Colors.terminal(:primary))
-        arrow = ">".colorize(ASRFacet::Colors.terminal(:warning))
+        base = @pastel.decorate("asrfrb", *Array(ASRFacet::Colors.terminal(:primary)))
+        arrow = @pastel.decorate(">", *Array(ASRFacet::Colors.terminal(:warning)))
         "#{base} #{arrow} "
       rescue StandardError
         "asrfrb > "
