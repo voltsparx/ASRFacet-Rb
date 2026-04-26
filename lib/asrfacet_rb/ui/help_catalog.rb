@@ -60,7 +60,8 @@ module ASRFacet
           usage: "asrfacet-rb portscan TARGET --type connect|syn|udp|ack|fin|null|xmas|window|maimon|ping|service [--timing 0-5] [--version] [--os]",
           details: [
             "Use this command when you want direct control over the scanner engine instead of the simpler `ports` wrapper.",
-            "Timing templates mirror the scanner timing profiles and the command can also render PDF, DOCX, CSV, JSON, HTML, TXT, CLI, ALL, or SARIF output."
+            "Timing templates mirror the scanner timing profiles and the command can also render PDF, DOCX, CSV, JSON, HTML, TXT, CLI, ALL, or SARIF output.",
+            "Raw-style scan types such as syn, ack, fin, null, xmas, window, and maimon need a raw-capable TCP backend and elevated privileges. The bundled backend remains connect-oriented, so sudo alone is not enough."
           ],
           examples: [
             "asrfacet-rb portscan 192.0.2.10 --type syn --timing 4 --ports 1-1024",
@@ -125,6 +126,20 @@ module ASRFacet
           examples: [
             "asrfacet-rb lab",
             "asrfacet-rb lab --port 9393"
+          ]
+        },
+        "deploy" => {
+          summary: "Start the full local operator stack in one command, including the web UI and optional validation lab.",
+          usage: "asrfacet-rb deploy [--public] [--with-lab] [--web-port 4567] [--lab-port 9292] [--manifest PATH]",
+          details: [
+            "Deploy mode starts the local web session control panel and, by default, the local validation lab at the same time.",
+            "It waits for both services to pass readiness checks, writes a deployment manifest JSON, and prints the reachable URLs and health endpoints.",
+            "Use `--public` only when you intentionally want the stack bound to 0.0.0.0 for access beyond the local machine."
+          ],
+          examples: [
+            "asrfacet-rb deploy",
+            "asrfacet-rb deploy --public --web-port 8080 --lab-port 9393",
+            "asrfacet-rb deploy --no-with-lab --manifest ~/.asrfacet_rb/runtime/deploy.json"
           ]
         },
         "web-session" => {
@@ -445,6 +460,7 @@ module ASRFacet
         "ui" => "web-session",
         "about" => "about",
         "lab" => "lab",
+        "deploy" => "deploy",
         "a" => "about",
         "x" => "explain",
         "exp" => "explain",
@@ -481,6 +497,7 @@ module ASRFacet
           "  portscan TARGET    Direct scanner engine control       Aliases: none",
           "  dns DOMAIN         DNS record collection only          Aliases: d, dn",
           "  lab                Start the local validation lab      Aliases: none",
+          "  deploy             Start the full local deploy stack   Aliases: none",
           "  interactive        Guided beginner workflow            Aliases: i, int",
           "  console            Persistent console shell            Aliases: c, con, shell",
           "  web                Local web control panel             Aliases: w, ui",
@@ -519,6 +536,7 @@ module ASRFacet
           "  #{executable} ports api.example.com --ports 80,443,8443",
           "  #{executable} portscan 192.0.2.10 --type syn --timing 4 --ports 1-1024",
           "  #{executable} lab",
+          "  #{executable} deploy",
           "  #{executable} about",
           "  #{executable} help scan",
           "  #{executable} --explain scope",

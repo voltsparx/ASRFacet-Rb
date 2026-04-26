@@ -14,7 +14,9 @@
 # This file is part of ASRFacet-Rb and is subject to the terms
 # and conditions defined in the LICENSE file.
 
+require "fileutils"
 require "json"
+require "time"
 require "uri"
 require "webrick"
 
@@ -23,21 +25,27 @@ module ASRFacet
     class Server
       DEFAULT_HOST = "127.0.0.1"
       DEFAULT_PORT = 4567
-      def initialize(host: DEFAULT_HOST, port: DEFAULT_PORT, session_store: nil, session_runner: nil)
+      attr_reader :host, :port
+
+      def initialize(host: DEFAULT_HOST, port: DEFAULT_PORT, session_store: nil, session_runner: nil, manage_signals: true)
         @host = host.to_s.strip.empty? ? DEFAULT_HOST : host.to_s.strip
         @port = port.to_i.positive? ? port.to_i : DEFAULT_PORT
         @session_store = session_store || ASRFacet::Web::SessionStore.new
         @session_runner = session_runner || ASRFacet::Web::SessionRunner.new(session_store: @session_store)
+        @manage_signals = manage_signals
         @server = nil
-      rescue StandardError
+      rescue ASRFacet::Error, ArgumentError, NoMethodError, TypeError
         @host = DEFAULT_HOST
         @port = DEFAULT_PORT
         @session_store = session_store || ASRFacet::Web::SessionStore.new
         @session_runner = session_runner || ASRFacet::Web::SessionRunner.new(session_store: @session_store)
+        @manage_signals = manage_signals
         @server = nil
       end
 
       def start
+        FileUtils.mkdir_p(@session_store.root.to_s)
+        FileUtils.mkdir_p(reports_root.to_s)
         @server = WEBrick::HTTPServer.new(
           BindAddress: @host,
           Port: @port,
@@ -45,11 +53,11 @@ module ASRFacet
           Logger: WEBrick::Log.new($stderr, WEBrick::Log::FATAL)
         )
         mount_routes
-        trap_signals
+        trap_signals if @manage_signals
         ASRFacet::Core::ThreadSafe.print_status("Web session control panel listening on http://#{@host}:#{@port}")
         ASRFacet::Core::ThreadSafe.print_status("Saved sessions are stored in #{@session_store.root}")
         @server.start
-      rescue StandardError => e
+      rescue ASRFacet::Error, IOError, SystemCallError, ScriptError => e
         ASRFacet::Core::ThreadSafe.print_error("Web session startup failed: #{e.message}")
         nil
       ensure
@@ -66,6 +74,8 @@ module ASRFacet
 
       def mount_routes
         @server.mount_proc("/") { |_req, res| respond_html(res, dashboard_html) }
+        @server.mount_proc("/healthz") { |_req, res| handle_health(res) }
+        @server.mount_proc("/readyz") { |_req, res| handle_readiness(res) }
         @server.mount_proc("/api/bootstrap") { |_req, res| handle_bootstrap(res) }
         @server.mount_proc("/api/sessions") { |req, res| handle_sessions(req, res) }
         @server.mount_proc("/api/session") { |req, res| handle_session_lookup(req, res) }
@@ -86,6 +96,19 @@ module ASRFacet
         end
       rescue StandardError
         nil
+      end
+
+      def handle_health(res)
+        respond_json(res, health_payload(status: "ok"))
+      rescue StandardError
+        respond_json(res, { error: "health_failed" }, status: 500)
+      end
+
+      def handle_readiness(res)
+        ready = readiness_ok?
+        respond_json(res, health_payload(status: ready ? "ready" : "not_ready"), status: ready ? 200 : 503)
+      rescue StandardError
+        respond_json(res, { error: "readiness_failed" }, status: 500)
       end
 
       def handle_bootstrap(res)
@@ -254,6 +277,27 @@ module ASRFacet
         File.expand_path((ASRFacet::Config.fetch("output", "directory") || "~/.asrfacet_rb/output").to_s)
       rescue StandardError
         File.expand_path("~/.asrfacet_rb/output")
+      end
+
+      def readiness_ok?
+        !@server.nil? && File.directory?(@session_store.root.to_s) && File.directory?(reports_root.to_s)
+      rescue StandardError
+        false
+      end
+
+      def health_payload(status:, status_code: nil)
+        {
+          service: "web",
+          status: status,
+          status_code: status_code || (status == "ready" || status == "ok" ? 200 : 503),
+          host: @host,
+          port: @port,
+          sessions_root: @session_store.root.to_s,
+          reports_root: reports_root,
+          timestamp: Time.now.utc.iso8601
+        }
+      rescue StandardError
+        { service: "web", status: status }
       end
 
       def framework_icon_path

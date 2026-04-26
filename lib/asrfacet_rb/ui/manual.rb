@@ -23,6 +23,7 @@ module ASRFacet
         console
         wizard
         local_lab
+        deployment
         workflow
         recon_basics
         configurations
@@ -84,6 +85,7 @@ module ASRFacet
             "portscan TARGET",
             "  Run the scanner engine directly with explicit scan type, timing, and optional fingerprinting.",
             "  Use this when you need control over SYN, UDP, ACK, FIN, NULL, XMAS, WINDOW, MAIMON, ping, or service detection behavior.",
+            "  Raw-style TCP modes need a raw-capable TCP backend and elevated privileges. The bundled backend is connect-oriented, so sudo alone does not make FIN, NULL, or XMAS semantically correct.",
             "dns DOMAIN",
             "  Collect DNS records and basic resolution data only. Aliases: d, dn.",
             "console",
@@ -95,6 +97,9 @@ module ASRFacet
             "lab",
             "  Launch the local validation lab with pre-built placeholder surfaces.",
             "  Use this to test scanning, crawling, reporting, and UI behavior against a local target before real authorized systems.",
+            "deploy",
+            "  Start the local web control plane and optional validation lab together in one command.",
+            "  Deploy mode waits for readiness, prints health endpoints, and writes a manifest under ~/.asrfacet_rb/runtime/ by default.",
             "about",
             "  Print a framework overview and safety-oriented product summary.",
             "interactive",
@@ -127,6 +132,14 @@ module ASRFacet
             "Use `asrfacet-rb lab` to launch a safe local validation target on 127.0.0.1 by default.",
             "The lab exposes placeholder discovery surfaces such as weak headers, permissive CORS, a directory-listing style page, JavaScript endpoint patterns, debug-style routes, and sanitized placeholder configuration files.",
             "Its purpose is to let you test crawling, reporting, explainability, and local web-session behavior before scanning a real authorized system."
+          ]
+        },
+        "deployment" => {
+          title: "DEPLOYMENT",
+          body: [
+            "Use `asrfacet-rb deploy` when you want the web control panel and the local validation lab to come up together in one process.",
+            "The deploy stack performs readiness checks against both services, prints the operator URLs, and writes a runtime manifest to ~/.asrfacet_rb/runtime/deploy.json unless you override it.",
+            "Use `--public` only when you intentionally want the services bound to 0.0.0.0 and reachable beyond the local machine."
           ]
         },
         "workflow" => {
@@ -255,6 +268,8 @@ module ASRFacet
         "output" => "outputs",
         "reporting" => "outputs",
         "lab" => "local_lab",
+        "deploy" => "deployment",
+        "deployment" => "deployment",
         "local_lab" => "local_lab",
         "recon" => "recon_basics",
         "basics" => "recon_basics",

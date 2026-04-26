@@ -1,3 +1,6 @@
+# frozen_string_literal: true
+# For use only on systems you own or have explicit
+# written authorization to test.
 # SPDX-License-Identifier: Proprietary
 #
 # ASRFacet-Rb: Attack Surface Reconnaissance Framework
@@ -12,6 +15,7 @@
 # and conditions defined in the LICENSE file.
 
 require "json"
+require "time"
 require "webrick"
 
 module ASRFacet
@@ -19,6 +23,7 @@ module ASRFacet
     class TemplateServer
       DEFAULT_HOST = "127.0.0.1"
       DEFAULT_PORT = 9292
+      attr_reader :host, :port
 
       TEMPLATES = {
         "headers" => "A page with intentionally weak security headers for HTTP fingerprinting validation.",
@@ -28,13 +33,15 @@ module ASRFacet
         "exposure" => "Common debug and metadata routes to validate path discovery."
       }.freeze
 
-      def initialize(host: DEFAULT_HOST, port: DEFAULT_PORT)
+      def initialize(host: DEFAULT_HOST, port: DEFAULT_PORT, manage_signals: true)
         @host = host.to_s.strip.empty? ? DEFAULT_HOST : host.to_s.strip
         @port = port.to_i.positive? ? port.to_i : DEFAULT_PORT
+        @manage_signals = manage_signals
         @server = nil
-      rescue StandardError
+      rescue ASRFacet::Error, ArgumentError, NoMethodError, TypeError
         @host = DEFAULT_HOST
         @port = DEFAULT_PORT
+        @manage_signals = manage_signals
         @server = nil
       end
 
@@ -46,11 +53,11 @@ module ASRFacet
           Logger: WEBrick::Log.new($stderr, WEBrick::Log::FATAL)
         )
         mount_routes
-        trap_signals
+        trap_signals if @manage_signals
         ASRFacet::Core::ThreadSafe.print_status("ASRFacet local lab listening on http://#{@host}:#{@port}")
         ASRFacet::Core::ThreadSafe.print_status("Use this only for safe local validation of the framework before real authorized targets.")
         @server.start
-      rescue StandardError => e
+      rescue ASRFacet::Error, IOError, SystemCallError, ScriptError => e
         ASRFacet::Core::ThreadSafe.print_error("Lab startup failed: #{e.message}")
         nil
       ensure
@@ -67,6 +74,8 @@ module ASRFacet
 
       def mount_routes
         @server.mount_proc("/") { |_req, res| html(res, index_page) }
+        @server.mount_proc("/healthz") { |_req, res| health(res) }
+        @server.mount_proc("/readyz") { |_req, res| readiness(res) }
         @server.mount_proc("/assets/app.js") { |_req, res| javascript(res, app_js) }
         @server.mount_proc("/app") { |_req, res| html(res, app_page) }
         @server.mount_proc("/browse/") { |_req, res| html(res, directory_listing_page) }
@@ -79,6 +88,19 @@ module ASRFacet
         @server.mount_proc("/rest/audit") { |_req, res| json(res, { events: [{ id: "evt-1", action: "demo" }] }) }
         @server.mount_proc("/cors/profile") { |_req, res| cors_json(res, { profile: "demo-profile", scope: "lab-only" }) }
         @server.mount_proc("/.well-known/security.txt") { |_req, res| plain(res, "Contact: mailto:security@example.local\n") }
+      rescue StandardError
+        nil
+      end
+
+      def health(res)
+        json(res, status_payload("ok"))
+      rescue StandardError
+        nil
+      end
+
+      def readiness(res)
+        ready = !@server.nil?
+        json(res, status_payload(ready ? "ready" : "not_ready"), status: ready ? 200 : 503)
       rescue StandardError
         nil
       end
@@ -212,8 +234,8 @@ module ASRFacet
         nil
       end
 
-      def json(res, payload)
-        res.status = 200
+      def json(res, payload, status: 200)
+        res.status = status
         res["Content-Type"] = "application/json; charset=utf-8"
         res.body = JSON.pretty_generate(payload)
       rescue StandardError
@@ -228,6 +250,19 @@ module ASRFacet
         res.body = JSON.pretty_generate(payload)
       rescue StandardError
         nil
+      end
+
+      def status_payload(status)
+        {
+          service: "lab",
+          status: status,
+          host: @host,
+          port: @port,
+          templates: TEMPLATES.keys,
+          timestamp: Time.now.utc.iso8601
+        }
+      rescue StandardError
+        { service: "lab", status: status }
       end
     end
   end

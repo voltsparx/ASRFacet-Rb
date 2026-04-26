@@ -30,7 +30,8 @@ RSpec.describe ASRFacet::Scanner::ScanEngine do
     instance_double(
       ASRFacet::Scanner::Probes::TCPProber,
       send_probe: { reply: :syn_ack, window: 0 },
-      fingerprint: { ttl: 64, window: 29_200, tcp_options: %i[mss sack timestamp], ip_id_sequence: [1, 2, 3], rst_behavior: :rst }
+      fingerprint: { ttl: 64, window: 29_200, tcp_options: %i[mss sack timestamp], ip_id_sequence: [1, 2, 3], rst_behavior: :rst },
+      raw_socket_capable?: false
     )
   end
   let(:udp_prober) { instance_double(ASRFacet::Scanner::Probes::UDPProber, send_probe: { reply: :udp, data: "ok" }) }
@@ -134,10 +135,12 @@ RSpec.describe ASRFacet::Scanner::ScanEngine do
     maimon: { tcp_reply: { reply: :timeout, window: 0 }, expected_state: :open_filtered }
   }.each do |scan_type, config|
     it "runs #{scan_type} through the scan engine with #{config[:expected_state]} semantics" do
+      allow(ASRFacet::Scanner::Privilege).to receive(:elevated?).and_return(true)
       typed_tcp_prober = instance_double(
         ASRFacet::Scanner::Probes::TCPProber,
         send_probe: config[:tcp_reply],
-        fingerprint: { ttl: 64, window: 29_200, tcp_options: %i[mss sack timestamp], ip_id_sequence: [1, 2, 3], rst_behavior: :rst }
+        fingerprint: { ttl: 64, window: 29_200, tcp_options: %i[mss sack timestamp], ip_id_sequence: [1, 2, 3], rst_behavior: :rst },
+        raw_socket_capable?: true
       )
 
       result = described_class.new(
@@ -157,6 +160,25 @@ RSpec.describe ASRFacet::Scanner::ScanEngine do
 
       expect(result.host_results.first.ports.first.state).to eq(config[:expected_state])
     end
+  end
+
+  it "fails fast for raw scan types when the bundled TCP backend is not raw-capable" do
+    expect do
+      described_class.new(
+        scan_type: :xmas,
+        timing: 3,
+        verbosity: 0,
+        version_detection: false,
+        os_detection: false,
+        version_intensity: 7,
+        ports: "80",
+        logger: logger,
+        probe_db: probe_db,
+        tcp_prober: tcp_prober,
+        udp_prober: udp_prober,
+        icmp_prober: icmp_prober
+      ).scan("example.com")
+    end.to raise_error(ASRFacet::ScanError, /sudo alone will not make xmas behave like a real raw scan/i)
   end
 
   it "runs a UDP scan through the scan engine with UDP semantics" do

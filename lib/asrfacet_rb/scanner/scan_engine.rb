@@ -59,6 +59,7 @@ module ASRFacet
       end
 
       def scan(targets)
+        ASRFacet::Scanner::Privilege.validate!(scan_type: @scan_type, tcp_prober: @context.tcp_prober)
         normalized_targets = Array(targets)
         port_list = parse_ports(@ports)
         result = ASRFacet::Scanner::Results::ScanResult.new(

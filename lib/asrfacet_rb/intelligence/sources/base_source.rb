@@ -78,12 +78,11 @@ module ASRFacet
           return [] if text.nil?
 
           normalized_domain = domain.to_s.downcase
-          regex = /#{SUBRE}#{Regexp.escape(normalized_domain)}/i
-          text.to_s.scan(regex).map do |match|
-            match.is_a?(Array) ? match.first.to_s.downcase : match.to_s.downcase
-          end.select do |entry|
-            entry == normalized_domain || entry.end_with?(".#{normalized_domain}")
-          end.uniq
+          regex = /(?:[a-z0-9](?:[a-z0-9\-]{0,61}[a-z0-9])?\.)+#{Regexp.escape(normalized_domain)}/i
+          text.to_s.scan(regex)
+              .map { |entry| entry.to_s.downcase }
+              .select { |entry| entry == normalized_domain || entry.end_with?(".#{normalized_domain}") }
+              .uniq
         end
 
         def log_warning(message)

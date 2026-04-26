@@ -175,11 +175,11 @@ module ASRFacet
             Thread.current.report_on_exception = false if Thread.current.respond_to?(:report_on_exception=)
             job[:block].call
           rescue StandardError => e
-            Thread.current[:asrfacet_error] = e
+            Thread.current[:asrfacet_rb_error] = e
           end
 
           if runner.join(job[:timeout])
-            raise runner[:asrfacet_error] if runner[:asrfacet_error]
+            raise runner[:asrfacet_rb_error] if runner[:asrfacet_rb_error]
 
             mark_completed
           else

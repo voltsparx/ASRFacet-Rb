@@ -43,7 +43,7 @@ module ASRFacet
       status = nil
 
       runner = proc do
-        Dir.mktmpdir("asrfacet-smoke") do |dir|
+        Dir.mktmpdir("asrfacet-rb-smoke") do |dir|
           stdout_file = Tempfile.new("stdout", dir)
           stderr_file = Tempfile.new("stderr", dir)
           begin

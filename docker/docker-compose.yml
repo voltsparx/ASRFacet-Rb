@@ -1,0 +1,26 @@
+# For use only on systems you own or have explicit
+# written authorization to test.
+services:
+  asrfacet_rb:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    command: >
+      sh -lc "bundle exec ruby bin/asrfacet-rb deploy ${ASRFACET_RB_DEPLOY_FLAGS:---public} --manifest /data/runtime/deploy.json"
+    environment:
+      HOME: /data
+      ASRFACET_RB_DEPLOY_FLAGS: ${ASRFACET_RB_DEPLOY_FLAGS:---public}
+    ports:
+      - "${ASRFACET_RB_WEB_PORT:-4567}:4567"
+      - "${ASRFACET_RB_LAB_PORT:-9292}:9292"
+    volumes:
+      - asrfacet_rb_data:/data
+    healthcheck:
+      test: ["CMD", "ruby", "-rnet/http", "-ruri", "-e", "exit(Net::HTTP.get_response(URI('http://127.0.0.1:4567/healthz')).code.to_i == 200 ? 0 : 1)"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+volumes:
+  asrfacet_rb_data:

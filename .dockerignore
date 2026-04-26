@@ -1,0 +1,13 @@
+# For use only on systems you own or have explicit
+# written authorization to test.
+# This file stays at the repository root because Docker only reads
+# .dockerignore from the active build-context root.
+.bundle
+.git
+.github
+coverage
+pkg
+tmp
+vendor/bundle
+*.log
+*.gem

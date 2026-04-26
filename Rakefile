@@ -50,6 +50,11 @@ namespace :test do
     ruby_exec(File.join("test", "smoke_lab.rb"))
   end
 
+  desc "Run deployment smoke tests"
+  task :deploy do
+    ruby_exec(File.join("test", "smoke_deploy.rb"))
+  end
+
   desc "Run installer smoke tests for the current platform"
   task :install do
     ruby_exec(File.join("test", "smoke_install.rb"))
@@ -76,6 +81,6 @@ namespace :build do
 end
 
 desc "Run the full release verification pass"
-task verify: ["test:spec", "test:cli", "test:web", "test:lab", "test:install", "test:website_installers", "build:gem"]
+task verify: ["test:spec", "test:cli", "test:web", "test:lab", "test:deploy", "test:install", "test:website_installers", "build:gem"]
 
 task default: :verify

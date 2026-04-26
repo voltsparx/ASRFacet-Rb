@@ -32,7 +32,7 @@ RSpec.describe ASRFacet::Output::CliFormatter do
       summary: store.summary,
       meta: {
         generated_at: Time.now.utc.iso8601,
-        output_directory: "C:/tmp/asrfacet"
+        output_directory: "C:/tmp/asrfacet-rb"
       }
     }
 
@@ -56,7 +56,7 @@ RSpec.describe ASRFacet::Output::CliFormatter do
       summary: store.summary,
       meta: {
         generated_at: Time.now.utc.iso8601,
-        output_directory: "C:/tmp/asrfacet"
+        output_directory: "C:/tmp/asrfacet-rb"
       }
     }
 

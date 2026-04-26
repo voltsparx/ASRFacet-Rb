@@ -38,7 +38,7 @@ $TestAliasLauncher = Join-Path $TestBinDir "$AliasName.cmd"
 $UserConfigRoot = Join-Path $HOME ".asrfacet_rb"
 $UserConfigPath = Join-Path $UserConfigRoot "config.yml"
 $DefaultOutputRoot = Join-Path $UserConfigRoot "output"
-$ManifestName = ".asrfacet-install.json"
+$ManifestName = ".asrfacet-rb-install.json"
 $RuntimePayload = @(
   "bin",
   "config",

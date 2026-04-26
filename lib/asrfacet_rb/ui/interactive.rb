@@ -157,7 +157,7 @@ module ASRFacet
         if output_format == "cli"
           puts(formatter.format(result))
         else
-          path = File.join(Dir.pwd, "asrfacet_report.#{output_format}")
+          path = File.join(Dir.pwd, "asrfacet-rb-report.#{output_format}")
           formatter.save(result, path)
           ASRFacet::Core::ThreadSafe.print_good("Saved report to #{path}")
         end

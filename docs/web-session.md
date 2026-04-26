@@ -5,9 +5,11 @@
 ```bash
 bundle exec ruby bin/asrfacet-rb --web-session
 bundle exec ruby bin/asrfacet-rb --web-session --web-host 127.0.0.1 --web-port 4573
+bundle exec ruby bin/asrfacet-rb deploy
 ```
 
 The web control panel is local-only by default and binds to `127.0.0.1:4567` unless overridden.
+Use `deploy` when you want the web control panel and the local validation lab to come up together with readiness checks and a runtime manifest.
 
 ## What The Dashboard Does
 
@@ -81,3 +83,11 @@ Completed sessions expose links for:
 - JSON report
 
 These are served from the stored artifact bundle on disk and remain available after the run completes.
+
+## Health And Reachability
+
+- Web health: `GET /healthz`
+- Web readiness: `GET /readyz`
+- Deploy manifest: `~/.asrfacet_rb/runtime/deploy.json`
+
+If you start the stack with `asrfacet-rb deploy`, the command waits until the web control panel is reachable and then prints the exact URLs to use.

@@ -299,7 +299,7 @@ module ASRFacet
     end
 
     def build_buster_wordlist(candidates)
-      tempfile = Tempfile.new(["asrfacet-dns-buster", ".txt"])
+      tempfile = Tempfile.new(["asrfacet-rb-dns-buster", ".txt"])
       Array(candidates).each do |hostname|
         tempfile.write("#{hostname.sub(/\.#{Regexp.escape(@target.domain)}\z/, "")}\n")
       end
@@ -318,7 +318,7 @@ module ASRFacet
 
     def cleanup_tempfile(path)
       return if path.to_s.empty?
-      return unless File.basename(path.to_s).start_with?("asrfacet-dns-buster")
+      return unless File.basename(path.to_s).start_with?("asrfacet-rb-dns-buster")
 
       File.delete(path) if File.exist?(path)
     rescue StandardError

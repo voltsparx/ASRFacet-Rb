@@ -47,11 +47,11 @@ module ASRFacet
               Thread.current.report_on_exception = false if Thread.current.respond_to?(:report_on_exception=)
               yield
             rescue StandardError => e
-              Thread.current[:asrfacet_error] = e
+              Thread.current[:asrfacet_rb_error] = e
             end
 
             if runner.join(timeout.to_f)
-              raise runner[:asrfacet_error] if runner[:asrfacet_error]
+              raise runner[:asrfacet_rb_error] if runner[:asrfacet_rb_error]
 
               result = runner.value
             else

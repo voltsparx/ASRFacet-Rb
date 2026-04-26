@@ -1,4 +1,4 @@
-# ASRFacet-Rb
+# ASRFacet-Rb 
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/voltsparx/ASRFacet-Rb/refs/heads/main/docs/images/illustration/asrfacet-rb-logo.png" alt="ASRFacet-Rb Logo" width="720">
@@ -113,6 +113,22 @@ Installed command aliases:
 - `asrfacet-rb`
 - `asrfrb`
 
+### Docker Quick Start
+
+The container assets live under [`docker/`](/c:/Users/lenovo/Documents/GitHub/ASRFacet-Rb/docker/README.md:1).
+
+```bash
+./docker/run-docker.sh --action up --rebuild --detach
+./docker/run-docker.sh --action cli --command "scan example.com --passive-only"
+```
+
+```powershell
+.\docker\run-docker.ps1 -Action up -Rebuild -Detach
+.\docker\run-docker.ps1 -Action cli -Command "scan example.com --passive-only"
+```
+
+If you run a wrapper without arguments, it falls back to an interactive prompt mode.
+
 Installer prompt theme:
 
 - `[ASRFacet-Rb][INFO]`
@@ -130,6 +146,7 @@ Installer prompt theme:
 | `passive DOMAIN` | Passive-only discovery | `asrfacet-rb passive example.com` |
 | `ports HOST` | Focused port validation | `asrfacet-rb ports api.example.com --ports top1000` |
 | `dns DOMAIN` | DNS-focused collection | `asrfacet-rb dns example.com` |
+| `deploy` | Start the web UI and local lab together | `asrfacet-rb deploy` |
 | `--console` | Interactive shell mode | `asrfacet-rb --console` |
 | `--web-session` | Local web control panel | `asrfacet-rb --web-session` |
 | `--version` | Print installed version | `asrfacet-rb --version` |
@@ -162,6 +179,25 @@ asrfacet-rb --web-session
 
 When to use: visual control panel flow for recon, mapping, and report access.
 
+### Guided Workflow 4: One-Go Local Deployment
+
+```bash
+asrfacet-rb deploy
+asrfacet-rb deploy --public --web-port 8080 --lab-port 9393
+```
+
+When to use: bring up the full local operator surface in one command with health endpoints and a runtime manifest.
+
+### Scanner Privileges
+
+`connect`, `udp`, and `service` scans work without raw-socket privileges.  
+Raw-style TCP modes such as `syn`, `ack`, `fin`, `null`, `xmas`, `window`, and `maimon` need both:
+
+- elevated privileges such as `sudo`
+- a real raw-capable TCP probe backend
+
+The current bundled scanner backend is still connect-oriented for TCP probes, so `sudo` alone does not make those raw modes equivalent to Nmap.
+
 ## Output, Storage, and Reporting
 
 ### Output Formats
@@ -180,6 +216,7 @@ When to use: visual control panel flow for recon, mapping, and report access.
 | `~/.asrfacet_rb/output/` | Report bundles and streams |
 | `~/.asrfacet_rb/memory/` | Recon memory and deltas |
 | `~/.asrfacet_rb/web_sessions/` | Saved web session state |
+| `~/.asrfacet_rb/runtime/` | Deployment manifest and runtime metadata |
 
 ### Reporting Process Visualization
 
@@ -219,6 +256,7 @@ bundle exec rake spec
 bundle exec rake test:cli
 bundle exec rake test:web
 bundle exec rake test:lab
+bundle exec rake test:deploy
 bundle exec rake test:install
 bundle exec rake test:website_installers
 ```
@@ -238,6 +276,7 @@ Verification snapshot:
 | Noisy or slow run | Too many threads or broad scope | Lower `--threads`, tighten `--scope`, use passive-first flow |
 | Report confusion | Multiple formats generated | Start with `report.html` then inspect `report.json` for automation |
 | Web mode not reachable | Host/port mismatch | Start with `--web-host 127.0.0.1 --web-port 4567` and retry |
+| Deploy stack does not come ready | Port already in use or service startup failure | Check `~/.asrfacet_rb/runtime/deploy.json`, then retry with different `--web-port` or `--lab-port` |
 
 ## Trust Signals
 

@@ -24,6 +24,14 @@ module ASRFacet
           @adapter = adapter
         end
 
+        def raw_socket_capable?
+          return @adapter.raw_socket_capable? if @adapter&.respond_to?(:raw_socket_capable?)
+
+          false
+        rescue StandardError
+          false
+        end
+
         def send_probe(host:, port:, flags:, timeout:)
           return @adapter.call(host: host, port: port, flags: flags, timeout: timeout) if @adapter
 

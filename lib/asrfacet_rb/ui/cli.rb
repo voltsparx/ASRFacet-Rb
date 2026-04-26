@@ -388,6 +388,30 @@ module ASRFacet
         report_exception("lab", e)
       end
 
+      desc "deploy", "Start the web control panel and optional local lab in one go"
+      method_option :public, type: :boolean, default: false, desc: "Bind services to 0.0.0.0 so they are reachable beyond localhost"
+      method_option :with_lab, type: :boolean, default: true, desc: "Start the local validation lab alongside the web control panel"
+      method_option :web_host, type: :string, default: "127.0.0.1", desc: "Bind host for the web control panel"
+      method_option :web_port, type: :numeric, default: 4567, desc: "Bind port for the web control panel"
+      method_option :lab_host, type: :string, default: "127.0.0.1", desc: "Bind host for the local lab"
+      method_option :lab_port, type: :numeric, default: 9292, desc: "Bind port for the local lab"
+      method_option :manifest, type: :string, desc: "Path to write the deployment manifest JSON"
+      def deploy
+        return unless ensure_framework_ready!
+
+        ASRFacet::Deployment::Stack.new(
+          public: options[:public],
+          with_lab: options[:with_lab],
+          web_host: options[:web_host],
+          web_port: options[:web_port],
+          lab_host: options[:lab_host],
+          lab_port: options[:lab_port],
+          manifest_path: options[:manifest]
+        ).start
+      rescue ASRFacet::Error => e
+        report_exception("deploy", e)
+      end
+
       desc "interactive", "Launch the guided interactive interface"
       def interactive
         return unless ensure_framework_ready!

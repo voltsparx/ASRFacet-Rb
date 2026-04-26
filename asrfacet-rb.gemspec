@@ -26,7 +26,7 @@ Gem::Specification.new do |spec|
   spec.license = "LicenseRef-Proprietary"
   spec.required_ruby_version = ">= 3.2"
 
-  spec.files = Dir.glob("{bin,config,install,lib,man,spec,test,wordlists}/**/*").select { |path| File.file?(path) } + %w[Gemfile README.md LICENSE Rakefile]
+  spec.files = Dir.glob("{bin,config,docker,install,lib,man,spec,test,wordlists}/**/*").select { |path| File.file?(path) } + %w[Gemfile README.md LICENSE Rakefile Procfile .dockerignore]
   spec.bindir = "bin"
   spec.executables = %w[asrfacet-rb asrfrb]
   spec.require_paths = ["lib"]

@@ -22,7 +22,7 @@ module ASRFacet
         21 => { probe: "", pattern: /ftp/i, service: "ftp" },
         22 => { probe: "", pattern: /ssh/i, service: "ssh" },
         23 => { probe: "", pattern: /telnet/i, service: "telnet" },
-        25 => { probe: "EHLO asrfacet.local\r\n", pattern: /smtp/i, service: "smtp" },
+        25 => { probe: "EHLO asrfacet-rb.local\r\n", pattern: /smtp/i, service: "smtp" },
         53 => { probe: "", pattern: /dns/i, service: "dns" },
         80 => { probe: "HEAD / HTTP/1.0\r\n\r\n", pattern: /http/i, service: "http" },
         110 => { probe: "", pattern: /pop3/i, service: "pop3" },

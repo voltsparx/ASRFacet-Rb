@@ -27,7 +27,7 @@ module ASRFacet
           raise ASRFacet::Error, "Node.js is not available on PATH" unless RuntimeDetector.node_available?
           raise ASRFacet::Error, "JavaScript output dependencies are not installed" unless RuntimeDetector.js_installed?
 
-          payload_file = Tempfile.new(["asrfacet_docx_payload", ".json"])
+          payload_file = Tempfile.new(["asrfacet-rb-docx-payload", ".json"])
           payload_file.write(JSON.pretty_generate(report_payload))
           payload_file.flush
 

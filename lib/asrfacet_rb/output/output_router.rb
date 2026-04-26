@@ -104,7 +104,7 @@ module ASRFacet
 
       def safe_target
         cleaned = @target.downcase.gsub(/[^a-z0-9.\-_]+/, "_").tr(".", "_")
-        cleaned.empty? ? "asrfacet_report" : cleaned
+        cleaned.empty? ? "asrfacet-rb-report" : cleaned
       end
     end
   end
