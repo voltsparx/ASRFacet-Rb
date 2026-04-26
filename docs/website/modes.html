@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -19,21 +19,21 @@
 <meta name="twitter:image" content="https://raw.githubusercontent.com/voltsparx/ASRFacet-Rb/main/docs/website/web_assets/media/asrfacet-rb-site-preview.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@300;400;500;600;700&family=Orbitron:wght@400;600;700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/core/base.css?v=1.5.0">
-<link rel="stylesheet" href="css/layout/topbar.css?v=1.5.0">
-<link rel="stylesheet" href="css/layout/sidebar.css?v=1.5.0">
-<link rel="stylesheet" href="css/layout/content.css?v=1.5.0">
-<link rel="stylesheet" href="css/components/workflow.css?v=1.5.0">
-<link rel="stylesheet" href="css/components/modules.css?v=1.5.0">
-<link rel="stylesheet" href="css/components/development.css?v=1.5.0">
-<link rel="stylesheet" href="css/layout/responsive.css?v=1.5.0">
+<link rel="stylesheet" href="css/core/base.css?v=2.0.0">
+<link rel="stylesheet" href="css/layout/topbar.css?v=2.0.0">
+<link rel="stylesheet" href="css/layout/sidebar.css?v=2.0.0">
+<link rel="stylesheet" href="css/layout/content.css?v=2.0.0">
+<link rel="stylesheet" href="css/components/workflow.css?v=2.0.0">
+<link rel="stylesheet" href="css/components/modules.css?v=2.0.0">
+<link rel="stylesheet" href="css/components/development.css?v=2.0.0">
+<link rel="stylesheet" href="css/layout/responsive.css?v=2.0.0">
 <link rel="icon" href="web_assets/media/favicon.ico" sizes="any">
 <link rel="shortcut icon" href="web_assets/media/favicon.ico" type="image/x-icon">
 </head>
 <body data-page="modes.html" data-default-section="console">
 <header id="topbar">
   <div id="topbar-logo-wrap"><img id="topbar-logo" src="web_assets/media/asrfacet-rb-web.png" alt="ASRFacet-Rb"><span id="topbar-name">ASRFacet-Rb</span></div>
-  <span id="topbar-version">v1.5.0 | Modes and Examples</span>
+  <span id="topbar-version">v2.0.0 | Modes and Examples</span>
   <div id="topbar-links">
     <a href="index.html">Home</a>
     <a href="cli-reference.html#commands">CLI</a>
@@ -61,7 +61,7 @@
 <nav id="sidebar" aria-label="Documentation navigation">
   <div class="sidebar-panel-head">
     <div class="sidebar-kicker">Modes</div>
-    <p class="sidebar-note">Console, browser control panel, wizard flow, lab mode, and example operator paths.</p>
+    <p class="sidebar-note">Console, browser control panel, wizard flow, deploy mode, lab mode, and example operator paths.</p>
   </div>
   <div id="sidebar-tabs" class="sidebar-tabs" role="tablist" aria-label="Documentation groups"></div>
   <div id="sidebar-nav"></div>
@@ -92,10 +92,10 @@
     <div class="page-hero">
       <div class="page-eyebrow">Modes</div>
       <div class="page-title">Web Session Mode</div>
-      <div class="page-desc">A local browser control panel for session-driven work, saved state, richer navigation, and report browsing.</div>
+      <div class="page-desc">A local browser control panel for session-driven work, saved state, richer navigation, command previews, and report browsing.</div>
     </div>
     <div class="prose">
-      <p>Use web session mode when you want a fuller interface, need saved sessions, or prefer a panel layout over a terminal prompt for longer runs.</p>
+      <p>Use web session mode when you want a fuller interface, need saved sessions, want command previews, or prefer a panel layout over a terminal prompt for longer runs.</p>
     </div>
     <div class="code-wrap">
       <div class="code-header"><div class="code-dot"></div><div class="code-dot"></div><div class="code-dot"></div><span class="code-lang">shell</span></div>
@@ -117,7 +117,22 @@
       <div class="page-desc">A guided path for new operators or anyone who wants safer prompts before kicking off a scan.</div>
     </div>
     <div class="prose">
-      <p>The wizard is useful when you know the target and the goal but do not want to memorize every flag combination. It trades a little speed for clarity and guardrails.</p>
+      <p>The wizard is console-only and useful when you know the target and the goal but do not want to memorize every flag combination. It trades a little speed for clarity and guardrails, then shows you the exact command it plans to run.</p>
+    </div>
+  </section>
+
+  <section id="deploy" class="page-section active">
+    <div class="page-hero">
+      <div class="page-eyebrow">Modes</div>
+      <div class="page-title">Deploy Mode</div>
+      <div class="page-desc">Bring up the web control panel and local validation lab together, wait for readiness, and print the exact URLs and health endpoints to use.</div>
+    </div>
+    <div class="code-wrap">
+      <div class="code-header"><div class="code-dot"></div><div class="code-dot"></div><div class="code-dot"></div><span class="code-lang">shell</span></div>
+      <div class="code-body">
+<span class="pn">$</span> asrfacet-rb <span class="kw">deploy</span>
+<span class="pn">$</span> asrfacet-rb <span class="kw">deploy</span> <span class="fl">--public</span> <span class="fl">--web-port</span> 8080 <span class="fl">--lab-port</span> 9393
+      </div>
     </div>
   </section>
 
@@ -147,7 +162,7 @@
       <div class="example-body">
         <div class="example-desc">Start passive, inspect the target, then escalate only when the scope and value are clear.</div>
         <div class="example-code"><span class="pn">$</span> asrfacet-rb <span class="kw">passive</span> <span class="ar">example.com</span>
-<span class="pn">$</span> asrfacet-rb <span class="kw">scan</span> <span class="ar">example.com</span> <span class="fl">--monitor</span></div>
+<span class="pn">$</span> asrfacet-rb <span class="kw">scan</span> <span class="ar">example.com</span> <span class="fl">--monitor</span> <span class="fl">--memory</span></div>
       </div>
     </div>
 
@@ -160,28 +175,38 @@
 <span class="pn">$</span> asrfacet-rb <span class="kw">manual</span> <span class="ar">workflow</span></div>
       </div>
     </div>
+
+    <div class="example-block">
+      <div class="example-header"><div class="example-title">Scanner Control</div><span class="example-tag">Raw Packets</span></div>
+      <div class="example-body">
+        <div class="example-desc">Use the dedicated scanner surface when you need timing templates, service detection, or raw-style scan semantics.</div>
+        <div class="example-code"><span class="pn">$</span> asrfacet-rb <span class="kw">portscan</span> <span class="ar">192.0.2.10</span> <span class="fl">--type</span> service <span class="fl">--version</span>
+<span class="pn">$</span> asrfacet-rb <span class="kw">portscan</span> <span class="ar">192.0.2.10</span> <span class="fl">--type</span> xmas <span class="fl">--raw-backend</span> nping <span class="fl">--sudo</span></div>
+      </div>
+    </div>
   </section>
 </main>
 
 <footer id="site-footer">
-  <div><div class="footer-col-title">Modes</div><span class="footer-copy">Console, browser, wizard, lab</span></div>
+  <div><div class="footer-col-title">Modes</div><span class="footer-copy">Console, browser, wizard, lab, deploy</span></div>
   <div><div class="footer-col-title">CLI</div><a class="footer-link" href="cli-reference.html#commands">Commands</a><a class="footer-link" href="cli-reference.html#flags">Flags</a></div>
   <div><div class="footer-col-title">Reports</div><a class="footer-link" href="reporting.html#outputs">Outputs</a><a class="footer-link" href="reporting.html#testing">Testing</a></div>
   <div><div class="footer-col-title">Home</div><a class="footer-link" href="index.html">Overview</a><a class="footer-link" href="workflow.html#pipeline">Workflow</a></div>
 </footer>
 
-<script src="js/core/site-data.js?v=1.5.0"></script>
-<script src="js/core/helpers.js?v=1.5.0"></script>
-<script src="js/features/sidebar.js?v=1.5.0"></script>
-<script src="js/features/easter-eggs.js?v=1.5.0"></script>
-<script src="js/features/search.js?v=1.5.0"></script>
-<script src="js/features/contact-panel.js?v=1.5.0"></script>
-<script src="js/features/workflow-visual.js?v=1.5.0"></script>
-<script src="js/features/raw-popup.js?v=1.5.0"></script>
-<script src="js/features/development-feed.js?v=1.5.0"></script>
-<script src="js/bootstrap/app.js?v=1.5.0"></script>
+<script src="js/core/site-data.js?v=2.0.0"></script>
+<script src="js/core/helpers.js?v=2.0.0"></script>
+<script src="js/features/sidebar.js?v=2.0.0"></script>
+<script src="js/features/easter-eggs.js?v=2.0.0"></script>
+<script src="js/features/search.js?v=2.0.0"></script>
+<script src="js/features/contact-panel.js?v=2.0.0"></script>
+<script src="js/features/workflow-visual.js?v=2.0.0"></script>
+<script src="js/features/raw-popup.js?v=2.0.0"></script>
+<script src="js/features/development-feed.js?v=2.0.0"></script>
+<script src="js/bootstrap/app.js?v=2.0.0"></script>
 </body>
 </html>
+
 
 
 

@@ -19,21 +19,21 @@
 <meta name="twitter:image" content="https://raw.githubusercontent.com/voltsparx/ASRFacet-Rb/main/docs/website/web_assets/media/asrfacet-rb-site-preview.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@300;400;500;600;700&family=Orbitron:wght@400;600;700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/core/base.css?v=1.5.0">
-<link rel="stylesheet" href="css/layout/topbar.css?v=1.5.0">
-<link rel="stylesheet" href="css/layout/sidebar.css?v=1.5.0">
-<link rel="stylesheet" href="css/layout/content.css?v=1.5.0">
-<link rel="stylesheet" href="css/components/workflow.css?v=1.5.0">
-<link rel="stylesheet" href="css/components/modules.css?v=1.5.0">
-<link rel="stylesheet" href="css/components/development.css?v=1.5.0">
-<link rel="stylesheet" href="css/layout/responsive.css?v=1.5.0">
+<link rel="stylesheet" href="css/core/base.css?v=2.0.0">
+<link rel="stylesheet" href="css/layout/topbar.css?v=2.0.0">
+<link rel="stylesheet" href="css/layout/sidebar.css?v=2.0.0">
+<link rel="stylesheet" href="css/layout/content.css?v=2.0.0">
+<link rel="stylesheet" href="css/components/workflow.css?v=2.0.0">
+<link rel="stylesheet" href="css/components/modules.css?v=2.0.0">
+<link rel="stylesheet" href="css/components/development.css?v=2.0.0">
+<link rel="stylesheet" href="css/layout/responsive.css?v=2.0.0">
 <link rel="icon" href="web_assets/media/favicon.ico" sizes="any">
 <link rel="shortcut icon" href="web_assets/media/favicon.ico" type="image/x-icon">
 </head>
 <body data-page="reporting.html" data-default-section="outputs">
 <header id="topbar">
   <div id="topbar-logo-wrap"><img id="topbar-logo" src="web_assets/media/asrfacet-rb-web.png" alt="ASRFacet-Rb"><span id="topbar-name">ASRFacet-Rb</span></div>
-  <span id="topbar-version">v1.5.0 | Reporting</span>
+  <span id="topbar-version">v2.0.0 | Reporting</span>
   <div id="topbar-links">
     <a href="index.html">Home</a>
     <a href="cli-reference.html#flags">CLI</a>
@@ -72,14 +72,18 @@
     <div class="page-hero">
       <div class="page-eyebrow">Reporting</div>
       <div class="page-title">Output Formats</div>
-      <div class="page-desc">Each output type serves a different audience: live operator work, shareable narrative reports, or downstream automation.</div>
+      <div class="page-desc">Each output type serves a different audience: live operator work, shareable narrative reports, packaged evidence, or downstream automation.</div>
     </div>
 
     <div class="fmt-grid">
       <div class="fmt-card"><div class="fmt-name">CLI</div><div class="fmt-best">Best for live feedback</div><div class="fmt-includes">Readable operator output, findings, and top assets during a run.</div></div>
       <div class="fmt-card"><div class="fmt-name">TXT</div><div class="fmt-best">Best for plain sharing</div><div class="fmt-includes">Human-readable offline notes and straightforward report exports.</div></div>
-      <div class="fmt-card"><div class="fmt-name">HTML</div><div class="fmt-best">Best for reports</div><div class="fmt-includes">Tables, richer summaries, explanatory blocks, and visual report sections.</div></div>
-      <div class="fmt-card"><div class="fmt-name">JSON</div><div class="fmt-best">Best for tooling</div><div class="fmt-includes">Structured data for automation and downstream processing.</div></div>
+      <div class="fmt-card"><div class="fmt-name">HTML</div><div class="fmt-best">Best for visual review</div><div class="fmt-includes">Dark-theme report pages, charts, summaries, and full tables in one file.</div></div>
+      <div class="fmt-card"><div class="fmt-name">JSON</div><div class="fmt-best">Best for tooling</div><div class="fmt-includes">Structured data for automation, API handoff, and downstream processing.</div></div>
+      <div class="fmt-card"><div class="fmt-name">CSV</div><div class="fmt-best">Best for spreadsheet work</div><div class="fmt-includes">Split exports for subdomains, IPs, ports, findings, and JavaScript endpoints.</div></div>
+      <div class="fmt-card"><div class="fmt-name">PDF</div><div class="fmt-best">Best for packaged evidence</div><div class="fmt-includes">Multi-page dark-theme summary reports through the Ruby or Node renderer path.</div></div>
+      <div class="fmt-card"><div class="fmt-name">DOCX</div><div class="fmt-best">Best for narrative editing</div><div class="fmt-includes">Editable document output for downstream review, markup, and handoff.</div></div>
+      <div class="fmt-card"><div class="fmt-name">SARIF / ALL</div><div class="fmt-best">Best for pipelines</div><div class="fmt-includes">Security-tool interchange output plus one-shot generation of the full report bundle.</div></div>
     </div>
   </section>
 
@@ -189,7 +193,7 @@ Use the HTML report for richer offline triage and JSON for automation.</div>
     <div class="page-hero">
       <div class="page-eyebrow">Reporting</div>
       <div class="page-title">Testing</div>
-      <div class="page-desc">The Rake-based verification flow is the main release gate. The current verified state is 53 examples, 0 failures.</div>
+      <div class="page-desc">The Rake-based verification flow is the main release gate. The current verified state is 241 examples, 0 failures.</div>
     </div>
 
     <div class="code-wrap">
@@ -202,12 +206,13 @@ Use the HTML report for richer offline triage and JSON for automation.</div>
 <span class="pn">$</span> bundle exec rake <span class="kw">spec</span>
 <span class="pn">$</span> bundle exec rake <span class="kw">test:web</span>
 <span class="pn">$</span> bundle exec rake <span class="kw">test:install</span>
+<span class="pn">$</span> bundle exec rake <span class="kw">verify</span>
       </div>
     </div>
 
     <div class="callout callout-info">
       <div class="callout-title">Current Verified Run</div>
-      April 9, 2026 — <code>bundle exec rake</code> completed successfully with CLI, web-session, lab, installer, website-installer, and gem-build smoke checks.
+      April 27, 2026 - <code>bundle exec rake verify</code> completed successfully with full specs, CLI, web-session, lab, installer, website-installer, deploy, and gem-build checks.
     </div>
   </section>
 </main>
@@ -219,18 +224,19 @@ Use the HTML report for richer offline triage and JSON for automation.</div>
   <div><div class="footer-col-title">Home</div><a class="footer-link" href="index.html">Overview</a><a class="footer-link" href="project.html#author">Project</a></div>
 </footer>
 
-<script src="js/core/site-data.js?v=1.5.0"></script>
-<script src="js/core/helpers.js?v=1.5.0"></script>
-<script src="js/features/sidebar.js?v=1.5.0"></script>
-<script src="js/features/easter-eggs.js?v=1.5.0"></script>
-<script src="js/features/search.js?v=1.5.0"></script>
-<script src="js/features/contact-panel.js?v=1.5.0"></script>
-<script src="js/features/workflow-visual.js?v=1.5.0"></script>
-<script src="js/features/raw-popup.js?v=1.5.0"></script>
-<script src="js/features/development-feed.js?v=1.5.0"></script>
-<script src="js/bootstrap/app.js?v=1.5.0"></script>
+<script src="js/core/site-data.js?v=2.0.0"></script>
+<script src="js/core/helpers.js?v=2.0.0"></script>
+<script src="js/features/sidebar.js?v=2.0.0"></script>
+<script src="js/features/easter-eggs.js?v=2.0.0"></script>
+<script src="js/features/search.js?v=2.0.0"></script>
+<script src="js/features/contact-panel.js?v=2.0.0"></script>
+<script src="js/features/workflow-visual.js?v=2.0.0"></script>
+<script src="js/features/raw-popup.js?v=2.0.0"></script>
+<script src="js/features/development-feed.js?v=2.0.0"></script>
+<script src="js/bootstrap/app.js?v=2.0.0"></script>
 </body>
 </html>
+
 
 
 

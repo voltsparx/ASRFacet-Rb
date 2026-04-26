@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -19,21 +19,21 @@
 <meta name="twitter:image" content="https://raw.githubusercontent.com/voltsparx/ASRFacet-Rb/main/docs/website/web_assets/media/asrfacet-rb-site-preview.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@300;400;500;600;700&family=Orbitron:wght@400;600;700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/core/base.css?v=1.5.0">
-<link rel="stylesheet" href="css/layout/topbar.css?v=1.5.0">
-<link rel="stylesheet" href="css/layout/sidebar.css?v=1.5.0">
-<link rel="stylesheet" href="css/layout/content.css?v=1.5.0">
-<link rel="stylesheet" href="css/components/workflow.css?v=1.5.0">
-<link rel="stylesheet" href="css/components/modules.css?v=1.5.0">
-<link rel="stylesheet" href="css/components/development.css?v=1.5.0">
-<link rel="stylesheet" href="css/layout/responsive.css?v=1.5.0">
+<link rel="stylesheet" href="css/core/base.css?v=2.0.0">
+<link rel="stylesheet" href="css/layout/topbar.css?v=2.0.0">
+<link rel="stylesheet" href="css/layout/sidebar.css?v=2.0.0">
+<link rel="stylesheet" href="css/layout/content.css?v=2.0.0">
+<link rel="stylesheet" href="css/components/workflow.css?v=2.0.0">
+<link rel="stylesheet" href="css/components/modules.css?v=2.0.0">
+<link rel="stylesheet" href="css/components/development.css?v=2.0.0">
+<link rel="stylesheet" href="css/layout/responsive.css?v=2.0.0">
 <link rel="icon" href="web_assets/media/favicon.ico" sizes="any">
 <link rel="shortcut icon" href="web_assets/media/favicon.ico" type="image/x-icon">
 </head>
 <body data-page="workflow.html" data-default-section="how">
 <header id="topbar">
   <div id="topbar-logo-wrap"><img id="topbar-logo" src="web_assets/media/asrfacet-rb-web.png" alt="ASRFacet-Rb"><span id="topbar-name">ASRFacet-Rb</span></div>
-  <span id="topbar-version">v1.5.0 | Workflow</span>
+  <span id="topbar-version">v2.0.0 | Workflow</span>
   <div id="topbar-links">
     <a href="index.html">Home</a>
     <a href="getting-started.html#quickstart">Start</a>
@@ -81,7 +81,7 @@
         <tbody>
           <tr><td>Passive Discovery</td><td>Collect known assets before touching the target</td><td>Certificate transparency, passive DNS, historical archive data</td></tr>
           <tr><td>Asset Validation</td><td>Confirm that discovered assets are real and in scope</td><td>DNS lookups, SAN pivots, scoped busting, resolution checks</td></tr>
-          <tr><td>Service Mapping</td><td>Identify exposed network services</td><td>Threaded TCP scanning and banner collection</td></tr>
+          <tr><td>Service Mapping</td><td>Identify exposed network services</td><td>Connect scans, raw-capable scanner modes, banner collection, and version detection</td></tr>
           <tr><td>Web Recon</td><td>Map HTTP exposure and application behavior</td><td>HTTP probing, crawling, JavaScript endpoint mining</td></tr>
           <tr><td>Monitoring</td><td>Highlight change over time</td><td>Recon memory, diffs, and change summaries</td></tr>
         </tbody>
@@ -109,12 +109,12 @@
     </div>
 
     <div class="pipeline">
-      <div class="pipe-step"><div class="pipe-left"><div class="pipe-circle">01</div><div class="pipe-connector"></div></div><div class="pipe-content"><div class="pipe-stage-name">Passive Runner</div><div class="pipe-stage-sub">Collects baseline hostnames from passive providers before active traffic starts.</div><div class="pipe-output">→ Output: subdomains, passive warnings</div></div></div>
-      <div class="pipe-step"><div class="pipe-left"><div class="pipe-circle">02</div><div class="pipe-connector"></div></div><div class="pipe-content"><div class="pipe-stage-name">DNS + Certificate Discovery</div><div class="pipe-stage-sub">Validates names and expands relationships through records and certificate SANs.</div><div class="pipe-output">→ Output: IPs, records, certificate edges</div></div></div>
-      <div class="pipe-step"><div class="pipe-left"><div class="pipe-circle">03</div><div class="pipe-connector"></div></div><div class="pipe-content"><div class="pipe-stage-name">Busting & Expansion</div><div class="pipe-stage-sub">Tests candidate hosts and grows the known asset set in a controlled way.</div><div class="pipe-output">→ Output: discovered hosts, candidates</div></div></div>
-      <div class="pipe-step"><div class="pipe-left"><div class="pipe-circle">04</div><div class="pipe-connector"></div></div><div class="pipe-content"><div class="pipe-stage-name">Port & Service Mapping</div><div class="pipe-stage-sub">Looks for reachable services on discovered IPs and collects basic banners.</div><div class="pipe-output">→ Output: open ports, services, banners</div></div></div>
-      <div class="pipe-step"><div class="pipe-left"><div class="pipe-circle">05</div><div class="pipe-connector"></div></div><div class="pipe-content"><div class="pipe-stage-name">HTTP + Crawl + JS</div><div class="pipe-stage-sub">Maps application exposure, follows links, and mines probable endpoints from JavaScript.</div><div class="pipe-output">→ Output: paths, links, forms, endpoints</div></div></div>
-      <div class="pipe-step"><div class="pipe-left"><div class="pipe-circle">06</div><div class="pipe-connector"></div></div><div class="pipe-content"><div class="pipe-stage-name">Correlation + Monitoring</div><div class="pipe-stage-sub">Scores assets, highlights likely findings, and compares the run against saved memory.</div><div class="pipe-output">→ Output: findings, deltas, top assets, reports</div></div></div>
+      <div class="pipe-step"><div class="pipe-left"><div class="pipe-circle">01</div><div class="pipe-connector"></div></div><div class="pipe-content"><div class="pipe-stage-name">Passive Runner</div><div class="pipe-stage-sub">Collects baseline hostnames from passive providers before active traffic starts.</div><div class="pipe-output">-> Output: subdomains, passive warnings</div></div></div>
+      <div class="pipe-step"><div class="pipe-left"><div class="pipe-circle">02</div><div class="pipe-connector"></div></div><div class="pipe-content"><div class="pipe-stage-name">DNS + Certificate Discovery</div><div class="pipe-stage-sub">Validates names and expands relationships through records and certificate SANs.</div><div class="pipe-output">-> Output: IPs, records, certificate edges</div></div></div>
+      <div class="pipe-step"><div class="pipe-left"><div class="pipe-circle">03</div><div class="pipe-connector"></div></div><div class="pipe-content"><div class="pipe-stage-name">Busting & Expansion</div><div class="pipe-stage-sub">Tests candidate hosts and grows the known asset set in a controlled way.</div><div class="pipe-output">-> Output: discovered hosts, candidates</div></div></div>
+      <div class="pipe-step"><div class="pipe-left"><div class="pipe-circle">04</div><div class="pipe-connector"></div></div><div class="pipe-content"><div class="pipe-stage-name">Port & Service Mapping</div><div class="pipe-stage-sub">Looks for reachable services on discovered IPs and collects banners, versions, and scanner states.</div><div class="pipe-output">-> Output: open ports, services, banners, versions</div></div></div>
+      <div class="pipe-step"><div class="pipe-left"><div class="pipe-circle">05</div><div class="pipe-connector"></div></div><div class="pipe-content"><div class="pipe-stage-name">HTTP + Crawl + JS</div><div class="pipe-stage-sub">Maps application exposure, follows links, and mines probable endpoints from JavaScript.</div><div class="pipe-output">-> Output: paths, links, forms, endpoints</div></div></div>
+      <div class="pipe-step"><div class="pipe-left"><div class="pipe-circle">06</div><div class="pipe-connector"></div></div><div class="pipe-content"><div class="pipe-stage-name">Correlation + Monitoring</div><div class="pipe-stage-sub">Scores assets, highlights likely findings, and compares the run against saved memory and workspaces.</div><div class="pipe-output">-> Output: findings, deltas, top assets, reports</div></div></div>
     </div>
   </section>
 
@@ -122,14 +122,14 @@
     <div class="page-hero">
       <div class="page-eyebrow">Workflow</div>
       <div class="page-title">Passive Sources</div>
-      <div class="page-desc">Passive mode is the safest first view of a target and a good habit even for experienced operators.</div>
+      <div class="page-desc">Passive mode is the safest first view of a target and a good habit even for experienced operators. The current framework ships seventeen passive sources across archive, passive DNS, code-search, and commercial-enrichment categories.</div>
     </div>
 
     <div class="src-grid">
-      <div class="src-card"><div class="src-name">crt.sh</div><div class="src-type">Certificate Transparency</div><span class="src-key free">No Key</span><div class="ov-desc" style="font-size:12px;color:var(--txt3);margin-top:8px">Great for SAN-derived hostnames</div></div>
-      <div class="src-card"><div class="src-name">Wayback</div><div class="src-type">Historical Archive</div><span class="src-key free">No Key</span><div class="ov-desc" style="font-size:12px;color:var(--txt3);margin-top:8px">Older hosts and archived URLs</div></div>
-      <div class="src-card"><div class="src-name">RapidDNS</div><div class="src-type">Passive DNS</div><span class="src-key free">No Key</span><div class="ov-desc" style="font-size:12px;color:var(--txt3);margin-top:8px">Simple hostname extraction</div></div>
-      <div class="src-card"><div class="src-name">Shodan</div><div class="src-type">Passive DNS</div><span class="src-key key">--shodan-key</span><div class="ov-desc" style="font-size:12px;color:var(--txt3);margin-top:8px">Optional enrichment when you have a key</div></div>
+      <div class="src-card"><div class="src-name">crt.sh / VirusTotal / SecurityTrails</div><div class="src-type">Certificate and passive DNS</div><span class="src-key key">Mixed</span><div class="ov-desc" style="font-size:12px;color:var(--txt3);margin-top:8px">Strong hostname discovery and SAN history.</div></div>
+      <div class="src-card"><div class="src-name">Wayback / CommonCrawl / URLScan</div><div class="src-type">Historical archive</div><span class="src-key free">No Key</span><div class="ov-desc" style="font-size:12px;color:var(--txt3);margin-top:8px">Older hosts, archived URLs, and long-tail exposure.</div></div>
+      <div class="src-card"><div class="src-name">RapidDNS / BufferOver / AlienVault</div><div class="src-type">Passive DNS</div><span class="src-key free">No Key</span><div class="ov-desc" style="font-size:12px;color:var(--txt3);margin-top:8px">Simple hostname extraction and corroboration.</div></div>
+      <div class="src-card"><div class="src-name">Shodan / Censys / WhoisXML / GitHub</div><div class="src-type">Commercial and code-search enrichment</div><span class="src-key key">Mixed</span><div class="ov-desc" style="font-size:12px;color:var(--txt3);margin-top:8px">Broader enrichment when you have credentials or need code search pivots.</div></div>
     </div>
   </section>
 
@@ -161,18 +161,19 @@
   <div><div class="footer-col-title">Home</div><a class="footer-link" href="index.html">Overview</a><a class="footer-link" href="reporting.html#outputs">Reports</a></div>
 </footer>
 
-<script src="js/core/site-data.js?v=1.5.0"></script>
-<script src="js/core/helpers.js?v=1.5.0"></script>
-<script src="js/features/sidebar.js?v=1.5.0"></script>
-<script src="js/features/easter-eggs.js?v=1.5.0"></script>
-<script src="js/features/search.js?v=1.5.0"></script>
-<script src="js/features/contact-panel.js?v=1.5.0"></script>
-<script src="js/features/workflow-visual.js?v=1.5.0"></script>
-<script src="js/features/raw-popup.js?v=1.5.0"></script>
-<script src="js/features/development-feed.js?v=1.5.0"></script>
-<script src="js/bootstrap/app.js?v=1.5.0"></script>
+<script src="js/core/site-data.js?v=2.0.0"></script>
+<script src="js/core/helpers.js?v=2.0.0"></script>
+<script src="js/features/sidebar.js?v=2.0.0"></script>
+<script src="js/features/easter-eggs.js?v=2.0.0"></script>
+<script src="js/features/search.js?v=2.0.0"></script>
+<script src="js/features/contact-panel.js?v=2.0.0"></script>
+<script src="js/features/workflow-visual.js?v=2.0.0"></script>
+<script src="js/features/raw-popup.js?v=2.0.0"></script>
+<script src="js/features/development-feed.js?v=2.0.0"></script>
+<script src="js/bootstrap/app.js?v=2.0.0"></script>
 </body>
 </html>
+
 
 
 

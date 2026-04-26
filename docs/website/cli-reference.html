@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -19,21 +19,21 @@
 <meta name="twitter:image" content="https://raw.githubusercontent.com/voltsparx/ASRFacet-Rb/main/docs/website/web_assets/media/asrfacet-rb-site-preview.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@300;400;500;600;700&family=Orbitron:wght@400;600;700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/core/base.css?v=1.5.0">
-<link rel="stylesheet" href="css/layout/topbar.css?v=1.5.0">
-<link rel="stylesheet" href="css/layout/sidebar.css?v=1.5.0">
-<link rel="stylesheet" href="css/layout/content.css?v=1.5.0">
-<link rel="stylesheet" href="css/components/workflow.css?v=1.5.0">
-<link rel="stylesheet" href="css/components/modules.css?v=1.5.0">
-<link rel="stylesheet" href="css/components/development.css?v=1.5.0">
-<link rel="stylesheet" href="css/layout/responsive.css?v=1.5.0">
+<link rel="stylesheet" href="css/core/base.css?v=2.0.0">
+<link rel="stylesheet" href="css/layout/topbar.css?v=2.0.0">
+<link rel="stylesheet" href="css/layout/sidebar.css?v=2.0.0">
+<link rel="stylesheet" href="css/layout/content.css?v=2.0.0">
+<link rel="stylesheet" href="css/components/workflow.css?v=2.0.0">
+<link rel="stylesheet" href="css/components/modules.css?v=2.0.0">
+<link rel="stylesheet" href="css/components/development.css?v=2.0.0">
+<link rel="stylesheet" href="css/layout/responsive.css?v=2.0.0">
 <link rel="icon" href="web_assets/media/favicon.ico" sizes="any">
 <link rel="shortcut icon" href="web_assets/media/favicon.ico" type="image/x-icon">
 </head>
 <body data-page="cli-reference.html" data-default-section="commands">
 <header id="topbar">
   <div id="topbar-logo-wrap"><img id="topbar-logo" src="web_assets/media/asrfacet-rb-web.png" alt="ASRFacet-Rb"><span id="topbar-name">ASRFacet-Rb</span></div>
-  <span id="topbar-version">v1.5.0 | CLI Reference</span>
+  <span id="topbar-version">v2.0.0 | CLI Reference</span>
   <div id="topbar-links">
     <a href="index.html">Home</a>
     <a href="workflow.html#pipeline">Workflow</a>
@@ -76,12 +76,15 @@
     </div>
 
     <div class="cmd-grid">
-      <div class="cmd-card"><div class="cmd-name">scan DOMAIN</div><div class="cmd-desc">Run the complete workflow from passive collection through findings and reports.</div></div>
-      <div class="cmd-card"><div class="cmd-name">passive DOMAIN</div><div class="cmd-desc">Use passive sources only for a lower-noise first pass.</div></div>
-      <div class="cmd-card"><div class="cmd-name">ports TARGET</div><div class="cmd-desc">Focus on service discovery without the whole web workflow.</div></div>
-      <div class="cmd-card"><div class="cmd-name">dns DOMAIN</div><div class="cmd-desc">Inspect naming and resolution data without broader probing.</div></div>
-      <div class="cmd-card"><div class="cmd-name">lab</div><div class="cmd-desc">Start the safe local practice target.</div></div>
-      <div class="cmd-card"><div class="cmd-name">about / explain / manual</div><div class="cmd-desc">Read framework guidance without leaving the terminal.</div></div>
+      <div class="cmd-card"><div class="cmd-name">scan DOMAIN</div><div class="cmd-desc">Run the complete reconnaissance workflow from passive collection through findings and stored report bundles.</div></div>
+      <div class="cmd-card"><div class="cmd-name">passive DOMAIN</div><div class="cmd-desc">Use passive sources only for a lower-noise first pass and save the result for later expansion.</div></div>
+      <div class="cmd-card"><div class="cmd-name">ports TARGET</div><div class="cmd-desc">Run a fast connect-style validation pass without invoking the entire workflow.</div></div>
+      <div class="cmd-card"><div class="cmd-name">portscan TARGET</div><div class="cmd-desc">Use the scanner engine directly with connect, syn, udp, ack, fin, null, xmas, window, maimon, ping, or service modes.</div></div>
+      <div class="cmd-card"><div class="cmd-name">dns DOMAIN</div><div class="cmd-desc">Inspect naming, wildcard behavior, and DNS resolution data without broader probing.</div></div>
+      <div class="cmd-card"><div class="cmd-name">workspace / track / viz / subs</div><div class="cmd-desc">Inspect stored workspaces, export graph views, compare changes over time, and list discovered subdomains.</div></div>
+      <div class="cmd-card"><div class="cmd-name">keys SUBCOMMAND</div><div class="cmd-desc">Store, retrieve, list, or delete encrypted API keys used by passive sources and enrichers.</div></div>
+      <div class="cmd-card"><div class="cmd-name">deploy / web / lab</div><div class="cmd-desc">Bring up the web control panel, local validation lab, or full local stack in one command.</div></div>
+      <div class="cmd-card"><div class="cmd-name">about / explain / manual</div><div class="cmd-desc">Read framework guidance without leaving the terminal or switching to the website.</div></div>
     </div>
   </section>
 
@@ -97,11 +100,13 @@
         <thead><tr><th>Flag</th><th>Meaning</th><th>Typical Use</th></tr></thead>
         <tbody>
           <tr><td><code>--threads N</code></td><td>Set worker concurrency</td><td>Control speed versus stability</td></tr>
-          <tr><td><code>--format cli|txt|html|json</code></td><td>Select the output style</td><td>Switch between operator, report, or automation views</td></tr>
+          <tr><td><code>--format cli|txt|html|json|csv|pdf|docx|sarif|all</code></td><td>Select the output style</td><td>Switch between operator, report, export, or automation views</td></tr>
           <tr><td><code>--output PATH</code></td><td>Write reports to a specific location</td><td>Save a named artifact</td></tr>
           <tr><td><code>--monitor</code></td><td>Compare the run against recon memory</td><td>Track change over time</td></tr>
           <tr><td><code>--headless</code></td><td>Use browser-backed rendering where available</td><td>Handle JS-heavy targets</td></tr>
           <tr><td><code>--web-session</code></td><td>Launch the local browser control panel</td><td>Operate through the web UI</td></tr>
+          <tr><td><code>--raw-backend auto|nping|builtin</code></td><td>Choose the raw TCP backend for raw-style scans</td><td>Use <code>nping</code> when SYN, FIN, NULL, or XMAS behavior matters</td></tr>
+          <tr><td><code>--sudo</code></td><td>Attempt elevation for raw-style scan types</td><td>Let the CLI relaunch itself when raw packet access is required</td></tr>
         </tbody>
       </table>
     </div>
@@ -124,13 +129,16 @@
 <span class="pn">$</span> asrfacet-rb <span class="kw">scan</span> <span class="ar">example.com</span> <span class="fl">--format</span> html
 <span class="pn">$</span> asrfacet-rb <span class="kw">passive</span> <span class="ar">example.com</span> <span class="fl">--threads</span> 12
 <span class="pn">$</span> asrfacet-rb <span class="kw">ports</span> <span class="ar">api.example.com</span> <span class="fl">--ports</span> top100
+<span class="pn">$</span> asrfacet-rb <span class="kw">portscan</span> <span class="ar">192.0.2.10</span> <span class="fl">--type</span> syn <span class="fl">--raw-backend</span> nping <span class="fl">--sudo</span>
+<span class="pn">$</span> asrfacet-rb <span class="kw">workspace</span> <span class="ar">list</span>
+<span class="pn">$</span> asrfacet-rb <span class="kw">deploy</span> <span class="fl">--public</span> <span class="fl">--web-port</span> 8080
 <span class="pn">$</span> asrfacet-rb <span class="kw">manual</span> <span class="ar">workflow</span>
       </div>
     </div>
 
     <div class="callout callout-info">
       <div class="callout-title">Operator Habit</div>
-      When you are unsure, start with <code>passive</code> or <code>lab</code> before escalating to <code>scan</code>.
+      When you are unsure, start with <code>passive</code> or <code>lab</code> before escalating to <code>scan</code>, and use <code>portscan</code> only when you need scanner-style control.
     </div>
   </section>
 </main>
@@ -142,18 +150,19 @@
   <div><div class="footer-col-title">Home</div><a class="footer-link" href="index.html">Overview</a><a class="footer-link" href="getting-started.html#quickstart">Quick Start</a></div>
 </footer>
 
-<script src="js/core/site-data.js?v=1.5.0"></script>
-<script src="js/core/helpers.js?v=1.5.0"></script>
-<script src="js/features/sidebar.js?v=1.5.0"></script>
-<script src="js/features/easter-eggs.js?v=1.5.0"></script>
-<script src="js/features/search.js?v=1.5.0"></script>
-<script src="js/features/contact-panel.js?v=1.5.0"></script>
-<script src="js/features/workflow-visual.js?v=1.5.0"></script>
-<script src="js/features/raw-popup.js?v=1.5.0"></script>
-<script src="js/features/development-feed.js?v=1.5.0"></script>
-<script src="js/bootstrap/app.js?v=1.5.0"></script>
+<script src="js/core/site-data.js?v=2.0.0"></script>
+<script src="js/core/helpers.js?v=2.0.0"></script>
+<script src="js/features/sidebar.js?v=2.0.0"></script>
+<script src="js/features/easter-eggs.js?v=2.0.0"></script>
+<script src="js/features/search.js?v=2.0.0"></script>
+<script src="js/features/contact-panel.js?v=2.0.0"></script>
+<script src="js/features/workflow-visual.js?v=2.0.0"></script>
+<script src="js/features/raw-popup.js?v=2.0.0"></script>
+<script src="js/features/development-feed.js?v=2.0.0"></script>
+<script src="js/bootstrap/app.js?v=2.0.0"></script>
 </body>
 </html>
+
 
 
 

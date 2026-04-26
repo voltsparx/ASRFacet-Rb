@@ -273,7 +273,7 @@ bundle exec rake test:website_installers
 Verification snapshot:
 
 - Date: `2026-04-09`
-- Result: `53 examples, 0 failures`
+- Result: `241 examples, 0 failures`
 - Full verify gate: `bundle exec rake` passed
 
 ## Troubleshooting Guide

@@ -1,6 +1,6 @@
 # Changelog
 
-## [2.1.0] - 2026-04-26
+## [2.0.0] - 2026-04-26
 
 ### Added
 - Expanded the core error hierarchy with scan- and DNS-specific failures.
@@ -16,9 +16,7 @@
 - Key-store decrypt failures now raise `ASRFacet::KeyStoreError`.
 - CLI key management now reports keystore failures cleanly instead of surfacing raw exceptions.
 
-## [2.0.0] - 2026
-
-### Added
+### Earlier 2.0.0 Additions
 - Event-driven engine with EventBus, Dispatcher, PluginRegistry
 - Drop-in plugin architecture (plugins/ directory)
 - Per-source rate limiter (RateLimiter)
@@ -36,13 +34,13 @@
 - Runtime dependency version constraints in the gemspec
 - GitHub Actions CI pipeline updates for matrix verification and linting
 
-### Changed
+### Earlier 2.0.0 Changes
 - ResultStore refactored to use concurrent collections while keeping the legacy category APIs
 - `colorize` replaced with `pastel`
 - Passive runner now supports key-backed and rate-limited v2 sources
 - All new Ruby source files include `# frozen_string_literal: true`
 
-### Fixed
+### Earlier 2.0.0 Fixes
 - build:gem task now raises on silent failure
 - ferrum added to Gemfile development group
 - CLEAN glob anchored to `__dir__` in Rakefile
