@@ -20,11 +20,16 @@ module ASRFacet
   module Scanner
     module Probes
       class TCPProber
-        def initialize(adapter: nil)
+        RAW_FLAG_MAP = %i[syn ack fin psh urg rst ecn cwr].freeze
+
+        def initialize(adapter: nil, raw_adapter: nil, platform: ASRFacet::Scanner::Platform)
           @adapter = adapter
+          @raw_adapter = raw_adapter
+          @platform = platform
         end
 
         def raw_socket_capable?
+          return @raw_adapter.raw_socket_capable? if @raw_adapter&.respond_to?(:raw_socket_capable?)
           return @adapter.raw_socket_capable? if @adapter&.respond_to?(:raw_socket_capable?)
 
           false
@@ -33,6 +38,9 @@ module ASRFacet
         end
 
         def send_probe(host:, port:, flags:, timeout:)
+          if use_raw_backend?(flags)
+            return @raw_adapter.call(host: host, port: port, flags: flags, timeout: timeout)
+          end
           return @adapter.call(host: host, port: port, flags: flags, timeout: timeout) if @adapter
 
           socket = Socket.tcp(host, port, connect_timeout: timeout)
@@ -54,6 +62,18 @@ module ASRFacet
           { ttl: 128, window: 8192, tcp_options: %i[mss nop window_scale], ip_id_sequence: [10, 11, 12], rst_behavior: :rst }
         rescue Errno::ETIMEDOUT, Errno::EHOSTUNREACH, Errno::ENETUNREACH, IOError, SystemCallError
           nil
+        end
+
+        private
+
+        def use_raw_backend?(flags)
+          return false unless @raw_adapter
+          return false unless raw_socket_capable?
+          return false unless @platform.elevated?
+
+          Array(flags).any? { |flag| RAW_FLAG_MAP.include?(flag.to_sym) }
+        rescue StandardError
+          false
         end
       end
     end

@@ -35,7 +35,7 @@ module ASRFacet
         service: ASRFacet::Scanner::ScanTypes::ServiceScan
       }.freeze
 
-      def initialize(scan_type:, timing:, verbosity:, version_detection:, os_detection:, version_intensity:, ports:, logger: nil, probe_db: ASRFacet::Scanner::ProbeDB.new, tcp_prober: ASRFacet::Scanner::Probes::TCPProber.new, udp_prober: ASRFacet::Scanner::Probes::UDPProber.new, icmp_prober: ASRFacet::Scanner::Probes::ICMPProber.new)
+      def initialize(scan_type:, timing:, verbosity:, version_detection:, os_detection:, version_intensity:, ports:, logger: nil, probe_db: ASRFacet::Scanner::ProbeDB.new, tcp_prober: nil, udp_prober: ASRFacet::Scanner::Probes::UDPProber.new, icmp_prober: ASRFacet::Scanner::Probes::ICMPProber.new, raw_backend: :auto)
         @scan_type = scan_type.to_sym
         @timing = timing.is_a?(ASRFacet::Scanner::Timing::Template) ? timing : ASRFacet::Scanner::Timing.get(timing)
         @verbosity = verbosity.to_i
@@ -44,6 +44,7 @@ module ASRFacet
         @ports = ports
         @logger = logger || ASRFacet::Scanner::VerboseLogger.new(level: @verbosity)
         @probe_db = probe_db
+        tcp_prober ||= default_tcp_prober(raw_backend)
         @version_detector = ASRFacet::Scanner::VersionDetector.new(probe_db: @probe_db, intensity: version_intensity)
         @fingerprint_engine = ASRFacet::Scanner::FingerprintEngine.new(tcp_prober: tcp_prober)
         @context = ASRFacet::Scanner::ScanContext.new(
@@ -83,6 +84,21 @@ module ASRFacet
       end
 
       private
+
+      def default_tcp_prober(raw_backend)
+        raw_adapter = build_raw_adapter(raw_backend)
+        ASRFacet::Scanner::Probes::TCPProber.new(raw_adapter: raw_adapter)
+      end
+
+      def build_raw_adapter(raw_backend)
+        backend = raw_backend.to_s.downcase
+        return nil if backend == "builtin" || backend == "none"
+        return ASRFacet::Scanner::Probes::NpingRawAdapter.new if %w[auto nping].include?(backend)
+
+        nil
+      rescue StandardError
+        nil
+      end
 
       def scan_host(target, port_list)
         host_result = ASRFacet::Scanner::Results::HostResult.new(host: target)

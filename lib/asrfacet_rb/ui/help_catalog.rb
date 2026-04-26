@@ -57,15 +57,18 @@ module ASRFacet
         },
         "portscan" => {
           summary: "Run the full scanner engine directly with explicit scan type, timing, and optional fingerprinting.",
-          usage: "asrfacet-rb portscan TARGET --type connect|syn|udp|ack|fin|null|xmas|window|maimon|ping|service [--timing 0-5] [--version] [--os]",
+          usage: "asrfacet-rb portscan TARGET --type connect|syn|udp|ack|fin|null|xmas|window|maimon|ping|service [--timing 0-5] [--version] [--os] [--raw-backend auto|nping|builtin] [--sudo]",
           details: [
             "Use this command when you want direct control over the scanner engine instead of the simpler `ports` wrapper.",
             "Timing templates mirror the scanner timing profiles and the command can also render PDF, DOCX, CSV, JSON, HTML, TXT, CLI, ALL, or SARIF output.",
-            "Raw-style scan types such as syn, ack, fin, null, xmas, window, and maimon need a raw-capable TCP backend and elevated privileges. The bundled backend remains connect-oriented, so sudo alone is not enough."
+            "Raw-style scan types such as syn, ack, fin, null, xmas, window, and maimon need a raw-capable TCP backend and elevated privileges.",
+            "ASRFacet-Rb can use Nping as the raw backend across Linux, macOS, and Windows. On Windows, this means Nping plus Npcap and an Administrator shell. On Linux or macOS, this means Nping and sudo or root.",
+            "Use `--sudo` to let the CLI relaunch itself with elevation when a raw scan needs it."
           ],
           examples: [
             "asrfacet-rb portscan 192.0.2.10 --type syn --timing 4 --ports 1-1024",
-            "asrfacet-rb portscan app.example.com --type service --version --intensity 9 --format json"
+            "asrfacet-rb portscan app.example.com --type service --version --intensity 9 --format json",
+            "asrfacet-rb portscan 192.0.2.10 --type xmas --raw-backend nping --sudo"
           ]
         },
         "dns" => {

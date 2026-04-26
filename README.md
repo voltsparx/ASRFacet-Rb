@@ -193,10 +193,19 @@ When to use: bring up the full local operator surface in one command with health
 `connect`, `udp`, and `service` scans work without raw-socket privileges.  
 Raw-style TCP modes such as `syn`, `ack`, `fin`, `null`, `xmas`, `window`, and `maimon` need both:
 
-- elevated privileges such as `sudo`
-- a real raw-capable TCP probe backend
+- elevated privileges such as `sudo` or an Administrator shell
+- a real raw-capable TCP probe backend such as `nping`
 
-The current bundled scanner backend is still connect-oriented for TCP probes, so `sudo` alone does not make those raw modes equivalent to Nmap.
+ASRFacet-Rb now supports `nping` as the raw TCP backend across Linux, macOS, and Windows.
+
+- Linux and macOS: install `nping`, then use `--raw-backend nping --sudo`
+- Windows: install `nping` with `Npcap`, then run from an elevated Administrator shell or use `--sudo` so the CLI can request elevation
+
+Example:
+
+```bash
+asrfacet-rb portscan 192.0.2.10 --type xmas --raw-backend nping --sudo
+```
 
 ## Output, Storage, and Reporting
 

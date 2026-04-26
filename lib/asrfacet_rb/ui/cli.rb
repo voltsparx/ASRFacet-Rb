@@ -192,6 +192,7 @@ module ASRFacet
       class << self
         def start(given_args = ARGV, config = {})
           args = Array(given_args).dup
+          Thread.current[:asrfacet_rb_original_args] = args.dup
           ASRFacet::UI::FirstRunGuide.maybe_print(args)
           explicit_command = args.first.to_s.match?(/\A[^-]/)
           if !explicit_command && (args.delete("--console") || args.delete("-C"))
@@ -292,8 +293,20 @@ module ASRFacet
       method_option :os, aliases: "-O", type: :boolean, default: false, desc: "Enable OS detection"
       method_option :verbosity, aliases: "-v", type: :numeric, default: 0, desc: "Verbose level (0-3)"
       method_option :intensity, type: :numeric, default: 7, desc: "Version intensity (0-9)"
+      method_option :raw_backend, type: :string, default: "auto", enum: %w[auto nping builtin], desc: "Raw TCP backend for raw-style scan types"
+      method_option :sudo, aliases: %w[-E --elevate], type: :boolean, default: false, desc: "Attempt sudo or Administrator relaunch for raw-style scan types"
       def portscan(target)
         return unless ensure_framework_ready!
+
+        tcp_prober = ASRFacet::Scanner::Probes::TCPProber.new(
+          raw_adapter: scanner_raw_adapter(options[:raw_backend])
+        )
+        return if ASRFacet::Scanner::Privilege.maybe_relaunch!(
+          scan_type: options[:type],
+          tcp_prober: tcp_prober,
+          argv: original_cli_args,
+          requested: options[:sudo]
+        )
 
         scan_result = ASRFacet::Scanner::ScanEngine.new(
           scan_type: options[:type],
@@ -302,7 +315,9 @@ module ASRFacet
           version_detection: options[:version],
           os_detection: options[:os],
           version_intensity: options[:intensity],
-          ports: options[:ports]
+          ports: options[:ports],
+          raw_backend: options[:raw_backend],
+          tcp_prober: tcp_prober
         ).scan(target)
         output_results(ASRFacet::Scanner::ResultAdapter.to_payload(scan_result, target: target), target)
       rescue ASRFacet::Error => e
@@ -494,6 +509,22 @@ module ASRFacet
 
       def workspace_manager
         @workspace_manager ||= ASRFacet::Intelligence::SessionManager.new
+      end
+
+      def original_cli_args
+        Array(Thread.current[:asrfacet_rb_original_args]).dup
+      rescue StandardError
+        []
+      end
+
+      def scanner_raw_adapter(raw_backend)
+        backend = raw_backend.to_s.downcase
+        return nil if backend == "builtin"
+        return ASRFacet::Scanner::Probes::NpingRawAdapter.new if %w[auto nping].include?(backend)
+
+        nil
+      rescue StandardError
+        nil
       end
 
       def load_asset_workspace(target)

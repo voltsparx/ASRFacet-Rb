@@ -178,7 +178,7 @@ RSpec.describe ASRFacet::Scanner::ScanEngine do
         udp_prober: udp_prober,
         icmp_prober: icmp_prober
       ).scan("example.com")
-    end.to raise_error(ASRFacet::ScanError, /sudo alone will not make xmas behave like a real raw scan/i)
+    end.to raise_error(ASRFacet::ScanError, /xmas scans need a raw-capable tcp prober backend such as nping/i)
   end
 
   it "runs a UDP scan through the scan engine with UDP semantics" do

@@ -212,6 +212,23 @@ RSpec.describe ASRFacet::UI::CLI do
       end
     end
 
+    it "hands raw scan types off to privilege relaunch when --sudo is requested" do
+      allow(ASRFacet::Scanner::Privilege).to receive(:maybe_relaunch!).and_return(true)
+      allow(ASRFacet::Scanner::ScanEngine).to receive(:new)
+
+      described_class.start([
+        "portscan", "example.com",
+        "--type", "xmas",
+        "--raw-backend", "nping",
+        "--sudo"
+      ])
+
+      expect(ASRFacet::Scanner::Privilege).to have_received(:maybe_relaunch!).with(
+        hash_including(scan_type: "xmas", requested: true, argv: include("portscan", "example.com", "--type", "xmas", "--raw-backend", "nping", "--sudo"))
+      )
+      expect(ASRFacet::Scanner::ScanEngine).not_to have_received(:new)
+    end
+
     it "prints fault-isolation and integrity notes from scan results" do
       store = ASRFacet::ResultStore.new
       store.add(:subdomains, "example.com")

@@ -44,6 +44,8 @@ $RuntimePayload = @(
   "config",
   "lib",
   "man",
+  "temp/nmap/nmap-service-probes",
+  "temp/nmap/nmap-services",
   "Gemfile",
   "Gemfile.lock",
   "README.md",
@@ -220,7 +222,16 @@ function Copy-Payload {
   foreach ($entry in $RuntimePayload) {
     $source = Join-Path $RepoRoot $entry
     if (Test-Path -LiteralPath $source) {
-      Copy-Item -LiteralPath $source -Destination $DestinationRoot -Recurse -Force
+      $entryParent = Split-Path -Parent $entry
+      $destination = if ([string]::IsNullOrWhiteSpace($entryParent)) {
+        $DestinationRoot
+      } else {
+        $targetDir = Join-Path $DestinationRoot $entryParent
+        New-Item -ItemType Directory -Path $targetDir -Force | Out-Null
+        $targetDir
+      }
+
+      Copy-Item -LiteralPath $source -Destination $destination -Recurse -Force
     }
   }
 

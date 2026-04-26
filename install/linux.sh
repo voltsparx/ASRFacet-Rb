@@ -40,6 +40,8 @@ RUNTIME_PAYLOAD=(
   "config"
   "lib"
   "man"
+  "temp/nmap/nmap-service-probes"
+  "temp/nmap/nmap-services"
   "Gemfile"
   "Gemfile.lock"
   "README.md"
@@ -120,7 +122,17 @@ copy_payload() {
   run_cmd mkdir -p "$destination_root"
   local entry
   for entry in "${RUNTIME_PAYLOAD[@]}"; do
-    [ -e "$REPO_ROOT/$entry" ] && run_cmd cp -R "$REPO_ROOT/$entry" "$destination_root/"
+    [ -e "$REPO_ROOT/$entry" ] || continue
+
+    local destination_dir="$destination_root"
+    local relative_dir
+    relative_dir="$(dirname "$entry")"
+    if [ "$relative_dir" != "." ]; then
+      destination_dir="$destination_root/$relative_dir"
+      run_cmd mkdir -p "$destination_dir"
+    fi
+
+    run_cmd cp -R "$REPO_ROOT/$entry" "$destination_dir/"
   done
 
   [ -d "$REPO_ROOT/wordlists" ] && run_cmd cp -R "$REPO_ROOT/wordlists" "$destination_root/"

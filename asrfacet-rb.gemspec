@@ -16,6 +16,11 @@ require_relative "lib/asrfacet_rb/version"
 require_relative "lib/asrfacet_rb/metadata"
 
 Gem::Specification.new do |spec|
+  generated_prefixes = %w[install/test-root/ output/ tmp/ vendor/].freeze
+  packaged_files = Dir.glob("{bin,config,docker,install,lib,man,spec,test,wordlists}/**/*").select do |path|
+    File.file?(path) && generated_prefixes.none? { |prefix| path.start_with?(prefix) }
+  end
+
   spec.name = "asrfacet-rb"
   spec.version = ASRFacet::VERSION
   spec.authors = [ASRFacet::Metadata::AUTHOR]
@@ -26,7 +31,16 @@ Gem::Specification.new do |spec|
   spec.license = "LicenseRef-Proprietary"
   spec.required_ruby_version = ">= 3.2"
 
-  spec.files = Dir.glob("{bin,config,docker,install,lib,man,spec,test,wordlists}/**/*").select { |path| File.file?(path) } + %w[Gemfile README.md LICENSE Rakefile Procfile .dockerignore]
+  spec.files = packaged_files + %w[
+    Gemfile
+    README.md
+    LICENSE
+    Rakefile
+    Procfile
+    .dockerignore
+    temp/nmap/nmap-service-probes
+    temp/nmap/nmap-services
+  ]
   spec.bindir = "bin"
   spec.executables = %w[asrfacet-rb asrfrb]
   spec.require_paths = ["lib"]
@@ -47,8 +61,9 @@ Gem::Specification.new do |spec|
   spec.add_runtime_dependency "webrick", ">= 1.7", "< 2"
   spec.add_runtime_dependency "concurrent-ruby", ">= 1.2", "< 2"
   spec.add_runtime_dependency "csv", ">= 3.2", "< 4"
-  spec.add_runtime_dependency "caracal", ">= 1.5", "< 2"
-  spec.add_runtime_dependency "hexapdf", ">= 0.36", "< 1"
+  spec.add_runtime_dependency "base64", ">= 0.3", "< 1"
+  spec.add_runtime_dependency "caracal", ">= 1.4", "< 2"
+  spec.add_runtime_dependency "hexapdf", ">= 0.24", "< 2"
   spec.add_development_dependency "rake"
   spec.add_development_dependency "rspec"
   spec.add_development_dependency "webmock"

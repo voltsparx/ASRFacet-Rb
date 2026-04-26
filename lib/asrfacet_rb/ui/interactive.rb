@@ -34,6 +34,8 @@ module ASRFacet
         version_detection = false
         os_detection = false
         intensity = 7
+        raw_backend = "auto"
+        elevate_raw_scan = false
         if %w[Full Ports Portscan].include?(mode)
           port_choice = @prompt.select("Port range:", ["Top100", "Top1000", "Custom"])
           port_range = port_choice == "Custom" ? @prompt.ask("Custom port range:") : port_choice.downcase
@@ -44,6 +46,10 @@ module ASRFacet
           version_detection = @prompt.yes?("Enable version detection?")
           os_detection = @prompt.yes?("Enable OS detection?")
           intensity = @prompt.select("Version intensity:", (0..9).to_a) if version_detection
+          if ASRFacet::Scanner::Privilege.raw_scan_type?(scan_type)
+            raw_backend = @prompt.select("Raw TCP backend:", %w[auto nping builtin])
+            elevate_raw_scan = @prompt.yes?("If privileges are missing, attempt sudo or Administrator relaunch?")
+          end
         end
         output_format = @prompt.select("Output format:", ["CLI", "JSON", "HTML", "TXT"]).downcase
         shodan_key = @prompt.yes?("Add a Shodan key?") ? @prompt.mask("Shodan API key:") : nil
@@ -67,7 +73,9 @@ module ASRFacet
           timing: timing,
           version_detection: version_detection,
           os_detection: os_detection,
-          intensity: intensity
+          intensity: intensity,
+          raw_backend: raw_backend,
+          elevate_raw_scan: elevate_raw_scan
         )
         render_output(result, output_format)
       rescue StandardError => e
@@ -77,7 +85,7 @@ module ASRFacet
 
       private
 
-      def run_with_spinners(target, mode, port_range, shodan_key, scan_type:, timing:, version_detection:, os_detection:, intensity:)
+      def run_with_spinners(target, mode, port_range, shodan_key, scan_type:, timing:, version_detection:, os_detection:, intensity:, raw_backend:, elevate_raw_scan:)
         case mode
         when "Full"
           dashboard = ASRFacet::ProgressDashboard.new
@@ -119,6 +127,28 @@ module ASRFacet
           ASRFacet::Scanner::ResultAdapter.to_payload(scan_result, target: target)
         when "Portscan"
           ASRFacet::Core::ThreadSafe.print_status("Running scanner engine")
+          tcp_prober = ASRFacet::Scanner::Probes::TCPProber.new(
+            raw_adapter: (%w[auto nping].include?(raw_backend.to_s) ? ASRFacet::Scanner::Probes::NpingRawAdapter.new : nil)
+          )
+          if elevate_raw_scan
+            argv = [
+              "portscan", target,
+              "--type", scan_type,
+              "--timing", timing.to_s,
+              "--ports", (port_range || "top100").to_s,
+              "--raw-backend", raw_backend.to_s,
+              "--sudo"
+            ]
+            argv << "--version" if version_detection
+            argv << "--os" if os_detection
+            argv.concat(["--intensity", intensity.to_s]) if version_detection
+            return nil if ASRFacet::Scanner::Privilege.maybe_relaunch!(
+              scan_type: scan_type,
+              tcp_prober: tcp_prober,
+              argv: argv,
+              requested: true
+            )
+          end
           scan_result = ASRFacet::Scanner::ScanEngine.new(
             scan_type: scan_type,
             timing: timing,
@@ -126,7 +156,9 @@ module ASRFacet
             version_detection: version_detection,
             os_detection: os_detection,
             version_intensity: intensity,
-            ports: port_range || "top100"
+            ports: port_range || "top100",
+            raw_backend: raw_backend,
+            tcp_prober: tcp_prober
           ).scan(target)
           ASRFacet::Core::ThreadSafe.print_good("Scanner engine complete")
           ASRFacet::Scanner::ResultAdapter.to_payload(scan_result, target: target)
@@ -147,6 +179,8 @@ module ASRFacet
       end
 
       def render_output(result, output_format)
+        return if result.nil?
+
         formatter = case output_format
                     when "json" then ASRFacet::Output::JsonFormatter.new
                     when "html" then ASRFacet::Output::HtmlFormatter.new
