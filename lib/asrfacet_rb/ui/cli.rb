@@ -13,6 +13,7 @@
 # and conditions defined in the LICENSE file.
 
 require "fileutils"
+require "json"
 require "thor"
 require "time"
 
@@ -81,6 +82,59 @@ module ASRFacet
       end
     end
 
+    class WorkspaceCLI < Thor
+      desc "list", "List stored workspaces"
+      def list
+        workspaces = workspace_manager.list
+        if workspaces.empty?
+          puts "[i] No workspaces found"
+          return
+        end
+
+        workspaces.each do |workspace|
+          puts "#{workspace[:target]} | #{workspace[:status]} | last_active=#{workspace[:last_active]}"
+        end
+      rescue ASRFacet::Error => e
+        ASRFacet::Core::ThreadSafe.print_error(e.message)
+      end
+
+      desc "show TARGET", "Show workspace session and graph metadata"
+      def show(target)
+        workspace = workspace_manager.load(target)
+        return puts("[!] Workspace not found: #{target}") if workspace.nil?
+
+        puts JSON.pretty_generate(workspace)
+      rescue ASRFacet::Error => e
+        ASRFacet::Core::ThreadSafe.print_error(e.message)
+      end
+
+      desc "delete TARGET", "Delete a workspace"
+      def delete(target)
+        if workspace_manager.delete(target)
+          puts "[ok] Workspace deleted: #{target}"
+        else
+          puts "[!] Workspace not found: #{target}"
+        end
+      rescue ASRFacet::Error => e
+        ASRFacet::Core::ThreadSafe.print_error(e.message)
+      end
+
+      desc "export TARGET", "Export a workspace as json or csv"
+      option :format, type: :string, default: "json", enum: %w[json csv], desc: "Export format"
+      def export(target)
+        path = workspace_manager.export(target, format: options[:format])
+        puts path
+      rescue ASRFacet::Error => e
+        ASRFacet::Core::ThreadSafe.print_error(e.message)
+      end
+
+      no_commands do
+        def workspace_manager
+          ASRFacet::Intelligence::SessionManager.new
+        end
+      end
+    end
+
     class CLI < Thor
       default_task :help
       map %w[s sc] => :scan
@@ -99,6 +153,8 @@ module ASRFacet
       subcommand "keys", KeysCLI
       desc "graph SUBCOMMAND", "Export the knowledge graph"
       subcommand "graph", GraphCLI
+      desc "workspace SUBCOMMAND", "Manage intelligence workspaces"
+      subcommand "workspace", WorkspaceCLI
 
       class_option :output, aliases: "-o", type: :string, desc: "Output file path"
       class_option :format, aliases: "-f", type: :string, default: "cli", enum: %w[cli json html txt csv pdf docx all sarif], desc: "Output format"
@@ -233,6 +289,49 @@ module ASRFacet
         report_exception("dns", e)
       end
 
+      desc "track TARGET", "Diff the current workspace graph against the latest exported snapshot on or before a date"
+      method_option :since, type: :string, desc: "Compare against the newest workspace export on or before this date"
+      def track(target)
+        workspace = load_asset_workspace(target)
+        return if workspace.nil?
+
+        current_graph = load_asset_graph(target)
+        previous_graph = graph_snapshot_for(target, options[:since])
+        diff = ASRFacet::Intelligence::Analysis::AssetDiffer.new.diff(previous_graph, current_graph)
+        puts JSON.pretty_generate(diff)
+      rescue ASRFacet::Error => e
+        report_exception("track", e)
+      end
+
+      desc "viz TARGET", "Render a workspace graph as dot, json, or mermaid"
+      method_option :format, aliases: "-f", type: :string, default: "json", enum: %w[dot json mermaid], desc: "Graph export format"
+      method_option :output, aliases: "-o", type: :string, desc: "Output file path"
+      def viz(target)
+        workspace = load_asset_workspace(target)
+        return if workspace.nil?
+
+        graph = load_asset_graph(target)
+        exporter = ASRFacet::Graph::Exporter.new(graph)
+        body = case options[:format].to_s
+               when "dot" then exporter.to_dot
+               when "mermaid" then exporter.to_mermaid
+               else exporter.to_json_graph
+               end
+        options[:output].to_s.empty? ? puts(body) : File.write(options[:output], body)
+      rescue ASRFacet::Error => e
+        report_exception("viz", e)
+      end
+
+      desc "subs TARGET", "List stored FQDN assets from a workspace"
+      def subs(target)
+        workspace = load_asset_workspace(target)
+        return if workspace.nil?
+
+        load_asset_graph(target).find_by_type(:fqdn).map(&:value).sort.each { |value| puts(value) }
+      rescue ASRFacet::Error => e
+        report_exception("subs", e)
+      end
+
       desc "lab", "Launch the local validation lab with safe placeholder templates"
       method_option :host, type: :string, default: "127.0.0.1", desc: "Bind host for the local lab"
       method_option :port, type: :numeric, default: 9292, desc: "Bind port for the local lab"
@@ -326,6 +425,56 @@ module ASRFacet
       end
 
       private
+
+      def workspace_manager
+        @workspace_manager ||= ASRFacet::Intelligence::SessionManager.new
+      end
+
+      def load_asset_workspace(target)
+        workspace = workspace_manager.load(target)
+        if workspace.nil?
+          ASRFacet::Core::ThreadSafe.print_warning("Workspace not found: #{target}")
+          return nil
+        end
+
+        workspace
+      rescue ASRFacet::Error => e
+        report_exception("workspace", e)
+        nil
+      end
+
+      def load_asset_graph(target)
+        ASRFacet::Intelligence::AssetGraph.new(target).load_from_disk
+      end
+
+      def graph_snapshot_for(target, since)
+        path = workspace_snapshot_path(target, since)
+        return { nodes: [], edges: [] } if path.nil?
+
+        payload = JSON.parse(File.read(path), symbolize_names: true)
+        payload[:graph] || { nodes: [], edges: [] }
+      rescue JSON::ParserError => e
+        raise ASRFacet::ParseError, "Unable to parse workspace export: #{e.message}"
+      rescue Errno::EACCES, Errno::ENOENT, IOError, SystemCallError => e
+        raise ASRFacet::Error, e.message
+      end
+
+      def workspace_snapshot_path(target, since)
+        workspace = workspace_manager.load(target)
+        return nil if workspace.nil?
+
+        since_time = since.to_s.strip.empty? ? nil : Time.parse(since.to_s)
+        candidates = Dir.glob(File.join(workspace[:workspace_path], "workspace_export_*.json"))
+        return nil if candidates.empty?
+
+        if since_time.nil?
+          candidates.max_by { |path| File.mtime(path) }
+        else
+          candidates.select { |path| File.mtime(path) <= since_time }.max_by { |path| File.mtime(path) }
+        end
+      rescue ArgumentError => e
+        raise ASRFacet::ParseError, "Invalid --since value: #{e.message}"
+      end
 
       def announce_stage(index, name, phase = :start, snapshot = {})
         return unless options[:verbose]

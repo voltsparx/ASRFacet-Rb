@@ -18,7 +18,7 @@ RSpec.describe ASRFacet::EventBus do
     bus = described_class.new(max_queue: 2)
     received = []
 
-    bus.subscribe(:subdomain) { |data| received << data[:host] }
+    bus.subscribe(:subdomain, priority: 20) { |data| received << data[:host] }
     bus.emit(:subdomain, { host: "app.example.com" })
 
     expect(bus.stats).to include(emitted: 1, dispatched: 0, queue_depth: 1, max_queue: 2)
@@ -35,5 +35,18 @@ RSpec.describe ASRFacet::EventBus do
     bus.emit(:subdomain, { host: "one.example.com" })
     expect(bus.emit(:subdomain, { host: "two.example.com" }, non_block: true)).to be_nil
     expect(bus.stats[:dropped]).to eq(1)
+  end
+
+  it "dispatches handlers in ascending priority order" do
+    bus = described_class.new
+    calls = []
+
+    bus.on(:subdomain, priority: 80) { |_payload| calls << :late }
+    bus.on(:subdomain, priority: 10) { |_payload| calls << :early }
+
+    bus.emit(:subdomain, { host: "app.example.com" }, dispatch_now: true)
+
+    expect(calls).to eq(%i[early late])
+    expect(bus.handler_count(:subdomain)).to eq(2)
   end
 end

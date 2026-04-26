@@ -34,7 +34,7 @@ module ASRFacet
         end
         lines << ""
         @graph.edges.each do |edge|
-          lines << "  \"#{edge[:from]}\" -> \"#{edge[:to]}\" [label=\"#{edge[:rel] || edge[:relation]}\"];"
+          lines << "  \"#{edge[:from] || edge[:from_id]}\" -> \"#{edge[:to] || edge[:to_id]}\" [label=\"#{edge[:rel] || edge[:relation] || edge[:type]}\"];"
         end
         lines << "}"
         lines.join("\n")
@@ -55,10 +55,12 @@ module ASRFacet
       def to_mermaid
         lines = ["graph LR"]
         @graph.edges.each do |edge|
-          from = mermaid_id(edge[:from])
-          to = mermaid_id(edge[:to])
-          rel = edge[:rel] || edge[:relation]
-          lines << "  #{from}[\"#{edge[:from]}\"] -->|#{rel}| #{to}[\"#{edge[:to]}\"]"
+          edge_from = edge[:from] || edge[:from_id]
+          edge_to = edge[:to] || edge[:to_id]
+          from = mermaid_id(edge_from)
+          to = mermaid_id(edge_to)
+          rel = edge[:rel] || edge[:relation] || edge[:type]
+          lines << "  #{from}[\"#{edge_from}\"] -->|#{rel}| #{to}[\"#{edge_to}\"]"
         end
         lines.join("\n")
       end
@@ -72,11 +74,18 @@ module ASRFacet
       def dot_color(type)
         {
           domain: "#AED6F1",
+          fqdn: "#A9DFBF",
           subdomain: "#A9DFBF",
           ip: "#FAD7A0",
+          ip_address: "#FAD7A0",
+          netblock: "#F5CBA7",
           port: "#F1948A",
           service: "#F1948A",
           asn: "#D7BDE2",
+          as_desc: "#D2B4DE",
+          certificate: "#F7DC6F",
+          technology: "#82E0AA",
+          email: "#AED6F1",
           finding: "#F9E79F"
         }.fetch(type&.to_sym, "#EAECEE")
       end

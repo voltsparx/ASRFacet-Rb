@@ -1,0 +1,138 @@
+{
+  "target": "lab.example.com",
+  "assets": [
+    {
+      "type": "domain",
+      "value": "lab.example.com",
+      "source": "fixture",
+      "properties": {
+        "confidence": 1.0
+      }
+    },
+    {
+      "type": "fqdn",
+      "value": "app.lab.example.com",
+      "source": "fixture",
+      "properties": {
+        "environment": "prod"
+      }
+    },
+    {
+      "type": "fqdn",
+      "value": "api.lab.example.com",
+      "source": "fixture",
+      "properties": {
+        "environment": "prod"
+      }
+    },
+    {
+      "type": "ip_address",
+      "value": "203.0.113.10",
+      "source": "fixture",
+      "properties": {
+        "asn": "AS13335"
+      }
+    },
+    {
+      "type": "ip_address",
+      "value": "203.0.113.11",
+      "source": "fixture",
+      "properties": {
+        "asn": "AS13335"
+      }
+    },
+    {
+      "type": "netblock",
+      "value": "203.0.113.0/24",
+      "source": "fixture",
+      "properties": {
+        "cidr": "203.0.113.0/24",
+        "owner": "Cloudflare"
+      }
+    },
+    {
+      "type": "asn",
+      "value": "AS13335",
+      "source": "fixture",
+      "properties": {
+        "organization": "Cloudflare"
+      }
+    },
+    {
+      "type": "certificate",
+      "value": "sha256:deadbeef",
+      "source": "fixture",
+      "properties": {
+        "sans": [
+          "app.lab.example.com",
+          "new.lab.example.com"
+        ]
+      }
+    },
+    {
+      "type": "email",
+      "value": "ops@lab.example.com",
+      "source": "fixture",
+      "properties": {}
+    },
+    {
+      "type": "technology",
+      "value": "nginx",
+      "source": "fixture",
+      "properties": {}
+    },
+    {
+      "type": "port",
+      "value": "443",
+      "source": "fixture",
+      "properties": {
+        "host": "203.0.113.10",
+        "critical": true
+      }
+    }
+  ],
+  "relations": [
+    {
+      "from": { "type": "fqdn", "value": "app.lab.example.com" },
+      "to": { "type": "domain", "value": "lab.example.com" },
+      "type": "subdomain_of",
+      "source": "fixture",
+      "properties": {}
+    },
+    {
+      "from": { "type": "fqdn", "value": "api.lab.example.com" },
+      "to": { "type": "domain", "value": "lab.example.com" },
+      "type": "subdomain_of",
+      "source": "fixture",
+      "properties": {}
+    },
+    {
+      "from": { "type": "fqdn", "value": "app.lab.example.com" },
+      "to": { "type": "ip_address", "value": "203.0.113.10" },
+      "type": "resolves_to",
+      "source": "fixture",
+      "properties": {}
+    },
+    {
+      "from": { "type": "fqdn", "value": "api.lab.example.com" },
+      "to": { "type": "ip_address", "value": "203.0.113.11" },
+      "type": "resolves_to",
+      "source": "fixture",
+      "properties": {}
+    },
+    {
+      "from": { "type": "fqdn", "value": "app.lab.example.com" },
+      "to": { "type": "certificate", "value": "sha256:deadbeef" },
+      "type": "has_certificate",
+      "source": "fixture",
+      "properties": {}
+    },
+    {
+      "from": { "type": "port", "value": "443" },
+      "to": { "type": "ip_address", "value": "203.0.113.10" },
+      "type": "port_of",
+      "source": "fixture",
+      "properties": {}
+    }
+  ]
+}

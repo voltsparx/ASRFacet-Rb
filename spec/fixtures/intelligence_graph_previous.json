@@ -1,0 +1,55 @@
+{
+  "target": "lab.example.com",
+  "assets": [
+    {
+      "type": "domain",
+      "value": "lab.example.com",
+      "source": "fixture",
+      "properties": {
+        "confidence": 1.0
+      }
+    },
+    {
+      "type": "fqdn",
+      "value": "app.lab.example.com",
+      "source": "fixture",
+      "properties": {
+        "environment": "staging"
+      }
+    },
+    {
+      "type": "ip_address",
+      "value": "203.0.113.10",
+      "source": "fixture",
+      "properties": {
+        "asn": "AS13335"
+      }
+    },
+    {
+      "type": "certificate",
+      "value": "sha256:deadbeef",
+      "source": "fixture",
+      "properties": {
+        "sans": [
+          "app.lab.example.com"
+        ]
+      }
+    }
+  ],
+  "relations": [
+    {
+      "from": { "type": "fqdn", "value": "app.lab.example.com" },
+      "to": { "type": "domain", "value": "lab.example.com" },
+      "type": "subdomain_of",
+      "source": "fixture",
+      "properties": {}
+    },
+    {
+      "from": { "type": "fqdn", "value": "app.lab.example.com" },
+      "to": { "type": "ip_address", "value": "203.0.113.10" },
+      "type": "resolves_to",
+      "source": "fixture",
+      "properties": {}
+    }
+  ]
+}
