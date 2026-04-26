@@ -44,6 +44,23 @@ module ASRFacet
       ROOT = File.expand_path("../../../temp/nmap", __dir__)
       SERVICES_PATH = File.join(ROOT, "nmap-services")
       PROBES_PATH = File.join(ROOT, "nmap-service-probes")
+      SERVICE_FAMILY_ALIASES = {
+        "null" => { probe_names: ["NULL"], services: [] },
+        "genericlines" => { probe_names: ["GenericLines"], services: [] },
+        "httpoptions" => { probe_names: ["HTTPOptions"], services: ["http"] },
+        "rtsprequest" => { probe_names: ["RTSPRequest"], services: ["rtsp"] },
+        "sslsessionreq" => { probe_names: ["SSLSessionReq"], services: ["ssl", "https"] },
+        "sshsessionreq" => { probe_names: [], services: ["ssh"] },
+        "smtprequest" => { probe_names: [], services: ["smtp"] },
+        "ftprequest" => { probe_names: [], services: ["ftp"] },
+        "mssqlquery" => { probe_names: ["Sqlping"], services: ["ms-sql-s"] },
+        "mysqlrequest" => { probe_names: [], services: ["mysql", "mysqlx"] },
+        "postgresrequest" => { probe_names: [], services: ["postgresql"] },
+        "redisrequest" => { probe_names: ["redis-server"], services: ["redis"] },
+        "mongodbrequest" => { probe_names: ["mongodb"], services: ["mongodb"] },
+        "dnsquery" => { probe_names: ["DNSVersionBindReq", "DNSVersionBindReqTCP", "DNSStatusRequest", "DNSStatusRequestTCP", "DNS-SD", "DNS-SD-TCP", "DNS_SD_QU"], services: ["domain", "mdns"] },
+        "sipoptions" => { probe_names: ["SIPOptions"], services: ["sip"] }
+      }.freeze
 
       class << self
         private
@@ -237,6 +254,31 @@ module ASRFacet
 
       def top_ports(count)
         TOP_PORTS.first(count.to_i)
+      end
+
+      def probes_for_service(service, proto: nil)
+        family = SERVICE_FAMILY_ALIASES.fetch(service.to_s.strip.downcase, {
+          probe_names: [service.to_s],
+          services: [service.to_s.downcase]
+        })
+        PROBES.select do |probe|
+          next false if proto && probe.proto != proto.to_sym
+
+          family[:probe_names].include?(probe.name) || service_match?(probe, family[:services])
+        end
+      end
+
+      def supports_service?(service, proto: nil)
+        !probes_for_service(service, proto: proto).empty?
+      end
+
+      private
+
+      def service_match?(probe, services)
+        return false if services.empty?
+
+        all_services = probe.matches.map { |entry| entry[:service] } + probe.softmatches.map { |entry| entry[:service] }
+        services.any? { |service| all_services.include?(service) }
       end
     end
   end

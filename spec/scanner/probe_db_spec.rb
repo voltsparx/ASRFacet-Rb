@@ -34,4 +34,17 @@ RSpec.describe ASRFacet::Scanner::ProbeDB do
   it "looks up a service name for a known TCP port" do
     expect(probe_db.service_for(22, :tcp)).to eq("ssh")
   end
+
+  it "supports the requested source-derived service families" do
+    expect(probe_db.supports_service?("SSHSessionReq", proto: :tcp)).to be(true)
+    expect(probe_db.supports_service?("SMTPRequest", proto: :tcp)).to be(true)
+    expect(probe_db.supports_service?("FTPRequest", proto: :tcp)).to be(true)
+    expect(probe_db.supports_service?("MSSQLQuery", proto: :udp)).to be(true)
+    expect(probe_db.supports_service?("MySQLRequest", proto: :tcp)).to be(true)
+    expect(probe_db.supports_service?("PostgresRequest", proto: :tcp)).to be(true)
+    expect(probe_db.supports_service?("RedisRequest", proto: :tcp)).to be(true)
+    expect(probe_db.supports_service?("MongoDBRequest", proto: :tcp)).to be(true)
+    expect(probe_db.supports_service?("DNSQuery")).to be(true)
+    expect(probe_db.supports_service?("SIPOptions")).to be(true)
+  end
 end
