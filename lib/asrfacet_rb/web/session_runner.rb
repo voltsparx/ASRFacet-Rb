@@ -286,10 +286,16 @@ module ASRFacet
         {
           target: target,
           generated_at: Time.now.utc.iso8601,
-          output_directory: output_root
+          output_directory: output_root,
+          report_engine: ASRFacet::Output::RuntimeDetector.engine_label
         }
       rescue StandardError
-        { target: target.to_s, generated_at: Time.now.utc.iso8601, output_directory: output_root }
+        {
+          target: target.to_s,
+          generated_at: Time.now.utc.iso8601,
+          output_directory: output_root,
+          report_engine: "ASRFacet-Rb"
+        }
       end
 
       def save_report_bundle(target, payload, requested_format:)

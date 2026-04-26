@@ -29,6 +29,8 @@ RSpec.describe ASRFacet::Web::Server do
     expect(html).to include("Scanner engine")
     expect(html).to include("Scan Type")
     expect(html).to include("Version Intensity (0-9)")
+    expect(html).to include("Select a node to see its linked assets")
+    expect(html).to include("report-summary")
   end
 
   it "exposes scanner and multi-format capabilities through bootstrap" do

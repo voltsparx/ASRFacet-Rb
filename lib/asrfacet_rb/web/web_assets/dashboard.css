@@ -876,6 +876,30 @@ body.theme-dark .graph-edge {
   font-size: 12px;
 }
 
+.graph-node {
+  cursor: pointer;
+}
+
+.graph-node circle,
+.graph-edge {
+  transition: opacity 0.18s ease, stroke-width 0.18s ease, transform 0.18s ease;
+}
+
+.graph-node.active circle {
+  stroke-width: 4;
+}
+
+.graph-node.dimmed circle,
+.graph-node.dimmed text,
+.graph-edge.dimmed {
+  opacity: 0.22;
+}
+
+.graph-node.connected circle,
+.graph-edge.connected {
+  opacity: 1;
+}
+
 .focus-card {
   display: grid;
   gap: 14px;
@@ -895,9 +919,22 @@ body.theme-dark .graph-edge {
   margin-top: 6px;
 }
 
+.focus-list {
+  margin: 10px 0 0;
+  padding-left: 18px;
+  color: var(--text-muted);
+}
+
 .report-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+
+.report-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin: 14px 0 18px;
 }
 
 .report-card {
