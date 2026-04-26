@@ -123,4 +123,84 @@ RSpec.describe ASRFacet::Scanner::ScanEngine do
 
     expect(result.host_results.first.up).to be(false)
   end
+
+  {
+    syn: { tcp_reply: { reply: :syn_ack, window: 0 }, expected_state: :open },
+    ack: { tcp_reply: { reply: :rst, window: 0 }, expected_state: :unfiltered },
+    fin: { tcp_reply: { reply: :timeout, window: 0 }, expected_state: :open_filtered },
+    null: { tcp_reply: { reply: :rst, window: 0 }, expected_state: :closed },
+    xmas: { tcp_reply: { reply: :timeout, window: 0 }, expected_state: :open_filtered },
+    window: { tcp_reply: { reply: :rst, window: 1024 }, expected_state: :open },
+    maimon: { tcp_reply: { reply: :timeout, window: 0 }, expected_state: :open_filtered }
+  }.each do |scan_type, config|
+    it "runs #{scan_type} through the scan engine with #{config[:expected_state]} semantics" do
+      typed_tcp_prober = instance_double(
+        ASRFacet::Scanner::Probes::TCPProber,
+        send_probe: config[:tcp_reply],
+        fingerprint: { ttl: 64, window: 29_200, tcp_options: %i[mss sack timestamp], ip_id_sequence: [1, 2, 3], rst_behavior: :rst }
+      )
+
+      result = described_class.new(
+        scan_type: scan_type,
+        timing: 3,
+        verbosity: 0,
+        version_detection: false,
+        os_detection: false,
+        version_intensity: 7,
+        ports: "80",
+        logger: logger,
+        probe_db: probe_db,
+        tcp_prober: typed_tcp_prober,
+        udp_prober: udp_prober,
+        icmp_prober: icmp_prober
+      ).scan("example.com")
+
+      expect(result.host_results.first.ports.first.state).to eq(config[:expected_state])
+    end
+  end
+
+  it "runs a UDP scan through the scan engine with UDP semantics" do
+    typed_udp_prober = instance_double(ASRFacet::Scanner::Probes::UDPProber, send_probe: { reply: :icmp_port_unreachable, data: nil })
+
+    result = described_class.new(
+      scan_type: :udp,
+      timing: 3,
+      verbosity: 0,
+      version_detection: false,
+      os_detection: false,
+      version_intensity: 7,
+      ports: "53",
+      logger: logger,
+      probe_db: probe_db,
+      tcp_prober: tcp_prober,
+      udp_prober: typed_udp_prober,
+      icmp_prober: icmp_prober
+    ).scan("example.com")
+
+    expect(result.host_results.first.ports.first.state).to eq(:closed)
+    expect(result.host_results.first.ports.first.proto).to eq(:udp)
+  end
+
+  it "runs a ping scan through the scan engine as host discovery" do
+    result = described_class.new(
+      scan_type: :ping,
+      timing: 3,
+      verbosity: 0,
+      version_detection: false,
+      os_detection: false,
+      version_intensity: 7,
+      ports: "80",
+      logger: logger,
+      probe_db: probe_db,
+      tcp_prober: tcp_prober,
+      udp_prober: udp_prober,
+      icmp_prober: icmp_prober
+    ).scan("example.com")
+
+    host = result.host_results.first
+    expect(host.up).to be(true)
+    expect(host.ports.first.port).to eq(0)
+    expect(host.ports.first.proto).to eq(:icmp)
+    expect(host.ports.first.state).to eq(:open)
+  end
 end
