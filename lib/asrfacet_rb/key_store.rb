@@ -12,7 +12,6 @@
 # This file is part of ASRFacet-Rb and is subject to the terms
 # and conditions defined in the LICENSE file.
 
-require "base64"
 require "digest"
 require "fileutils"
 require "json"

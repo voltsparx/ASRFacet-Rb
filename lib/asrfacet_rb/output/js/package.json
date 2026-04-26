@@ -1,0 +1,23 @@
+{
+  "name": "asrfacet-rb-output",
+  "version": "2.0.0",
+  "description": "JS output engine for ASRFacet-Rb",
+  "private": true,
+  "scripts": {
+    "test:docx": "node docx/docx_gen.js",
+    "test:pdf": "node pdf/pdf_gen.js"
+  },
+  "dependencies": {
+    "docx": "^8.5.0",
+    "@react-pdf/renderer": "^3.4.0",
+    "react": "^18.3.0",
+    "react-dom": "^18.3.0",
+    "chart.js": "^4.4.0",
+    "chartjs-node-canvas": "^4.1.6",
+    "canvas": "^2.11.2"
+  },
+  "devDependencies": {
+    "@babel/preset-react": "^7.26.3",
+    "@babel/register": "^7.25.9"
+  }
+}

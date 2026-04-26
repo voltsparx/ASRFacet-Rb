@@ -125,8 +125,18 @@ module ASRFacet
       all(:errors)
     end
 
+    def subdomains_with_sources
+      all(:subdomains_with_sources)
+    end
+
     def stats
-      hash = {}
+      hash = {
+        subdomains: subdomains.size,
+        ips: ips.size,
+        js_endpoints: js_endpoints.size,
+        findings: findings.size,
+        errors: errors.size
+      }
       @data.each_pair do |key, values|
         hash[key] = values.size
       end

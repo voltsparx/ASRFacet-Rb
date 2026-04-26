@@ -87,7 +87,7 @@ module ASRFacet
       subcommand "graph", GraphCLI
 
       class_option :output, aliases: "-o", type: :string, desc: "Output file path"
-      class_option :format, aliases: "-f", type: :string, default: "cli", enum: %w[cli json html txt sarif], desc: "Output format"
+      class_option :format, aliases: "-f", type: :string, default: "cli", enum: %w[cli json html txt csv pdf docx all sarif], desc: "Output format"
       class_option :verbose, aliases: "-v", type: :boolean, default: false, desc: "Verbose output"
       class_option :threads, aliases: "-t", type: :numeric, default: 100, desc: "Worker count"
       class_option :timeout, type: :numeric, default: 10, desc: "Network timeout"
@@ -415,33 +415,31 @@ module ASRFacet
       def output_results(result, domain)
         payload = normalize_payload(result)
         payload[:top_assets] = Array(payload[:top_assets]).first(top_limit)
+        payload[:charts] = ASRFacet::Output::ChartDataBuilder.new(payload[:store]).build
         payload[:meta] = report_metadata(domain, payload)
         payload[:artifacts] = build_artifact_manifest(domain, payload[:meta][:generated_at], payload)
         save_report_bundle(payload)
 
         render_to_screen(payload)
 
-        unless options[:output].to_s.empty?
-          formatter_for(formatter_key).save(payload, options[:output])
-          ASRFacet::Core::ThreadSafe.print_good("Saved requested #{formatter_key.upcase} report to #{options[:output]}")
-        end
+        render_requested_output(payload, domain)
 
         print_monitoring(payload, domain) if options[:monitor]
         print_artifact_summary(payload[:artifacts])
-      rescue StandardError => e
+      rescue ASRFacet::Error => e
         report_exception("output", e)
       end
 
       def render_to_screen(payload)
-        if formatter_key == "cli" || interactive_terminal?
+        if formatter_key == "cli" || router_format?(formatter_key) || formatter_key == "all" || interactive_terminal?
           puts(formatter_for("cli").format(payload))
-          if formatter_key != "cli"
+          if formatter_key != "cli" && !router_format?(formatter_key) && formatter_key != "all"
             ASRFacet::Core::ThreadSafe.print_status("Detailed #{formatter_key.upcase} output was written to the stored report bundle.")
           end
         else
           puts(formatter_for(formatter_key).format(payload))
         end
-      rescue StandardError => e
+      rescue ASRFacet::Error => e
         report_exception("rendering", e)
       end
 
@@ -517,9 +515,10 @@ module ASRFacet
           txt_report: File.join(report_dir, "report.txt"),
           html_report: File.join(report_dir, "report.html"),
           json_report: File.join(report_dir, "report.json"),
+          csv_report_base: File.join(report_dir, "report.csv"),
           stream_report: payload[:stream_path].to_s
         }
-      rescue StandardError
+      rescue ASRFacet::Error
         {}
       end
 
@@ -530,10 +529,15 @@ module ASRFacet
 
         FileUtils.mkdir_p(report_dir)
         formatter_for("cli").save(payload, artifacts[:cli_report])
-        formatter_for("txt").save(payload, artifacts[:txt_report])
-        formatter_for("html").save(payload, artifacts[:html_report])
-        formatter_for("json").save(payload, artifacts[:json_report])
-      rescue StandardError
+        router = ASRFacet::Output::OutputRouter.new(
+          payload[:store],
+          payload.dig(:meta, :target).to_s,
+          charts: payload[:charts] || {}
+        )
+        router.render("txt", artifacts[:txt_report])
+        router.render("html", artifacts[:html_report])
+        router.render("json", artifacts[:json_report])
+      rescue ASRFacet::Error
         nil
       end
 
@@ -547,7 +551,7 @@ module ASRFacet
         ASRFacet::Core::ThreadSafe.puts("  HTML: #{paths[:html_report]}") unless paths[:html_report].to_s.empty?
         ASRFacet::Core::ThreadSafe.puts("  JSON: #{paths[:json_report]}") unless paths[:json_report].to_s.empty?
         ASRFacet::Core::ThreadSafe.puts("  JSONL stream: #{paths[:stream_report]}") unless paths[:stream_report].to_s.empty?
-      rescue StandardError
+      rescue ASRFacet::Error
         nil
       end
 
@@ -560,8 +564,57 @@ module ASRFacet
       def safe_name(value)
         cleaned = value.to_s.downcase.gsub(/[^a-z0-9.\-_]+/, "_")
         cleaned.empty? ? "scan" : cleaned.tr(".", "_")
-      rescue StandardError
+      rescue ASRFacet::Error
         "scan"
+      end
+
+      def render_requested_output(payload, domain)
+        key = formatter_key
+        return if key == "cli"
+
+        if router_format?(key) || key == "all"
+          router = ASRFacet::Output::OutputRouter.new(
+            payload[:store],
+            domain,
+            charts: payload[:charts] || {}
+          )
+          ASRFacet::Core::ThreadSafe.print_status("Rendering report (#{router.engine_info})...")
+          if key == "all"
+            output_dir = options[:output].to_s.empty? ? requested_output_directory(domain) : options[:output]
+            router.render_all(output_dir)
+            ASRFacet::Core::ThreadSafe.print_good("Saved requested reports to #{output_dir}")
+          else
+            path = options[:output].to_s.empty? ? requested_output_path(domain, key) : options[:output]
+            router.render(key, path)
+            ASRFacet::Core::ThreadSafe.print_good("Saved requested #{key.upcase} report to #{path}")
+          end
+        elsif !options[:output].to_s.empty?
+          formatter_for(key).save(payload, options[:output])
+          ASRFacet::Core::ThreadSafe.print_good("Saved requested #{key.upcase} report to #{options[:output]}")
+        end
+      rescue ASRFacet::Error => e
+        report_exception("output_render", e)
+      end
+
+      def requested_output_directory(domain)
+        File.join(Dir.pwd, "reports", safe_name(domain))
+      rescue ASRFacet::Error
+        File.join(Dir.pwd, "reports", "scan")
+      end
+
+      def requested_output_path(domain, format)
+        base = requested_output_directory(domain)
+        format = format.to_s.downcase
+        extension = format == "csv" ? "csv" : format
+        "#{base}.#{extension}"
+      rescue ASRFacet::Error
+        File.join(Dir.pwd, "reports", "scan.#{format}")
+      end
+
+      def router_format?(key)
+        %w[txt html json csv pdf docx].include?(key.to_s.downcase)
+      rescue ASRFacet::Error
+        false
       end
 
       def update_dashboard(dashboard, index, _name, phase, snapshot)

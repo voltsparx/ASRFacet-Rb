@@ -11,7 +11,7 @@
 # This file is part of ASRFacet-Rb and is subject to the terms
 # and conditions defined in the LICENSE file.
 
-require "colorize"
+require "pastel"
 
 module ASRFacet
   module UI
@@ -28,11 +28,12 @@ module ASRFacet
       LEGAL_LINE = "Authorized testing only.".freeze
 
       def self.print
-        ASRFacet::Core::ThreadSafe.puts(BANNER.colorize(ASRFacet::Colors.terminal(:primary)))
-        ASRFacet::Core::ThreadSafe.puts(VERSION_LINE.colorize(ASRFacet::Colors.terminal(:violet)))
-        ASRFacet::Core::ThreadSafe.puts(TAGLINE.colorize(ASRFacet::Colors.terminal(:info)))
-        ASRFacet::Core::ThreadSafe.puts(LEGAL_LINE.colorize(ASRFacet::Colors.terminal(:warning)))
-      rescue StandardError
+        pastel = Pastel.new
+        ASRFacet::Core::ThreadSafe.puts(pastel.decorate(BANNER, ASRFacet::Colors.terminal(:primary)))
+        ASRFacet::Core::ThreadSafe.puts(pastel.decorate(VERSION_LINE, ASRFacet::Colors.terminal(:violet)))
+        ASRFacet::Core::ThreadSafe.puts(pastel.decorate(TAGLINE, ASRFacet::Colors.terminal(:info)))
+        ASRFacet::Core::ThreadSafe.puts(pastel.decorate(LEGAL_LINE, ASRFacet::Colors.terminal(:warning)))
+      rescue ASRFacet::Error
         nil
       end
     end
