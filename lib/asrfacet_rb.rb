@@ -1,4 +1,6 @@
 # frozen_string_literal: true
+# For use only on systems you own or have explicit
+# written authorization to test.
 # SPDX-License-Identifier: Proprietary
 #
 # ASRFacet-Rb: Attack Surface Reconnaissance Framework
@@ -90,6 +92,31 @@ require_relative "asrfacet_rb/intelligence/enrichment/http_enricher"
 require_relative "asrfacet_rb/intelligence/analysis/relationship_mapper"
 require_relative "asrfacet_rb/intelligence/analysis/attack_surface"
 require_relative "asrfacet_rb/intelligence/analysis/asset_differ"
+require_relative "asrfacet_rb/scanner/timing"
+require_relative "asrfacet_rb/scanner/results/port_result"
+require_relative "asrfacet_rb/scanner/results/host_result"
+require_relative "asrfacet_rb/scanner/results/scan_result"
+require_relative "asrfacet_rb/scanner/verbose_logger"
+require_relative "asrfacet_rb/scanner/probe_db"
+require_relative "asrfacet_rb/scanner/probes/tcp_prober"
+require_relative "asrfacet_rb/scanner/probes/udp_prober"
+require_relative "asrfacet_rb/scanner/probes/icmp_prober"
+require_relative "asrfacet_rb/scanner/version_detector"
+require_relative "asrfacet_rb/scanner/fingerprint_engine"
+require_relative "asrfacet_rb/scanner/scan_context"
+require_relative "asrfacet_rb/scanner/scan_types/base_scan"
+require_relative "asrfacet_rb/scanner/scan_types/connect_scan"
+require_relative "asrfacet_rb/scanner/scan_types/syn_scan"
+require_relative "asrfacet_rb/scanner/scan_types/udp_scan"
+require_relative "asrfacet_rb/scanner/scan_types/ack_scan"
+require_relative "asrfacet_rb/scanner/scan_types/fin_scan"
+require_relative "asrfacet_rb/scanner/scan_types/null_scan"
+require_relative "asrfacet_rb/scanner/scan_types/xmas_scan"
+require_relative "asrfacet_rb/scanner/scan_types/window_scan"
+require_relative "asrfacet_rb/scanner/scan_types/maimon_scan"
+require_relative "asrfacet_rb/scanner/scan_types/ping_scan"
+require_relative "asrfacet_rb/scanner/scan_types/service_scan"
+require_relative "asrfacet_rb/scanner/scan_engine"
 require_relative "asrfacet_rb/plugins/base"
 require_relative "asrfacet_rb/plugins/dns_enrich_plugin"
 require_relative "asrfacet_rb/passive/base_source"

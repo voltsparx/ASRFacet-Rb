@@ -1,4 +1,6 @@
 # frozen_string_literal: true
+# For use only on systems you own or have explicit
+# written authorization to test.
 # SPDX-License-Identifier: Proprietary
 #
 # ASRFacet-Rb: Attack Surface Reconnaissance Framework
@@ -265,6 +267,38 @@ module ASRFacet
         output_results({ store: store, top_assets: [], summary: store.summary }, host)
       rescue ASRFacet::Error => e
         report_exception("ports", e)
+      end
+
+      desc "portscan TARGET", "Run a Nmap-style connectivity and service scan"
+      method_option :type, aliases: "-sS", type: :string, default: "connect", enum: %w[connect syn udp ack fin null xmas window maimon ping service], desc: "Scan type"
+      method_option :timing, aliases: "-T", type: :numeric, default: 3, desc: "Timing template (0-5)"
+      method_option :ports, aliases: "-p", type: :string, default: "top100", desc: "Port preset or explicit spec"
+      method_option :version, aliases: "-sV", type: :boolean, default: false, desc: "Enable service version detection"
+      method_option :os, aliases: "-O", type: :boolean, default: false, desc: "Enable OS detection"
+      method_option :verbosity, aliases: "-v", type: :numeric, default: 0, desc: "Verbose level (0-3)"
+      method_option :intensity, type: :numeric, default: 7, desc: "Version intensity (0-9)"
+      def portscan(target)
+        return unless ensure_framework_ready!
+
+        engine = ASRFacet::Scanner::ScanEngine.new(
+          scan_type: options[:type],
+          timing: options[:timing],
+          verbosity: options[:verbosity],
+          version_detection: options[:version],
+          os_detection: options[:os],
+          version_intensity: options[:intensity],
+          ports: options[:ports]
+        )
+        result = engine.scan(target)
+        payload = JSON.pretty_generate(result.to_h)
+        if options[:output].to_s.empty?
+          puts(payload) if options[:format].to_s == "json"
+        else
+          File.write(options[:output], payload)
+          puts(options[:output])
+        end
+      rescue ASRFacet::Error => e
+        report_exception("portscan", e)
       end
 
       desc "dns DOMAIN", "Run DNS collection only"
