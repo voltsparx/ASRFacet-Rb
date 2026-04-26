@@ -14,6 +14,8 @@
 require "webmock/rspec"
 require_relative "../lib/asrfacet_rb"
 
+Dir[File.join(__dir__, "support", "**", "*.rb")].sort.each { |path| require path }
+
 WebMock.disable_net_connect!(allow_localhost: true)
 
 RSpec.configure do |config|

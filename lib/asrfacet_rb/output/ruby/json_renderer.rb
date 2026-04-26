@@ -14,39 +14,18 @@
 
 require "json"
 require_relative "../base_renderer"
-require_relative "../runtime_detector"
 
 module ASRFacet
   module Output
     module Ruby
       class JsonRenderer < BaseRenderer
         def render(output_path)
-          write!(output_path, JSON.pretty_generate(payload))
+          write!(output_path, JSON.pretty_generate(report_payload))
           log_success("JSON", output_path)
-        rescue StandardError => e
+        rescue ASRFacet::Error
+          raise
+        rescue JSON::GeneratorError, Errno::EACCES, Errno::ENOENT, IOError, SystemCallError => e
           raise ASRFacet::Error, "JSON render failed: #{e.message}"
-        end
-
-        private
-
-        def payload
-          {
-            meta: {
-              tool: "ASRFacet-Rb",
-              version: version,
-              target: @target,
-              generated: iso_timestamp,
-              engine: RuntimeDetector.engine_label
-            },
-            stats: @store.stats,
-            subdomains: @store.subdomains,
-            ips: @store.ips,
-            ports: @store.ports,
-            findings: sorted_findings,
-            js_endpoints: @store.js_endpoints,
-            errors: @store.errors,
-            charts: @options[:charts] || {}
-          }
         end
       end
     end

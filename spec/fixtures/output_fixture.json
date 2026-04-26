@@ -1,0 +1,53 @@
+{
+  "target": "lab.example.com",
+  "subdomains": [
+    "api.lab.example.com",
+    "admin.lab.example.com",
+    "cdn.lab.example.com"
+  ],
+  "subdomains_with_sources": [
+    { "host": "api.lab.example.com", "source": "crtsh" },
+    { "host": "admin.lab.example.com", "source": "securitytrails" },
+    { "host": "cdn.lab.example.com", "source": "urlscan" }
+  ],
+  "ips": [
+    "10.0.0.10",
+    "172.16.4.20",
+    "203.0.113.8"
+  ],
+  "ports": [
+    { "host": "10.0.0.10", "port": 443, "service": "https", "banner": "nginx" },
+    { "host": "203.0.113.8", "port": 80, "service": "http", "banner": "cloudflare" },
+    { "host": "203.0.113.8", "port": 22, "service": "ssh", "banner": "OpenSSH" }
+  ],
+  "findings": [
+    {
+      "title": "Public Admin Panel",
+      "severity": "high",
+      "asset": "admin.lab.example.com",
+      "description": "Administrative interface responds on the public network.",
+      "found_at": "2026-04-25T10:15:00Z"
+    },
+    {
+      "title": "Directory Listing",
+      "severity": "medium",
+      "asset": "cdn.lab.example.com",
+      "description": "Static asset bucket exposes directory indexes.",
+      "found_at": "2026-04-25T12:30:00Z"
+    },
+    {
+      "title": "Security Headers Missing",
+      "severity": "low",
+      "asset": "api.lab.example.com",
+      "description": "The API response omits CSP and HSTS headers.",
+      "found_at": "2026-04-26T09:05:00Z"
+    }
+  ],
+  "js_endpoints": [
+    { "endpoint": "https://api.lab.example.com/v1/users", "method": "GET", "source": "bundle.js" },
+    { "endpoint": "https://api.lab.example.com/v1/admin", "method": "POST", "source": "admin.js" }
+  ],
+  "errors": [
+    { "source": "wayback", "message": "request timeout", "time": "2026-04-26T08:50:00Z" }
+  ]
+}

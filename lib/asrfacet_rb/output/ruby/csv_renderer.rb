@@ -20,65 +20,39 @@ module ASRFacet
     module Ruby
       class CsvRenderer < BaseRenderer
         def render(output_path)
-          base = output_path.delete_suffix(".csv")
-          write_subdomains("#{base}_subdomains.csv")
-          write_ips("#{base}_ips.csv")
-          write_ports("#{base}_ports.csv")
-          write_findings("#{base}_findings.csv")
-          write_js_endpoints("#{base}_js_endpoints.csv")
-          log_success("CSV (5 files)", "#{base}_*.csv")
-        rescue StandardError => e
+          base = output_path.sub(/\.csv\z/i, "")
+          write_csv("#{base}_subdomains.csv", %w[host sources], subdomain_rows.map { |row| [row[:host], row[:sources].join("|")] })
+          write_csv("#{base}_ips.csv", %w[ip class ports], ip_rows.map { |row| [row[:ip], row[:class], row[:ports]] })
+          write_csv("#{base}_ports.csv", %w[host port service banner], port_rows.map { |row| [row[:host], row[:port], row[:service], row[:banner]] })
+          write_csv("#{base}_findings.csv", %w[title severity asset description], sorted_findings.map { |row| [row[:title], row[:severity], row[:asset] || row[:host], row[:description]] })
+          write_csv("#{base}_js_endpoints.csv", %w[endpoint method source], js_endpoint_rows.map { |row| [row[:endpoint], row[:method], row[:source]] })
+          log_success("CSV", "#{base}_*.csv")
+        rescue ASRFacet::Error
+          raise
+        rescue Errno::EACCES, Errno::ENOENT, IOError, SystemCallError => e
           raise ASRFacet::Error, "CSV render failed: #{e.message}"
         end
 
         private
 
-        def meta_rows
-          [["# ASRFacet-Rb Recon Report"], ["# Target", @target], ["# Generated", timestamp], ["# Version", version], []]
-        end
-
-        def write_subdomains(path)
-          CSV.open(path, "w") do |csv|
-            meta_rows.each { |row| csv << row }
-            csv << %w[index subdomain]
-            @store.subdomains.each_with_index { |subdomain, index| csv << [index + 1, subdomain] }
+        def write_csv(path, headers, rows)
+          FileUtils.mkdir_p(File.dirname(path))
+          CSV.open(path, "wb") do |csv|
+            metadata_rows.each { |row| csv << row }
+            csv << headers
+            rows.each { |row| csv << row }
           end
         end
 
-        def write_ips(path)
-          CSV.open(path, "w") do |csv|
-            meta_rows.each { |row| csv << row }
-            csv << %w[index ip]
-            @store.ips.each_with_index { |ip, index| csv << [index + 1, ip] }
-          end
-        end
-
-        def write_ports(path)
-          CSV.open(path, "w") do |csv|
-            meta_rows.each { |row| csv << row }
-            csv << %w[ip port service banner]
-            @store.ports.each do |ip, ports|
-              Array(ports).each { |port| csv << [ip, port[:port], port[:service], port[:banner]] }
-            end
-          end
-        end
-
-        def write_findings(path)
-          CSV.open(path, "w") do |csv|
-            meta_rows.each { |row| csv << row }
-            csv << %w[index title severity asset description]
-            sorted_findings.each_with_index do |finding, index|
-              csv << [index + 1, finding[:title], finding[:severity], finding[:asset] || finding[:host], finding[:description]]
-            end
-          end
-        end
-
-        def write_js_endpoints(path)
-          CSV.open(path, "w") do |csv|
-            meta_rows.each { |row| csv << row }
-            csv << %w[index endpoint]
-            @store.js_endpoints.each_with_index { |endpoint, index| csv << [index + 1, endpoint] }
-          end
+        def metadata_rows
+          [
+            ["# ASRFacet-Rb Recon Report"],
+            ["# Target", target],
+            ["# Generated", timestamp],
+            ["# Version", version],
+            ["# Engine", options[:engine_label].to_s],
+            []
+          ]
         end
       end
     end

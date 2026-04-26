@@ -12,47 +12,67 @@
 # This file is part of ASRFacet-Rb and is subject to the terms
 # and conditions defined in the LICENSE file.
 
+require "open3"
+
 module ASRFacet
   module Output
     module RuntimeDetector
-      def self.node_available?
-        @node_available ||= begin
-          out = `node --version 2>&1`.strip
-          $?.success? && out.match?(/\Av\d+\.\d+/)
-        rescue Errno::ENOENT
-          false
-        end
+      module_function
+
+      def node_available?
+        !node_version.nil?
       end
 
-      def self.node_version
-        return nil unless node_available?
+      def node_version
+        stdout, status = capture("node", "--version")
+        return nil unless status&.success?
 
-        `node --version 2>&1`.strip
+        version = stdout.to_s.strip
+        version.match?(/\Av\d+\.\d+\.\d+/) ? version : nil
+      rescue Errno::ENOENT, IOError, SystemCallError
+        nil
       end
 
-      def self.npm_available?
-        out = `npm --version 2>&1`.strip
-        $?.success? && out.match?(/\A\d+\.\d+/)
-      rescue Errno::ENOENT
+      def npm_available?
+        stdout, status = capture("npm", "--version")
+        return false unless status&.success?
+
+        stdout.to_s.strip.match?(/\A\d+\.\d+\.\d+/)
+      rescue Errno::ENOENT, IOError, SystemCallError
         false
       end
 
-      def self.js_dir
-        File.expand_path("../js", __FILE__)
+      def js_dir
+        File.expand_path("js", __dir__)
       end
 
-      def self.js_installed?
-        lock = File.join(js_dir, "package-lock.json")
-        File.exist?(lock)
+      def js_installed?
+        return false unless File.directory?(js_dir)
+
+        package_manifest = File.join(js_dir, "package.json")
+        node_modules = File.join(js_dir, "node_modules")
+        package_lock = File.join(js_dir, "package-lock.json")
+
+        File.file?(package_manifest) && (File.directory?(node_modules) || File.file?(package_lock))
+      rescue ArgumentError, IOError, SystemCallError
+        false
       end
 
-      def self.engine_label
+      def engine_label
         if node_available?
-          "Node.js #{node_version} - docx.js + react-pdf"
+          version = node_version || "Node.js"
+          "#{version} | DOCX: docx.js | PDF: react-pdf"
         else
-          "Ruby fallback - Caracal + HexaPDF"
+          "Ruby | DOCX: Caracal | PDF: HexaPDF"
         end
       end
+
+      def capture(*command)
+        Open3.capture2(*command)
+      rescue Errno::ENOENT, IOError, SystemCallError
+        [nil, nil]
+      end
+      private_class_method :capture
     end
   end
 end

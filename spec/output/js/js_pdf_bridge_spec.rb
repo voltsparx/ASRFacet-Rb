@@ -21,10 +21,8 @@ RSpec.describe ASRFacet::Output::Js::JsPdfBridge do
 
   it "invokes the node bridge when JS dependencies are marked installed" do
     renderer = described_class.new(store, "example.com", charts: {})
-    lock_path = File.join(ASRFacet::Output::RuntimeDetector.js_dir, "package-lock.json")
-
-    allow(File).to receive(:exist?).and_call_original
-    allow(File).to receive(:exist?).with(lock_path).and_return(true)
+    allow(ASRFacet::Output::RuntimeDetector).to receive(:node_available?).and_return(true)
+    allow(ASRFacet::Output::RuntimeDetector).to receive(:js_installed?).and_return(true)
     allow(renderer).to receive(:system).and_return(true)
 
     expect { renderer.render(File.join(Dir.tmpdir, "report.pdf")) }.not_to raise_error

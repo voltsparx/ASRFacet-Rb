@@ -14,27 +14,18 @@
 
 require "spec_helper"
 require "tmpdir"
-require "asrfacet_rb/output/ruby/html_renderer"
 
 RSpec.describe ASRFacet::Output::Ruby::HtmlRenderer do
-  let(:store) do
-    ASRFacet::ResultStore.new.tap do |result|
-      result.add_subdomain("app.example.com")
-      result.add_ip("1.2.3.4")
-      result.add_finding(title: "Header leak", severity: "low", asset: "app.example.com")
-    end
-  end
-
-  it "writes an html report" do
+  it "renders a dark single-file html dashboard from fixture data" do
     Dir.mktmpdir do |dir|
       path = File.join(dir, "report.html")
-
-      described_class.new(store, "example.com", charts: {}).render(path)
+      described_class.new(build_output_store, output_fixture_data[:target], build_output_options).render(path)
 
       html = File.read(path)
-      expect(html).to include("<html")
-      expect(html).to include("severityChart")
-      expect(html).to include("app.example.com")
+      expect(html).to include("chart.js")
+      expect(html).to include("Primary Charts")
+      expect(html).to include("badge-high")
+      expect(html).to include("api.lab.example.com")
     end
   end
 end

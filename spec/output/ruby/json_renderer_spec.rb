@@ -15,26 +15,17 @@
 require "json"
 require "spec_helper"
 require "tmpdir"
-require "asrfacet_rb/output/ruby/json_renderer"
 
 RSpec.describe ASRFacet::Output::Ruby::JsonRenderer do
-  let(:store) do
-    ASRFacet::ResultStore.new.tap do |result|
-      result.add_subdomain("api.example.com")
-      result.add_ip("1.2.3.4")
-      result.add_error(source: "test", message: "sample")
-    end
-  end
-
-  it "writes a json report" do
+  it "renders pretty json with meta, stats, tables, and charts" do
     Dir.mktmpdir do |dir|
       path = File.join(dir, "report.json")
+      described_class.new(build_output_store, output_fixture_data[:target], build_output_options).render(path)
 
-      described_class.new(store, "example.com", charts: {}).render(path)
-
-      data = JSON.parse(File.read(path))
-      expect(data.dig("meta", "target")).to eq("example.com")
-      expect(data.fetch("subdomains")).to include("api.example.com")
+      payload = JSON.parse(File.read(path))
+      expect(payload.dig("meta", "target")).to eq("lab.example.com")
+      expect(payload.fetch("findings").length).to eq(3)
+      expect(payload.dig("charts", "service_breakdown")).not_to be_empty
     end
   end
 end

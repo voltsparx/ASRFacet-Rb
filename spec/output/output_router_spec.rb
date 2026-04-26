@@ -14,36 +14,30 @@
 
 require "spec_helper"
 require "tmpdir"
-require "asrfacet_rb/output/output_router"
 
 RSpec.describe ASRFacet::Output::OutputRouter do
-  let(:store) do
-    instance_double(
-      ASRFacet::ResultStore,
-      stats: { subdomains: 2, ips: 1, findings: 1, js_endpoints: 0, errors: 0 },
-      subdomains: ["sub.example.com"],
-      ips: ["1.2.3.4"],
-      ports: {},
-      findings: [],
-      js_endpoints: [],
-      errors: [],
-      subdomains_with_sources: nil
-    )
+  subject(:router) { described_class.new(build_output_store, output_fixture_data[:target], asset_graph: build_output_graph) }
+
+  it "raises on an unknown format" do
+    expect { router.render("xml", File.join(Dir.tmpdir, "report.xml")) }.to raise_error(ASRFacet::Error, /Unknown format/)
   end
 
-  subject(:router) { described_class.new(store, "example.com") }
+  it "reports the active engine label" do
+    allow(ASRFacet::Output::RuntimeDetector).to receive(:node_available?).and_return(false)
 
-  describe "#render" do
-    it "raises on unknown format" do
-      expect { router.render("xml", File.join(Dir.tmpdir, "out.xml")) }
-        .to raise_error(ASRFacet::Error, /Unknown format/)
-    end
+    expect(router.engine_info).to include("Ruby")
   end
 
-  describe "#engine_info" do
-    it "returns a label string" do
-      expect(router.engine_info).to be_a(String)
-      expect(router.engine_info).not_to be_empty
+  it "renders all ruby-native formats into a directory" do
+    allow(ASRFacet::Output::RuntimeDetector).to receive(:node_available?).and_return(false)
+
+    Dir.mktmpdir do |dir|
+      router.render_all(dir)
+
+      expect(Dir.glob(File.join(dir, "*.txt"))).not_to be_empty
+      expect(Dir.glob(File.join(dir, "*.html"))).not_to be_empty
+      expect(Dir.glob(File.join(dir, "*.json"))).not_to be_empty
+      expect(Dir.glob(File.join(dir, "*_findings.csv"))).not_to be_empty
     end
   end
 end

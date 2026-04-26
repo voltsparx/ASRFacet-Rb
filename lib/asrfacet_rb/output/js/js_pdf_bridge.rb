@@ -24,49 +24,22 @@ module ASRFacet
         SCRIPT = File.join(RuntimeDetector.js_dir, "pdf", "pdf_gen.js").freeze
 
         def render(output_path)
-          ensure_installed
-          tmp = write_payload
-          run_script(tmp.path, output_path)
+          raise ASRFacet::Error, "Node.js is not available on PATH" unless RuntimeDetector.node_available?
+          raise ASRFacet::Error, "JavaScript output dependencies are not installed" unless RuntimeDetector.js_installed?
+
+          payload_file = Tempfile.new(["asrfacet_pdf_payload", ".json"])
+          payload_file.write(JSON.pretty_generate(report_payload))
+          payload_file.flush
+
+          success = system("node", SCRIPT, payload_file.path, output_path)
+          raise ASRFacet::Error, "node pdf_gen.js exited non-zero" unless success
+
           log_success("PDF (react-pdf)", output_path)
         rescue ASRFacet::Error
           raise
-        rescue StandardError => e
-          raise ASRFacet::Error, "react-pdf bridge failed: #{e.message}"
         ensure
-          tmp&.close
-          tmp&.unlink
-        end
-
-        private
-
-        def ensure_installed
-          lock = File.join(RuntimeDetector.js_dir, "package-lock.json")
-          raise ASRFacet::Error, "JS deps missing. Run: cd #{RuntimeDetector.js_dir} && npm install" unless File.exist?(lock)
-        end
-
-        def write_payload
-          tmp = Tempfile.new(["asrfacet_pdf_", ".json"])
-          tmp.write(build_payload.to_json)
-          tmp.flush
-          tmp
-        end
-
-        def build_payload
-          {
-            meta: { tool: "ASRFacet-Rb", version: version, target: @target, generated: iso_timestamp },
-            stats: @store.stats,
-            subdomains: @store.subdomains,
-            ips: @store.ips,
-            ports: @store.ports,
-            findings: sorted_findings,
-            js_endpoints: @store.js_endpoints,
-            charts: @options[:charts] || {}
-          }
-        end
-
-        def run_script(payload_path, output_path)
-          result = system("node", SCRIPT, payload_path, output_path)
-          raise ASRFacet::Error, "node pdf_gen.js exited non-zero" unless result
+          payload_file&.close
+          payload_file&.unlink
         end
       end
     end
