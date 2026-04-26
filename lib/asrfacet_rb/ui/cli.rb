@@ -124,7 +124,7 @@ module ASRFacet
       desc "export TARGET", "Export a workspace as json or csv"
       option :format, type: :string, default: "json", enum: %w[json csv], desc: "Export format"
       def export(target)
-        path = workspace_manager.export(target, format: options[:format])
+        path = workspace_manager.export(target, format: export_format)
         puts path
       rescue ASRFacet::Error => e
         ASRFacet::Core::ThreadSafe.print_error(e.message)
@@ -133,6 +133,17 @@ module ASRFacet
       no_commands do
         def workspace_manager
           ASRFacet::Intelligence::SessionManager.new
+        end
+
+        def export_format
+          subcommand_format = options[:format].to_s
+          inherited = parent_options.to_h
+          inherited_format = (inherited[:format] || inherited["format"]).to_s
+          return inherited_format if subcommand_format == "json" && %w[json csv].include?(inherited_format)
+
+          subcommand_format
+        rescue StandardError
+          options[:format].to_s
         end
       end
     end
