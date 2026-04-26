@@ -20,103 +20,132 @@ require "socket"
 
 module ASRFacet
   class KeyStore
-    KEY_FILE = File.join(Dir.home, ".asrfacet_rb", "keys.enc").freeze
-    SALT_FILE = File.join(Dir.home, ".asrfacet_rb", "keys.salt").freeze
-    ITER = 100_000
-    KEY_LEN = 32
-    IV_LEN = 16
+    STORE_DIR = File.join(Dir.home, ".asrfacet_rb").freeze
+    KEY_FILE = File.join(STORE_DIR, "keys.enc").freeze
+    SALT_FILE = File.join(STORE_DIR, "keys.salt").freeze
+    CIPHER_NAME = "AES-256-CBC"
+    ITERATIONS = 100_000
+    KEY_LENGTH = 32
+    IV_LENGTH = 16
+    SALT_LENGTH = 16
+    MACHINE_ID_PATHS = [
+      "/etc/machine-id",
+      "/var/lib/dbus/machine-id"
+    ].freeze
 
-    def initialize(passphrase: derive_machine_passphrase)
-      @passphrase = passphrase
-      FileUtils.mkdir_p(File.dirname(KEY_FILE))
+    def self.derive_machine_passphrase
+      identifier = MACHINE_ID_PATHS
+                   .find { |path| File.file?(path) && !File.zero?(path) }
+      identifier = identifier ? File.read(identifier, mode: "rb").strip : Socket.gethostname.to_s.strip
+      Digest::SHA256.hexdigest("asrfacet-rb:#{identifier}")
+    rescue Errno::EACCES, Errno::ENOENT, IOError, SocketError, SystemCallError => e
+      raise ASRFacet::KeyStoreError, "Unable to derive key store passphrase: #{e.message}"
+    end
+
+    def initialize(passphrase: nil, key_file: KEY_FILE, salt_file: SALT_FILE)
+      @passphrase = passphrase || self.class.derive_machine_passphrase
+      @key_file = File.expand_path(key_file)
+      @salt_file = File.expand_path(salt_file)
+      ensure_store_directory!
+    rescue Errno::EACCES, IOError, SystemCallError => e
+      raise ASRFacet::KeyStoreError, e.message
     end
 
     def set(source, value)
       data = load_all
-      data[source.to_s] = value.to_s
-      save_all(data)
+      data[normalize_source(source)] = value.to_s
+      persist(data)
+      value.to_s
     end
 
     def get(source)
-      load_all[source.to_s]
+      load_all[normalize_source(source)]
     end
 
     def delete(source)
       data = load_all
-      data.delete(source.to_s)
-      save_all(data)
+      data.delete(normalize_source(source))
+      persist(data)
     end
 
     def list
-      load_all.keys
+      load_all.keys.sort
     end
 
     def all
-      load_all
+      load_all.dup
     end
 
     private
 
-    def derive_machine_passphrase
-      identifier = if File.exist?("/etc/machine-id")
-                     File.read("/etc/machine-id").strip
-                   elsif File.exist?("/var/lib/dbus/machine-id")
-                     File.read("/var/lib/dbus/machine-id").strip
-                   else
-                     Socket.gethostname
-                   end
-      Digest::SHA256.hexdigest("asrfacet-#{identifier}")
+    def normalize_source(source)
+      source.to_s.strip
+    rescue NoMethodError => e
+      raise ASRFacet::KeyStoreError, e.message
+    end
+
+    def ensure_store_directory!
+      FileUtils.mkdir_p(File.dirname(@key_file))
+      FileUtils.mkdir_p(File.dirname(@salt_file))
     end
 
     def load_all
-      return {} unless File.exist?(KEY_FILE)
+      return {} unless File.file?(@key_file)
 
-      decrypt(File.binread(KEY_FILE))
-    rescue OpenSSL::Cipher::CipherError
-      raise ASRFacet::KeyStoreError, "Failed to decrypt key store - wrong passphrase?"
+      raw = File.binread(@key_file)
+      decrypt(raw)
+    rescue OpenSSL::Cipher::CipherError, ArgumentError => e
+      raise ASRFacet::KeyStoreError, "Failed to decrypt key store: #{e.message}"
+    rescue Errno::EACCES, Errno::ENOENT, IOError, SystemCallError => e
+      raise ASRFacet::KeyStoreError, e.message
     end
 
-    def save_all(data)
-      File.binwrite(KEY_FILE, encrypt(data))
-    rescue SystemCallError => e
+    def persist(data)
+      File.binwrite(@key_file, encrypt(data))
+    rescue Errno::EACCES, IOError, SystemCallError => e
       raise ASRFacet::KeyStoreError, e.message
     end
 
     def encryption_key
-      salt = if File.exist?(SALT_FILE)
-               File.binread(SALT_FILE)
-             else
-               generated = OpenSSL::Random.random_bytes(16)
-               File.binwrite(SALT_FILE, generated)
-               generated
-             end
-      OpenSSL::PKCS5.pbkdf2_hmac(@passphrase, salt, ITER, KEY_LEN, "SHA256")
-    rescue SystemCallError, OpenSSL::OpenSSLError => e
-      raise ASRFacet::KeyStoreError, e.message
-    end
-
-    def encrypt(data)
-      cipher = OpenSSL::Cipher.new("AES-256-CBC")
-      cipher.encrypt
-      iv = cipher.random_iv
-      cipher.key = encryption_key
-      cipher.iv = iv
-      encrypted = cipher.update(data.to_json) + cipher.final
-      iv + encrypted
+      salt = load_or_create_salt
+      OpenSSL::PKCS5.pbkdf2_hmac(@passphrase, salt, ITERATIONS, KEY_LENGTH, "SHA256")
     rescue OpenSSL::OpenSSLError => e
       raise ASRFacet::KeyStoreError, e.message
     end
 
-    def decrypt(raw)
-      cipher = OpenSSL::Cipher.new("AES-256-CBC")
-      cipher.decrypt
-      iv = raw[0, IV_LEN]
-      encrypted = raw[IV_LEN..]
+    def load_or_create_salt
+      return File.binread(@salt_file) if File.file?(@salt_file)
+
+      salt = OpenSSL::Random.random_bytes(SALT_LENGTH)
+      File.binwrite(@salt_file, salt)
+      salt
+    rescue Errno::EACCES, Errno::ENOENT, IOError, SystemCallError, OpenSSL::OpenSSLError => e
+      raise ASRFacet::KeyStoreError, e.message
+    end
+
+    def encrypt(data)
+      cipher = OpenSSL::Cipher.new(CIPHER_NAME)
+      cipher.encrypt
       cipher.key = encryption_key
+      iv = cipher.random_iv
       cipher.iv = iv
-      JSON.parse(cipher.update(encrypted) + cipher.final)
-    rescue JSON::ParserError => e
-      raise ASRFacet::ParseError, e.message
+      iv + cipher.update(JSON.generate(data)) + cipher.final
+    rescue JSON::GeneratorError, OpenSSL::Cipher::CipherError, OpenSSL::OpenSSLError => e
+      raise ASRFacet::KeyStoreError, e.message
+    end
+
+    def decrypt(raw)
+      raise ASRFacet::KeyStoreError, "Encrypted key store is empty" if raw.nil? || raw.bytesize < IV_LENGTH
+
+      cipher = OpenSSL::Cipher.new(CIPHER_NAME)
+      cipher.decrypt
+      cipher.key = encryption_key
+      cipher.iv = raw.byteslice(0, IV_LENGTH)
+      payload = raw.byteslice(IV_LENGTH, raw.bytesize - IV_LENGTH).to_s
+      parsed = JSON.parse(cipher.update(payload) + cipher.final)
+      parsed.is_a?(Hash) ? parsed : {}
+    rescue OpenSSL::Cipher::CipherError, OpenSSL::OpenSSLError, JSON::ParserError => e
+      raise ASRFacet::KeyStoreError, "Failed to decrypt key store: #{e.message}"
     end
   end
 end

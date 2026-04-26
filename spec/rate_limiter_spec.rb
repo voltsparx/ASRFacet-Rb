@@ -15,14 +15,49 @@
 require "spec_helper"
 
 RSpec.describe ASRFacet::RateLimiter do
-  it "sleeps when a source is called faster than its configured qps" do
-    limiter = described_class.new(crtsh: 2.0)
-    allow(Process).to receive(:clock_gettime).and_return(100.0, 100.1)
-    allow(limiter).to receive(:sleep)
+  it "throttles repeated calls for the same source" do
+    now = 100.0
+    sleeps = []
+    limiter = described_class.new(
+      { crtsh: 2.0 },
+      clock: -> { now },
+      sleeper: lambda do |duration|
+        sleeps << duration
+        now += duration
+      end
+    )
 
     limiter.throttle(:crtsh)
+    now += 0.1
     limiter.throttle(:crtsh)
 
-    expect(limiter).to have_received(:sleep).with(be_within(0.01).of(0.4))
+    expect(sleeps).to contain_exactly(be_within(0.001).of(0.4))
+  end
+
+  it "raises a rate limit error for invalid qps values" do
+    limiter = described_class.new
+
+    expect { limiter.set_qps(:crtsh, 0) }.to raise_error(ASRFacet::RateLimitError, /QPS must be positive/)
+  end
+
+  it "keeps sources independent and uses the default qps for unknown sources" do
+    now = 200.0
+    sleeps = []
+    limiter = described_class.new(
+      {},
+      clock: -> { now },
+      sleeper: lambda do |duration|
+        sleeps << duration
+        now += duration
+      end
+    )
+
+    limiter.throttle(:custom_source)
+    now += 0.25
+    limiter.throttle(:crtsh)
+    now += 0.25
+    limiter.throttle(:custom_source)
+
+    expect(sleeps).to contain_exactly(be_within(0.001).of(0.5))
   end
 end

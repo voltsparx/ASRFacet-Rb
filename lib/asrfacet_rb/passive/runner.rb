@@ -62,8 +62,8 @@ module ASRFacet
             @mutex.synchronize do
               @errors << "#{source_class.name.split('::').last}: circuit open - skipped (rate limited)"
             end
-          rescue ASRFacet::Error, StandardError => e
-            breaker&.record_failure rescue nil
+          rescue ASRFacet::Error => e
+            breaker&.record_failure
             @mutex.synchronize do
               @errors << "#{source_class.name.split('::').last}: #{e.message}"
             end
@@ -77,7 +77,7 @@ module ASRFacet
           errors: @errors,
           source_count: SOURCES.size
         }
-      rescue ASRFacet::Error, StandardError
+      rescue ASRFacet::Error
         { subdomains: [], errors: [], source_count: SOURCES.size }
       end
 
@@ -89,7 +89,11 @@ module ASRFacet
         else
           source_class.new
         end
-      rescue StandardError => e
+      rescue ASRFacet::KeyStoreError, ArgumentError, NameError => e
+        raise ASRFacet::SourceError, e.message
+      rescue Exception => e
+        raise unless e.is_a?(StandardError)
+
         raise ASRFacet::SourceError, e.message
       end
 
@@ -99,7 +103,11 @@ module ASRFacet
         else
           source.run(@domain, merged_api_keys)
         end
-      rescue StandardError => e
+      rescue ASRFacet::Error, ArgumentError, NoMethodError => e
+        raise ASRFacet::SourceError, e.message
+      rescue Exception => e
+        raise unless e.is_a?(StandardError)
+
         raise ASRFacet::SourceError, e.message
       end
 
@@ -114,14 +122,14 @@ module ASRFacet
         @mutex.synchronize do
           @breakers[key] ||= ASRFacet::Core::CircuitBreaker.new(key)
         end
-      rescue StandardError
+      rescue ASRFacet::PluginError
         ASRFacet::Core::CircuitBreaker.new(source.name.to_s)
       end
 
       def source_timeout
         timeout = @options[:timeout]
         timeout.to_f.positive? ? timeout.to_f : 30
-      rescue StandardError
+      rescue ASRFacet::ParseError, NoMethodError, TypeError
         30
       end
     end

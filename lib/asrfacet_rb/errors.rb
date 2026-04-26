@@ -21,4 +21,6 @@ module ASRFacet
   class ParseError < Error; end
   class KeyStoreError < Error; end
   class PluginError < Error; end
+  class ScanError < Error; end
+  class DnsError < Error; end
 end

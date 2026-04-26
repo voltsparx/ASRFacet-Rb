@@ -21,26 +21,40 @@ module ASRFacet
     class KeysCLI < Thor
       desc "set SOURCE VALUE", "Store an API key for a source"
       def set(source, value)
-        ASRFacet::KeyStore.new.set(source, value)
+        key_store.set(source, value)
         puts "[ok] Key stored for: #{source}"
+      rescue ASRFacet::KeyStoreError => e
+        ASRFacet::Core::ThreadSafe.print_error(e.message)
       end
 
       desc "get SOURCE", "Retrieve an API key"
       def get(source)
-        value = ASRFacet::KeyStore.new.get(source)
+        value = key_store.get(source)
         value ? puts(value) : puts("[!] No key found for: #{source}")
+      rescue ASRFacet::KeyStoreError => e
+        ASRFacet::Core::ThreadSafe.print_error(e.message)
       end
 
       desc "list", "List all stored source names"
       def list
-        keys = ASRFacet::KeyStore.new.list
+        keys = key_store.list
         keys.empty? ? puts("[i] No keys stored yet") : keys.each { |key| puts("  #{key}") }
+      rescue ASRFacet::KeyStoreError => e
+        ASRFacet::Core::ThreadSafe.print_error(e.message)
       end
 
       desc "delete SOURCE", "Remove a stored key"
       def delete(source)
-        ASRFacet::KeyStore.new.delete(source)
+        key_store.delete(source)
         puts "[ok] Key removed for: #{source}"
+      rescue ASRFacet::KeyStoreError => e
+        ASRFacet::Core::ThreadSafe.print_error(e.message)
+      end
+
+      no_commands do
+        def key_store
+          ASRFacet::KeyStore.new
+        end
       end
     end
 
@@ -129,7 +143,7 @@ module ASRFacet
           end
 
           super(args, config)
-        rescue StandardError
+        rescue ASRFacet::Error
           super(given_args, config)
         end
       end
@@ -167,7 +181,7 @@ module ASRFacet
                    with_graceful_shutdown(pipeline) { pipeline.run }
                  end
         output_results(result, domain)
-      rescue StandardError => e
+      rescue ASRFacet::Error => e
         report_exception("scan", e)
       end
 
@@ -177,7 +191,7 @@ module ASRFacet
         return unless ensure_framework_ready!
 
         output_results(passive_payload(domain), domain)
-      rescue StandardError => e
+      rescue ASRFacet::Error => e
         report_exception("passive", e)
       end
 
@@ -193,7 +207,7 @@ module ASRFacet
           announce_event(:open_port, entry.merge(host: host)) if options[:verbose]
         end
         output_results({ store: store, top_assets: [], summary: store.summary }, host)
-      rescue StandardError => e
+      rescue ASRFacet::Error => e
         report_exception("ports", e)
       end
 
@@ -215,7 +229,7 @@ module ASRFacet
         Array(dns_result[:data][:a]).each { |ip| store.add(:ips, ip) }
         Array(dns_result[:data][:aaaa]).each { |ip| store.add(:ips, ip) }
         output_results({ store: store, top_assets: [], summary: store.summary }, domain)
-      rescue StandardError => e
+      rescue ASRFacet::Error => e
         report_exception("dns", e)
       end
 
@@ -229,7 +243,7 @@ module ASRFacet
           host: options[:host],
           port: options[:port]
         ).start
-      rescue StandardError => e
+      rescue ASRFacet::Error => e
         report_exception("lab", e)
       end
 
@@ -238,7 +252,7 @@ module ASRFacet
         return unless ensure_framework_ready!
 
         ASRFacet::UI::Interactive.new.start
-      rescue StandardError => e
+      rescue ASRFacet::Error => e
         report_exception("interactive", e)
       end
 
@@ -247,7 +261,7 @@ module ASRFacet
         return unless ensure_framework_ready!
 
         ASRFacet::UI::Console.new.start
-      rescue StandardError => e
+      rescue ASRFacet::Error => e
         report_exception("console", e)
       end
 
@@ -259,14 +273,14 @@ module ASRFacet
           host: options[:web_host],
           port: options[:web_port]
         ).start
-      rescue StandardError => e
+      rescue ASRFacet::Error => e
         report_exception("web", e)
       end
 
       desc "about", "Show a framework overview, usage guidance, and storage paths"
       def about
         puts(ASRFacet::UI::About.plain_text)
-      rescue StandardError => e
+      rescue ASRFacet::Error => e
         ASRFacet::Core::ThreadSafe.print_error(e.message)
       end
 
@@ -277,7 +291,7 @@ module ASRFacet
         else
           explain(topic)
         end
-      rescue StandardError => e
+      rescue ASRFacet::Error => e
         ASRFacet::Core::ThreadSafe.print_error(e.message)
       end
 
@@ -290,7 +304,7 @@ module ASRFacet
         else
           puts(explanation)
         end
-      rescue StandardError => e
+      rescue ASRFacet::Error => e
         ASRFacet::Core::ThreadSafe.print_error(e.message)
       end
 
@@ -302,15 +316,13 @@ module ASRFacet
         else
           puts(text)
         end
-      rescue StandardError => e
+      rescue ASRFacet::Error => e
         ASRFacet::Core::ThreadSafe.print_error(e.message)
       end
 
       desc "version", "Print the current version"
       def version
         puts(ASRFacet::VERSION)
-      rescue StandardError
-        nil
       end
 
       private
@@ -325,7 +337,7 @@ module ASRFacet
             "Stage #{index}/8 complete: #{name} | hosts=#{snapshot[:subdomains].to_i} ips=#{snapshot[:ips].to_i} ports=#{snapshot[:open_ports].to_i} web=#{snapshot[:http_responses].to_i} findings=#{snapshot[:findings].to_i}"
           )
         end
-      rescue StandardError
+      rescue ASRFacet::Error, IOError, NoMethodError, TypeError
         nil
       end
 
@@ -350,7 +362,7 @@ module ASRFacet
         when :error
           ASRFacet::Core::ThreadSafe.print_warning("Engine note: #{entry[:engine]} - #{entry[:reason]}")
         end
-      rescue StandardError
+      rescue ASRFacet::Error, IOError, NoMethodError, TypeError
         nil
       end
 
@@ -374,7 +386,7 @@ module ASRFacet
           delay: options[:delay],
           adaptive_rate: options[:adaptive_rate]
         }
-      rescue StandardError
+      rescue ASRFacet::Error, NoMethodError, TypeError
         {}
       end
 
@@ -408,7 +420,7 @@ module ASRFacet
         end
         result[:errors].each { |error| store.add(:passive_errors, error) }
         { store: store, top_assets: [], summary: store.summary }
-      rescue StandardError
+      rescue ASRFacet::Error, NoMethodError, TypeError, ArgumentError
         { store: ASRFacet::ResultStore.new, top_assets: [], summary: {} }
       end
 
@@ -449,7 +461,7 @@ module ASRFacet
         payload = result.dup
         payload[:store] ||= ASRFacet::ResultStore.new
         payload
-      rescue StandardError
+      rescue ASRFacet::Error, NoMethodError, TypeError
         { store: ASRFacet::ResultStore.new, top_assets: [] }
       end
 
@@ -461,19 +473,19 @@ module ASRFacet
         when "sarif" then ASRFacet::Output::SarifFormatter.new
         else ASRFacet::Output::CliFormatter.new
         end
-      rescue StandardError
+      rescue ASRFacet::Error, NameError
         ASRFacet::Output::CliFormatter.new
       end
 
       def formatter_key
         options[:format].to_s.downcase
-      rescue StandardError
+      rescue ASRFacet::Error, NoMethodError
         "cli"
       end
 
       def top_limit
         options[:top].to_i.positive? ? options[:top].to_i : 5
-      rescue StandardError
+      rescue ASRFacet::Error, NoMethodError
         5
       end
 
@@ -484,7 +496,7 @@ module ASRFacet
         tracker = ASRFacet::Output::ChangeTracker.new(domain)
         ASRFacet::Core::ThreadSafe.puts("")
         ASRFacet::Core::ThreadSafe.puts(tracker.format_cli(diff))
-      rescue StandardError
+      rescue ASRFacet::Error, IOError, NoMethodError, TypeError
         nil
       end
 
@@ -501,7 +513,7 @@ module ASRFacet
           summary: symbolize_keys(summary || {}),
           output_note: "Reports are automatically stored under the ASRFacet-Rb output directory for later review."
         }
-      rescue StandardError
+      rescue ASRFacet::Error, NoMethodError, TypeError, ArgumentError
         { target: domain.to_s, generated_at: Time.now.utc.iso8601, output_directory: resolve_output_directory }
       end
 
@@ -557,7 +569,7 @@ module ASRFacet
 
       def resolve_output_directory
         File.expand_path((ASRFacet::Config.fetch("output", "directory") || "~/.asrfacet_rb/output").to_s)
-      rescue StandardError
+      rescue ASRFacet::Error, ArgumentError, IOError, NoMethodError
         File.expand_path("~/.asrfacet_rb/output")
       end
 
@@ -627,7 +639,7 @@ module ASRFacet
           dashboard.increment(stage_index, found: snapshot[:subdomains].to_i + snapshot[:open_ports].to_i + snapshot[:findings].to_i)
           dashboard.finish(stage_index)
         end
-      rescue StandardError
+      rescue ASRFacet::Error, IOError, NoMethodError, TypeError
         nil
       end
 
@@ -639,13 +651,13 @@ module ASRFacet
         return true if definition.nil?
 
         options[option_name].to_s == definition.default.to_s
-      rescue StandardError
+      rescue ASRFacet::Error, NoMethodError, TypeError
         true
       end
 
       def interactive_terminal?
         $stdout.tty?
-      rescue StandardError
+      rescue IOError, NoMethodError
         false
       end
 
@@ -660,7 +672,7 @@ module ASRFacet
         else
           value
         end
-      rescue StandardError
+      rescue ASRFacet::Error, NoMethodError, TypeError
         {}
       end
 
@@ -673,7 +685,7 @@ module ASRFacet
 
         ASRFacet::Core::ThreadSafe.print_error("Framework integrity check failed. The requested operation was not started.")
         false
-      rescue StandardError
+      rescue ASRFacet::Error, NoMethodError, TypeError
         true
       end
 
@@ -687,7 +699,7 @@ module ASRFacet
           ASRFacet::Core::ThreadSafe.puts("    Path: #{issue[:path]}") unless issue[:path].to_s.empty?
           ASRFacet::Core::ThreadSafe.puts("    Recommendation: #{issue[:recommendation]}") unless issue[:recommendation].to_s.empty?
         end
-      rescue StandardError
+      rescue ASRFacet::Error, IOError, NoMethodError, TypeError
         nil
       end
 
@@ -696,7 +708,7 @@ module ASRFacet
         ASRFacet::Core::ThreadSafe.print_error(failure[:summary])
         ASRFacet::Core::ThreadSafe.puts("    Details: #{failure[:details]}") unless failure[:details].to_s.empty?
         ASRFacet::Core::ThreadSafe.puts("    Recommendation: #{failure[:recommendation]}") unless failure[:recommendation].to_s.empty?
-      rescue StandardError
+      rescue ASRFacet::Error, IOError, NoMethodError, TypeError
         ASRFacet::Core::ThreadSafe.print_error(error.to_s)
       end
 
@@ -708,14 +720,14 @@ module ASRFacet
             ASRFacet::Core::ThreadSafe.print_warning(message)
             pipeline&.request_shutdown(message)
           end
-        rescue StandardError
+        rescue ArgumentError, Errno::EINVAL, SystemCallError
           nil
         end
         yield
       ensure
         previous_handlers.each do |signal, handler|
           Signal.trap(signal, handler)
-        rescue StandardError
+        rescue ArgumentError, Errno::EINVAL, SystemCallError
           nil
         end
       end

@@ -1,5 +1,21 @@
 # Changelog
 
+## [2.1.0] - 2026-04-26
+
+### Added
+- Expanded the core error hierarchy with scan- and DNS-specific failures.
+- Hardened the encrypted key store contract with machine-derived passphrases, PBKDF2, and dedicated CLI key management commands.
+- Added deterministic spec coverage for the key store and per-source rate limiter.
+
+### Changed
+- Reworked the rate limiter to use thread-safe concurrent maps, per-source mutexes, and monotonic-clock throttling.
+- Updated runtime dependency constraints for `caracal` and `hexapdf` to the requested support window.
+- Refined passive-source and CLI error handling around the new `ASRFacet::Error` subclasses.
+
+### Fixed
+- Key-store decrypt failures now raise `ASRFacet::KeyStoreError`.
+- CLI key management now reports keystore failures cleanly instead of surfacing raw exceptions.
+
 ## [2.0.0] - 2026
 
 ### Added

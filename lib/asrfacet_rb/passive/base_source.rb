@@ -25,7 +25,7 @@ module ASRFacet
 
       def self.plugin_type
         :passive_source
-      rescue StandardError
+      rescue ASRFacet::PluginError
         :passive_source
       end
 
@@ -51,7 +51,14 @@ module ASRFacet
         headers.each { |key, value| request[key] = value }
 
         http.request(request).body
-      rescue StandardError
+      rescue URI::InvalidURIError, Net::OpenTimeout, Net::ReadTimeout, OpenSSL::SSL::SSLError, SocketError, SystemCallError => e
+        @logger&.warn(event: :source_fetch_error, source: name, error: e.message) if defined?(@logger)
+        raise ASRFacet::SourceError, e.message
+      rescue IOError => e
+        raise ASRFacet::NetworkError, e.message
+      rescue ArgumentError => e
+        raise ASRFacet::ParseError, e.message
+      rescue ASRFacet::Error
         nil
       end
     end
