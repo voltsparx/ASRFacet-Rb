@@ -18,15 +18,19 @@ module ASRFacet
   module Scanner
     module Results
       class ScanResult
-        attr_accessor :targets, :scan_type, :timing, :started_at, :finished_at, :host_results
+        attr_accessor :targets, :scan_type, :scan_mode, :timing, :started_at,
+                      :finished_at, :host_results, :flags_used
 
-        def initialize(targets:, scan_type:, timing:, started_at:, finished_at: nil, host_results: [])
+        def initialize(targets:, scan_type:, timing:, started_at:, finished_at: nil,
+                       host_results: [], scan_mode: :active, flags_used: [])
           @targets = Array(targets)
           @scan_type = scan_type.to_sym
+          @scan_mode = scan_mode.to_sym
           @timing = timing
           @started_at = started_at
           @finished_at = finished_at
           @host_results = Array(host_results)
+          @flags_used = Array(flags_used)
         end
 
         def add_host(host_result)
@@ -48,16 +52,23 @@ module ASRFacet
           host_results.sum { |host| host.filtered_ports.count }
         end
 
+        def total_hosts_up
+          host_results.count(&:up)
+        end
+
         def to_h
           {
             targets: targets,
             scan_type: scan_type,
+            scan_mode: scan_mode,
             timing: timing.to_h,
             started_at: started_at&.utc&.iso8601,
             finished_at: finished_at&.utc&.iso8601,
             elapsed: elapsed,
             total_open: total_open,
             total_filtered: total_filtered,
+            total_hosts_up: total_hosts_up,
+            flags_used: flags_used,
             host_results: host_results.map(&:to_h)
           }
         end

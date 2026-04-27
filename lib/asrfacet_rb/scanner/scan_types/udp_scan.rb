@@ -18,6 +18,14 @@ module ASRFacet
   module Scanner
     module ScanTypes
       class UdpScan < BaseScan
+        def scan_name
+          "UDP Scan"
+        end
+
+        def scan_description
+          "Detects UDP services often missed. Slower than TCP scans. Use -sU."
+        end
+
         def probe(host, port)
           started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
           response, retries = with_retries do
@@ -26,6 +34,7 @@ module ASRFacet
           state = case response[:reply]
                   when :udp then :open
                   when :icmp_port_unreachable then :closed
+                  when :icmp_type_3 then :filtered
                   else :open_filtered
                   end
           build_result(

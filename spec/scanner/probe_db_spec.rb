@@ -19,7 +19,7 @@ require "spec_helper"
 RSpec.describe ASRFacet::Scanner::ProbeDB do
   subject(:probe_db) { described_class.new }
 
-  it "loads the top 1000 ports from nmap-services" do
+  it "loads the top 1000 ports from the bundled service catalog" do
     expect(described_class::TOP_PORTS.length).to eq(1000)
     expect(described_class::TOP_PORTS.first).to include(:port, :proto, :service, :frequency)
   end
@@ -35,7 +35,7 @@ RSpec.describe ASRFacet::Scanner::ProbeDB do
     expect(probe_db.service_for(22, :tcp)).to eq("ssh")
   end
 
-  it "supports the requested source-derived service families" do
+  it "supports the requested bundled service families" do
     expect(probe_db.supports_service?("SSHSessionReq", proto: :tcp)).to be(true)
     expect(probe_db.supports_service?("SMTPRequest", proto: :tcp)).to be(true)
     expect(probe_db.supports_service?("FTPRequest", proto: :tcp)).to be(true)
@@ -48,7 +48,7 @@ RSpec.describe ASRFacet::Scanner::ProbeDB do
     expect(probe_db.supports_service?("SIPOptions")).to be(true)
   end
 
-  it "falls back to bundled defaults when the Nmap data files are unavailable" do
+  it "falls back to bundled defaults when the packaged data files are unavailable" do
     allow(File).to receive(:file?).and_call_original
     allow(File).to receive(:file?).with(described_class::SERVICES_PATH).and_return(false)
     allow(File).to receive(:file?).with(described_class::PROBES_PATH).and_return(false)

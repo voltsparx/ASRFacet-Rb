@@ -17,7 +17,11 @@
 require "spec_helper"
 
 RSpec.describe ASRFacet::Scanner::Timing do
-  it "returns the exact T5 values derived from nmap.cc and NmapOps.cc" do
+  it "exposes all timing template names" do
+    expect(described_class.names).to eq(%w[paranoid sneaky polite normal aggressive insane])
+  end
+
+  it "returns the exact T5 values for the bundled scanner profile" do
     template = described_class.get(5)
 
     expect(template.name).to eq("insane")
@@ -35,5 +39,10 @@ RSpec.describe ASRFacet::Scanner::Timing do
 
   it "falls back to normal for an unknown template" do
     expect(described_class.from_name("mystery").level).to eq(3)
+  end
+
+  it "describes timing templates with red-team context" do
+    expect(described_class.describe(0)).to include("IDS evasion")
+    expect(described_class.describe(5)).to include("LAN only")
   end
 end

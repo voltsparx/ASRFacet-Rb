@@ -17,11 +17,13 @@
 module ASRFacet
   module Scanner
     class ScanContext
-      attr_reader :timing, :logger, :probe_db, :tcp_prober, :udp_prober, :icmp_prober, :version_detector, :fingerprint_engine
+      attr_reader :timing, :logger, :terminal, :probe_db, :tcp_prober,
+                  :udp_prober, :icmp_prober, :version_detector, :fingerprint_engine
 
-      def initialize(timing:, logger:, probe_db:, tcp_prober:, udp_prober:, icmp_prober:, version_detector:, fingerprint_engine:)
+      def initialize(timing:, logger:, probe_db:, tcp_prober:, udp_prober:, icmp_prober:, version_detector:, fingerprint_engine:, terminal: nil)
         @timing = timing
         @logger = logger
+        @terminal = terminal
         @probe_db = probe_db
         @tcp_prober = tcp_prober
         @udp_prober = udp_prober

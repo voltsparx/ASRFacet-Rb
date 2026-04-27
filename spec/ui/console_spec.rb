@@ -58,4 +58,25 @@ RSpec.describe ASRFacet::UI::Console do
 
     expect(plain).to eq("asrfrb > ")
   end
+
+  it "tracks an active extension mode and stores plugin selectors for that mode" do
+    console.send(:use_console_mode, "portscan")
+    console.send(:handle_extension_command, "select plugins mode:portscan,-internet_exposure")
+    state = console.instance_variable_get(:@extension_state)
+
+    expect(state.active_mode).to eq("portscan")
+    expect(state.spec_for(:plugins)).to include("mode:portscan")
+    expect(state.review[:plugins][:selected].map { |entry| entry[:name] }).to include("attack_path")
+  end
+
+  it "injects stored console attachables into matching CLI commands" do
+    allow(ASRFacet::UI::CLI).to receive(:start)
+    console.send(:use_console_mode, "scan")
+    console.send(:handle_extension_command, "select plugins exposure_score")
+    console.send(:handle_extension_command, "select filters scope_guard")
+
+    console.send(:dispatch_cli, "scan example.com")
+
+    expect(ASRFacet::UI::CLI).to have_received(:start).with(include("scan", "example.com", "--plugins", "exposure_score", "--filters", "scope_guard"))
+  end
 end

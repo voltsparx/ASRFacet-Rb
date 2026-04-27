@@ -38,10 +38,9 @@ PROFILE_FILES=("$HOME/.zshrc" "$HOME/.bash_profile" "$HOME/.bashrc" "$HOME/.prof
 RUNTIME_PAYLOAD=(
   "bin"
   "config"
+  "data"
   "lib"
   "man"
-  "temp/nmap/nmap-service-probes"
-  "temp/nmap/nmap-services"
   "Gemfile"
   "Gemfile.lock"
   "README.md"

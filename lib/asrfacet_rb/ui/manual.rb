@@ -115,6 +115,7 @@ module ASRFacet
           body: [
             "The console is the primary operator interface. It supports framework-style commands such as `show commands`, `show options`, `show workflow`, `show config`, `info recon`, `man`, and `wizard`.",
             "You can also run normal commands directly inside it, for example `scan example.com`, `passive example.com`, `dns example.com`, or `ports 192.0.2.10 --ports top1000`.",
+            "Console sessions can keep per-mode plugin and filter attachables active with commands like `use portscan`, `select plugins mode:portscan`, `add filter interesting_asset`, and `review`.",
             "For deeper connectivity work, run `portscan 192.0.2.10 --type syn --timing 4 --ports 1-1024 --version` directly from the console.",
             "Console-only helpers like `wizard`, `banner`, `about`, and `clear` exist to make the shell friendlier for first-time users."
           ]

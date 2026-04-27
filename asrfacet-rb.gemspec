@@ -17,7 +17,7 @@ require_relative "lib/asrfacet_rb/metadata"
 
 Gem::Specification.new do |spec|
   generated_prefixes = %w[install/test-root/ output/ tmp/ vendor/].freeze
-  packaged_files = Dir.glob("{bin,config,docker,install,lib,man,spec,test,wordlists}/**/*").select do |path|
+  packaged_files = Dir.glob("{bin,config,data,docker,install,lib,man,spec,test,wordlists}/**/*").select do |path|
     File.file?(path) && generated_prefixes.none? { |prefix| path.start_with?(prefix) }
   end
 

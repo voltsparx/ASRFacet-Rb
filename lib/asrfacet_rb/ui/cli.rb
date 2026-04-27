@@ -148,6 +148,118 @@ module ASRFacet
       end
     end
 
+    class PluginsCLI < Thor
+      class_option :mode, type: :string, desc: "Limit plugin catalog to one session mode"
+      class_option :category, type: :string, desc: "Limit plugin catalog to one category"
+      class_option :search, type: :string, desc: "Filter plugin catalog by free-text search"
+      class_option :json, type: :boolean, default: false, desc: "Print JSON instead of an ASCII table"
+
+      desc "list", "List built-in and user session plugins"
+      def list
+        entries = plugin_engine.catalog(mode: options[:mode], category: options[:category], search: options[:search])
+        if options[:json]
+          puts JSON.pretty_generate(entries)
+          return
+        end
+
+        rows = entries.map do |entry|
+          [entry[:name], entry[:category], Array(entry[:modes]).join(","), entry[:description]]
+        end
+        render_table(%w[Plugin Category Modes Description], rows)
+        puts ""
+        puts "Selection specifiers: #{ASRFacet::Extensions::AttachableCatalog.selector_help.join(', ')}"
+      end
+
+      desc "show NAME", "Show one plugin in detail"
+      def show(name)
+        entry = plugin_engine.find(name)
+        return puts("[!] Plugin not found: #{name}") if entry.nil?
+
+        puts JSON.pretty_generate(entry)
+      end
+
+      desc "resolve SPEC", "Resolve a plugin selection string against the current catalog"
+      def resolve(spec)
+        puts JSON.pretty_generate(plugin_engine.resolve(selection: spec, mode: options[:mode]).reject { |key, _value| key == :classes })
+      end
+
+      no_commands do
+        def plugin_engine
+          ASRFacet::Plugins::Engine.new(selection: "all")
+        end
+
+        def render_table(headers, rows)
+          widths = headers.each_index.map do |index|
+            ([headers[index].to_s.length] + rows.map { |row| row[index].to_s.length }).max
+          end
+          divider = "+" + widths.map { |width| "-" * (width + 2) }.join("+") + "+"
+          puts divider
+          puts "|" + headers.each_with_index.map { |value, index| " #{value.to_s.ljust(widths[index])} " }.join("|") + "|"
+          puts divider
+          rows.each do |row|
+            puts "|" + row.each_with_index.map { |value, index| " #{value.to_s.ljust(widths[index])} " }.join("|") + "|"
+          end
+          puts divider
+        end
+      end
+    end
+
+    class FiltersCLI < Thor
+      class_option :mode, type: :string, desc: "Limit filter catalog to one session mode"
+      class_option :category, type: :string, desc: "Limit filter catalog to one category"
+      class_option :search, type: :string, desc: "Filter filter catalog by free-text search"
+      class_option :json, type: :boolean, default: false, desc: "Print JSON instead of an ASCII table"
+
+      desc "list", "List built-in and user session filters"
+      def list
+        entries = filter_engine.catalog(mode: options[:mode], category: options[:category], search: options[:search])
+        if options[:json]
+          puts JSON.pretty_generate(entries)
+          return
+        end
+
+        rows = entries.map do |entry|
+          [entry[:name], entry[:category], Array(entry[:modes]).join(","), entry[:description]]
+        end
+        render_table(%w[Filter Category Modes Description], rows)
+        puts ""
+        puts "Selection specifiers: #{ASRFacet::Extensions::AttachableCatalog.selector_help.join(', ')}"
+      end
+
+      desc "show NAME", "Show one filter in detail"
+      def show(name)
+        entry = filter_engine.find(name)
+        return puts("[!] Filter not found: #{name}") if entry.nil?
+
+        puts JSON.pretty_generate(entry)
+      end
+
+      desc "resolve SPEC", "Resolve a filter selection string against the current catalog"
+      def resolve(spec)
+        puts JSON.pretty_generate(filter_engine.resolve(selection: spec, mode: options[:mode]).reject { |key, _value| key == :classes })
+      end
+
+      no_commands do
+        def filter_engine
+          ASRFacet::Filters::Engine.new(selection: "all")
+        end
+
+        def render_table(headers, rows)
+          widths = headers.each_index.map do |index|
+            ([headers[index].to_s.length] + rows.map { |row| row[index].to_s.length }).max
+          end
+          divider = "+" + widths.map { |width| "-" * (width + 2) }.join("+") + "+"
+          puts divider
+          puts "|" + headers.each_with_index.map { |value, index| " #{value.to_s.ljust(widths[index])} " }.join("|") + "|"
+          puts divider
+          rows.each do |row|
+            puts "|" + row.each_with_index.map { |value, index| " #{value.to_s.ljust(widths[index])} " }.join("|") + "|"
+          end
+          puts divider
+        end
+      end
+    end
+
     class CLI < Thor
       default_task :help
       map %w[s sc] => :scan
@@ -168,6 +280,10 @@ module ASRFacet
       subcommand "graph", GraphCLI
       desc "workspace SUBCOMMAND", "Manage intelligence workspaces"
       subcommand "workspace", WorkspaceCLI
+      desc "plugins SUBCOMMAND", "Inspect pluggable session plugins"
+      subcommand "plugins", PluginsCLI
+      desc "filters SUBCOMMAND", "Inspect pluggable session filters"
+      subcommand "filters", FiltersCLI
 
       class_option :output, aliases: "-o", type: :string, desc: "Output file path"
       class_option :format, aliases: "-f", type: :string, default: "cli", enum: %w[cli json html txt csv pdf docx all sarif], desc: "Output format"
@@ -188,10 +304,13 @@ module ASRFacet
       class_option :webhook_platform, type: :string, default: "slack", enum: %w[slack discord], desc: "Webhook platform"
       class_option :delay, type: :numeric, default: 0, desc: "Base delay between requests in milliseconds"
       class_option :adaptive_rate, type: :boolean, default: true, desc: "Enable adaptive rate control"
+      class_option :plugins, type: :string, desc: "Comma-separated session plugins or 'all'"
+      class_option :filters, type: :string, desc: "Comma-separated session filters or 'all'"
 
       class << self
         def start(given_args = ARGV, config = {})
           args = Array(given_args).dup
+          args = normalize_shortcuts(args)
           Thread.current[:asrfacet_rb_original_args] = args.dup
           ASRFacet::UI::FirstRunGuide.maybe_print(args)
           explicit_command = args.first.to_s.match?(/\A[^-]/)
@@ -217,6 +336,19 @@ module ASRFacet
         rescue ASRFacet::Error
           super(given_args, config)
         end
+
+        def normalize_shortcuts(args)
+          normalized = Array(args).dup
+          normalized = normalized.flat_map do |arg|
+            case arg
+            when "-ac-pa" then %w[--active --passive]
+            else arg
+            end
+          end
+          normalized
+        rescue StandardError
+          Array(args)
+        end
       end
 
       desc "scan DOMAIN", "Run a full reconnaissance pipeline"
@@ -234,6 +366,7 @@ module ASRFacet
         end
 
         return unless ensure_framework_ready!
+        print_extension_review(:scan)
 
         result = if options[:passive_only]
                    passive_payload(domain)
@@ -260,6 +393,7 @@ module ASRFacet
       method_option :shodan_key, type: :string, desc: "Shodan API key"
       def passive(domain)
         return unless ensure_framework_ready!
+        print_extension_review(:passive)
 
         output_results(passive_payload(domain), domain)
       rescue ASRFacet::Error => e
@@ -270,6 +404,7 @@ module ASRFacet
       method_option :ports, aliases: "-p", type: :string, desc: "Port range"
       def ports(host)
         return unless ensure_framework_ready!
+        print_extension_review(:ports)
 
         scan_result = ASRFacet::Scanner::ScanEngine.new(
           scan_type: "connect",
@@ -285,7 +420,7 @@ module ASRFacet
         report_exception("ports", e)
       end
 
-      desc "portscan TARGET", "Run a Nmap-style connectivity and service scan"
+      desc "portscan TARGET", "Run an ASRFacet-Rb connectivity and service scan"
       method_option :type, aliases: "-sS", type: :string, default: "connect", enum: %w[connect syn udp ack fin null xmas window maimon ping service], desc: "Scan type"
       method_option :timing, aliases: "-T", type: :numeric, default: 3, desc: "Timing template (0-5)"
       method_option :ports, aliases: "-p", type: :string, default: "top100", desc: "Port preset or explicit spec"
@@ -297,6 +432,16 @@ module ASRFacet
       method_option :sudo, aliases: %w[-E --elevate], type: :boolean, default: false, desc: "Attempt sudo or Administrator relaunch for raw-style scan types"
       def portscan(target)
         return unless ensure_framework_ready!
+        print_extension_review(:portscan)
+
+        terminal = scanner_terminal_output(scan_mode: :active)
+        terminal.print_banner(
+          target,
+          options[:type].to_s,
+          ASRFacet::Scanner::Timing.get(options[:timing]),
+          :active,
+          portscan_flags
+        )
 
         tcp_prober = ASRFacet::Scanner::Probes::TCPProber.new(
           raw_adapter: scanner_raw_adapter(options[:raw_backend])
@@ -317,11 +462,71 @@ module ASRFacet
           version_intensity: options[:intensity],
           ports: options[:ports],
           raw_backend: options[:raw_backend],
-          tcp_prober: tcp_prober
+          tcp_prober: tcp_prober,
+          terminal: terminal,
+          result_store: ASRFacet::ResultStore.new,
+          knowledge_graph: ASRFacet::Core::KnowledgeGraph.new,
+          flags_used: portscan_flags
         ).scan(target)
-        output_results(ASRFacet::Scanner::ResultAdapter.to_payload(scan_result, target: target), target)
+        output_results(
+          ASRFacet::Scanner::ResultAdapter.to_payload(scan_result, target: target).merge(
+            terminal_mode: :portscan,
+            terminal_output: terminal
+          ),
+          target
+        )
       rescue ASRFacet::Error => e
         report_exception("portscan", e)
+      end
+
+      desc "enum TARGET", "Full enumeration - passive, active, or both"
+      method_option :passive, aliases: ["-pa"], type: :boolean, default: false, desc: "Passive sources only"
+      method_option :active, aliases: ["-ac"], type: :boolean, default: false, desc: "Active reconnaissance"
+      method_option :brute, type: :boolean, default: false, desc: "Enable brute-force style DNS expansion"
+      method_option :wordlist, aliases: "-w", type: :string, desc: "Wordlist path"
+      method_option :portscan, type: :boolean, default: false, desc: "Include port scanning in active mode"
+      method_option :scan_type, type: :string, default: "connect", enum: %w[connect syn udp ack fin null xmas window maimon ping service], desc: "Scan type for --portscan"
+      method_option :timing, aliases: "-T", type: :numeric, default: 3, desc: "Timing template (0-5)"
+      method_option :ports, aliases: "-p", type: :string, default: "top1000", desc: "Port preset or explicit spec"
+      method_option :version, aliases: "-sV", type: :boolean, default: false, desc: "Enable service version detection"
+      method_option :verbosity, aliases: "-v", type: :numeric, default: 0, desc: "Verbose level (0-3)"
+      method_option :timeout, type: :numeric, desc: "Timeout in minutes"
+      def enum(target)
+        return unless ensure_framework_ready!
+
+        modes = enum_modes
+        print_extension_review(modes[:active] ? :enum : :passive)
+        terminal = scanner_terminal_output(scan_mode: modes[:label])
+        terminal.print_banner(target, "enumeration", ASRFacet::Scanner::Timing.get(options[:timing]), modes[:label], enum_flags)
+
+        payload = if modes[:active] && modes[:passive]
+                    run_combined_enum(target, terminal)
+                  elsif modes[:active]
+                    run_active_enum(target, terminal)
+                  else
+                    passive_payload(target).merge(meta: { mode: :passive, target: target })
+                  end
+
+        output_results(payload.merge(terminal_mode: :enum, terminal_output: terminal), target)
+      rescue ASRFacet::Error => e
+        report_exception("enum", e)
+      end
+
+      desc "intel TARGET", "Passive intelligence gathering only"
+      method_option :sources, type: :string, desc: "Comma-separated source names"
+      method_option :exclude_src, type: :string, desc: "Exclude source"
+      method_option :timeout, type: :numeric, desc: "Timeout in minutes"
+      method_option :verbosity, aliases: "-v", type: :numeric, default: 0, desc: "Verbose level (0-3)"
+      def intel(target)
+        return unless ensure_framework_ready!
+        print_extension_review(:intel)
+
+        terminal = scanner_terminal_output(scan_mode: :intel)
+        terminal.print_banner(target, "intel", ASRFacet::Scanner::Timing.get(3), :intel, intel_flags)
+        payload = passive_payload(target).merge(meta: { mode: :intel, target: target })
+        output_results(payload.merge(terminal_mode: :intel, terminal_output: terminal), target)
+      rescue ASRFacet::Error => e
+        report_exception("intel", e)
       end
 
       desc "dns DOMAIN", "Run DNS collection only"
@@ -630,7 +835,9 @@ module ASRFacet
           webhook_url: options[:webhook_url],
           webhook_platform: options[:webhook_platform],
           delay: options[:delay],
-          adaptive_rate: options[:adaptive_rate]
+          adaptive_rate: options[:adaptive_rate],
+          plugins: options[:plugins],
+          filters: options[:filters]
         }
       rescue ASRFacet::Error, NoMethodError, TypeError
         {}
@@ -665,13 +872,14 @@ module ASRFacet
           announce_event(:subdomain, { host: subdomain }) if options[:verbose]
         end
         result[:errors].each { |error| store.add(:passive_errors, error) }
-        { store: store, top_assets: [], summary: store.summary }
+        { store: store, top_assets: [], summary: store.summary, meta: { target: domain.to_s, mode: :passive } }
       rescue ASRFacet::Error, NoMethodError, TypeError, ArgumentError
-        { store: ASRFacet::ResultStore.new, top_assets: [], summary: {} }
+        { store: ASRFacet::ResultStore.new, top_assets: [], summary: {}, meta: { target: domain.to_s, mode: :passive } }
       end
 
       def output_results(result, domain)
         payload = normalize_payload(result)
+        payload = apply_session_extensions(payload, domain)
         payload[:top_assets] = Array(payload[:top_assets]).first(top_limit)
         payload[:charts] = ASRFacet::Output::ChartDataBuilder.new(payload[:store]).build
         payload[:meta] = report_metadata(domain, payload)
@@ -690,7 +898,11 @@ module ASRFacet
 
       def render_to_screen(payload)
         if formatter_key == "cli" || router_format?(formatter_key) || formatter_key == "all" || interactive_terminal?
-          puts(formatter_for("cli").format(payload))
+          if payload[:terminal_output] && (payload[:scan_result_object] || payload[:terminal_mode])
+            payload[:terminal_output].print_scan_complete(payload[:scan_result_object], enum_result: payload)
+          else
+            puts(formatter_for("cli").format(payload))
+          end
           if formatter_key != "cli" && !router_format?(formatter_key) && formatter_key != "all"
             ASRFacet::Core::ThreadSafe.print_status("Detailed #{formatter_key.upcase} output was written to the stored report bundle.")
           end
@@ -757,7 +969,10 @@ module ASRFacet
           output_directory: output_root,
           stream_path: payload[:stream_path].to_s,
           summary: symbolize_keys(summary || {}),
-          output_note: "Reports are automatically stored under the ASRFacet-Rb output directory for later review."
+          output_note: "Reports are automatically stored under the ASRFacet-Rb output directory for later review.",
+          plugins: selected_runtime_list(payload[:runtime_plugins], options[:plugins]),
+          filters: selected_runtime_list(payload[:runtime_filters], options[:filters]),
+          extension_resolution: symbolize_keys(payload[:extension_resolution] || {})
         }
       rescue ASRFacet::Error, NoMethodError, TypeError, ArgumentError
         { target: domain.to_s, generated_at: Time.now.utc.iso8601, output_directory: resolve_output_directory }
@@ -907,6 +1122,89 @@ module ASRFacet
         false
       end
 
+      def scanner_terminal_output(scan_mode:)
+        ASRFacet::Scanner::TerminalOutput.new(
+          verbosity: options[:verbosity] || (options[:verbose] ? 1 : 0),
+          scan_mode: scan_mode
+        )
+      rescue StandardError
+        ASRFacet::Scanner::TerminalOutput.new
+      end
+
+      def portscan_flags
+        flags = []
+        flags << "--type #{options[:type]}"
+        flags << "-T#{options[:timing]}"
+        flags << "-p #{options[:ports]}"
+        flags << "--version" if options[:version]
+        flags << "--os" if options[:os]
+        flags << "--plugins #{options[:plugins]}" unless options[:plugins].to_s.empty?
+        flags << "--filters #{options[:filters]}" unless options[:filters].to_s.empty?
+        flags
+      end
+
+      def enum_flags
+        flags = []
+        flags << "--passive" if enum_modes[:passive]
+        flags << "--active" if enum_modes[:active]
+        flags << "--brute" if options[:brute]
+        flags << "--portscan" if options[:portscan]
+        flags << "--plugins #{options[:plugins]}" unless options[:plugins].to_s.empty?
+        flags << "--filters #{options[:filters]}" unless options[:filters].to_s.empty?
+        flags
+      end
+
+      def intel_flags
+        flags = []
+        flags << "--sources #{options[:sources]}" unless options[:sources].to_s.empty?
+        flags << "--plugins #{options[:plugins]}" unless options[:plugins].to_s.empty?
+        flags << "--filters #{options[:filters]}" unless options[:filters].to_s.empty?
+        flags
+      end
+
+      def enum_modes
+        passive = options[:passive] || !options[:active]
+        active = options[:active]
+        {
+          passive: passive,
+          active: active,
+          label: if passive && active
+                   :active_passive
+                 elsif active
+                   :active
+                 else
+                   :passive
+                 end
+        }
+      end
+
+      def run_active_enum(target, terminal)
+        terminal.print_stage_start(1, "Active recon", 1)
+        dashboard = interactive_terminal? ? ASRFacet::ProgressDashboard.new : nil
+        pipeline = ASRFacet::Pipeline.new(
+          target,
+          build_scan_options.merge(
+            stage_callback: lambda do |index, name, phase = :start, snapshot = {}|
+              announce_stage(index, name, phase, snapshot)
+              update_dashboard(dashboard, index, name, phase, snapshot)
+            end,
+            event_callback: method(:announce_event)
+          )
+        )
+        with_graceful_shutdown(pipeline) do
+          pipeline.run.merge(meta: { mode: :active, target: target }, terminal_output: terminal)
+        end
+      end
+
+      def run_combined_enum(target, terminal)
+        payload = run_active_enum(target, terminal)
+        passive = passive_payload(target)
+        merged_store = payload[:store] || ASRFacet::ResultStore.new
+        Array(passive[:store].all(:subdomains)).each { |entry| merged_store.add(:subdomains, entry) }
+        Array(passive[:store].all(:passive_errors)).each { |entry| merged_store.add(:passive_errors, entry) }
+        payload.merge(store: merged_store, summary: merged_store.summary, meta: { mode: :active_passive, target: target })
+      end
+
       def symbolize_keys(value)
         case value
         when Hash
@@ -976,6 +1274,66 @@ module ASRFacet
         rescue ArgumentError, Errno::EINVAL, SystemCallError
           nil
         end
+      end
+
+      def apply_session_extensions(payload, domain)
+        return payload if payload[:extensions_applied] == true
+
+        runtime = ASRFacet::Extensions::SessionAugmentor.new(logger: ASRFacet::Core::ThreadSafe).apply(
+          target: domain,
+          store: payload[:store],
+          graph: payload[:graph],
+          options: build_options,
+          mode: payload.dig(:meta, :mode) || :scan,
+          execution: payload[:execution] || {}
+        )
+        payload.merge(
+          store: runtime[:store] || payload[:store],
+          summary: runtime[:summary] || payload[:summary],
+          runtime_plugins: Array(runtime[:plugin_trace]),
+          runtime_filters: Array(runtime[:filter_trace]),
+          extension_resolution: symbolize_keys(runtime[:extension_resolution] || {}),
+          extensions_applied: true
+        )
+      rescue ASRFacet::Error, NoMethodError, TypeError
+        payload
+      end
+
+      def selected_runtime_list(runtime_trace, option_value)
+        trace = Array(runtime_trace).map { |entry| entry[:name].to_s }.reject(&:empty?)
+        return trace unless trace.empty?
+
+        value = option_value.to_s.strip
+        return [] if value.empty?
+
+        value.split(",").map(&:strip).reject(&:empty?)
+      rescue ASRFacet::Error, NoMethodError, TypeError
+        []
+      end
+
+      def print_extension_review(mode)
+        return if options[:plugins].to_s.strip.empty? && options[:filters].to_s.strip.empty?
+
+        plugin_plan = ASRFacet::Plugins::Engine.new(selection: options[:plugins]).resolve(mode: mode)
+        filter_plan = ASRFacet::Filters::Engine.new(selection: options[:filters]).resolve(mode: mode)
+        ASRFacet::Core::ThreadSafe.puts("")
+        ASRFacet::Core::ThreadSafe.print_status("Resolved extension plan for #{mode}:")
+        print_extension_line("Plugins", plugin_plan)
+        print_extension_line("Filters", filter_plan)
+        ASRFacet::Core::ThreadSafe.puts("")
+      rescue ASRFacet::Error, IOError, NoMethodError, TypeError
+        nil
+      end
+
+      def print_extension_line(label, plan)
+        selected = Array(plan[:selected]).map { |entry| entry[:name].to_s }.reject(&:empty?)
+        excluded = Array(plan[:excluded]).map { |entry| entry[:name].to_s }.reject(&:empty?)
+        unknown = Array(plan[:unknown]).map(&:to_s).reject(&:empty?)
+        ASRFacet::Core::ThreadSafe.puts("  #{label}: #{selected.empty? ? 'none' : selected.join(', ')}")
+        ASRFacet::Core::ThreadSafe.puts("    Excluded: #{excluded.join(', ')}") unless excluded.empty?
+        ASRFacet::Core::ThreadSafe.puts("    Unknown selectors: #{unknown.join(', ')}") unless unknown.empty?
+      rescue ASRFacet::Error, IOError, NoMethodError, TypeError
+        nil
       end
     end
   end

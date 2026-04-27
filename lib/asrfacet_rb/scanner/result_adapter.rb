@@ -37,7 +37,8 @@ module ASRFacet
               cpe: port_result.cpe,
               banner: port_result.banner,
               rtt: port_result.rtt,
-              retries: port_result.retries
+              retries: port_result.retries,
+              redteam_hints: Array(port_result.redteam_hints).map { |hint| hint.respond_to?(:to_h) ? hint.to_h : hint }
             }
             category = case port_result.state
                        when :open then :open_ports
@@ -53,7 +54,8 @@ module ASRFacet
           hosts_up: Array(scan_result&.host_results).count(&:up),
           total_open: scan_result&.total_open.to_i,
           total_filtered: scan_result&.total_filtered.to_i,
-          scan_type: scan_result&.scan_type.to_s
+          scan_type: scan_result&.scan_type.to_s,
+          scan_mode: scan_result&.scan_mode.to_s
         )
 
         {
@@ -61,6 +63,7 @@ module ASRFacet
           top_assets: [],
           summary: summary,
           scan_result: scan_result&.to_h,
+          scan_result_object: scan_result,
           execution: { stages: [], failures: [], integrity: { status: "ok", summary: "Scanner run completed.", issues: [], recommendations: [] } },
           meta: { target: target.to_s }
         }

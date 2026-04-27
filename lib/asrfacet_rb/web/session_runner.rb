@@ -62,6 +62,24 @@ module ASRFacet
         false
       end
 
+      def stop(session_id)
+        thread = @mutex.synchronize { @jobs[session_id.to_s] }
+        return false unless thread&.alive?
+
+        @session_store.request_stop(session_id, reason: "Stop requested from the web control panel.")
+        thread.kill
+        @session_store.mark_stopped(session_id, reason: "Run stopped from the web control panel.")
+        true
+      rescue StandardError => e
+        @session_store.append_event(
+          session_id,
+          type: "warning",
+          message: "Stop request could not be completed cleanly: #{e.message}",
+          data: { engine: "session_runner", error: e.message }
+        )
+        false
+      end
+
       private
 
       def run_session(session_id)
@@ -71,6 +89,8 @@ module ASRFacet
         config = ASRFacet::Web::SessionStore.normalize_config(symbolize(session[:config] || {}))
         target = config[:target].to_s.strip
         raise "A target is required before starting a session." if target.empty?
+        extension_plan = resolve_extension_plan(config)
+        validate_extension_plan!(extension_plan)
         integrity = ASRFacet::Core::IntegrityChecker.check(output_root: output_root)
         if ASRFacet::Core::IntegrityChecker.critical?(integrity)
           raise "Framework integrity check failed: #{integrity[:summary]}"
@@ -92,8 +112,10 @@ module ASRFacet
         end
         result = perform_run(session_id, config, target, integrity: integrity)
         payload = normalize_payload(result)
+        payload = apply_session_extensions(payload, target, config)
         payload[:summary] ||= payload[:store].respond_to?(:summary) ? payload[:store].summary : {}
-        payload[:meta] = build_meta(target)
+        payload[:extension_resolution] ||= serialize_extension_plan(extension_plan)
+        payload[:meta] = build_meta(target, extension_plan)
         payload[:integrity] ||= integrity
         payload[:artifacts] = save_report_bundle(target, payload, requested_format: config[:format])
         Array(payload.dig(:artifacts, :report_errors)).each do |entry|
@@ -216,7 +238,8 @@ module ASRFacet
           version_detection: config[:scan_version],
           os_detection: config[:scan_os],
           version_intensity: config[:scan_intensity],
-          ports: config[:ports]
+          ports: config[:ports],
+          raw_backend: config[:raw_backend]
         ).scan(target)
         payload = ASRFacet::Scanner::ResultAdapter.to_payload(scan_result, target: target)
         store = payload[:store]
@@ -270,6 +293,8 @@ module ASRFacet
           adaptive_rate: config[:adaptive_rate],
           verbose: config[:verbose],
           format: config[:format],
+          plugins: config[:plugins],
+          filters: config[:filters],
           api_keys: api_keys(config)
         }
       rescue StandardError
@@ -282,20 +307,83 @@ module ASRFacet
         {}
       end
 
-      def build_meta(target)
+      def build_meta(target, extension_plan = {})
         {
           target: target,
           generated_at: Time.now.utc.iso8601,
           output_directory: output_root,
-          report_engine: ASRFacet::Output::RuntimeDetector.engine_label
+          report_engine: ASRFacet::Output::RuntimeDetector.engine_label,
+          control_plane: "web_session",
+          extensions: serialize_extension_plan(extension_plan),
+          scanner_backend: {
+            platform: ASRFacet::Scanner::Platform.host_label,
+            nping_available: ASRFacet::Scanner::Platform.nping_available?,
+            elevation_supported: ASRFacet::Scanner::Platform.elevation_supported?,
+            raw_requirements: ASRFacet::Scanner::Platform.raw_backend_requirements
+          }
         }
       rescue StandardError
         {
           target: target.to_s,
           generated_at: Time.now.utc.iso8601,
           output_directory: output_root,
-          report_engine: "ASRFacet-Rb"
+          report_engine: "ASRFacet-Rb",
+          control_plane: "web_session"
         }
+      end
+
+      def apply_session_extensions(payload, target, config)
+        return payload if payload[:extensions_applied] == true
+
+        runtime = ASRFacet::Extensions::SessionAugmentor.new(logger: ASRFacet::Core::ThreadSafe).apply(
+          target: target,
+          store: payload[:store],
+          graph: payload[:graph],
+          options: config,
+          mode: config[:mode] || :scan,
+          execution: payload[:execution] || {}
+        )
+        payload.merge(
+          store: runtime[:store] || payload[:store],
+          summary: runtime[:summary] || payload[:summary],
+          runtime_plugins: Array(runtime[:plugin_trace]),
+          runtime_filters: Array(runtime[:filter_trace]),
+          extension_resolution: symbolize(runtime[:extension_resolution] || {}),
+          extensions_applied: true
+        )
+      rescue StandardError
+        payload
+      end
+
+      def resolve_extension_plan(config)
+        mode = config[:mode].to_s
+        {
+          plugins: ASRFacet::Plugins::Engine.new(selection: config[:plugins]).resolve(mode: mode),
+          filters: ASRFacet::Filters::Engine.new(selection: config[:filters]).resolve(mode: mode)
+        }
+      rescue StandardError
+        { plugins: {}, filters: {} }
+      end
+
+      def validate_extension_plan!(extension_plan)
+        errors = []
+        plugin_unknown = Array(extension_plan.dig(:plugins, :unknown)).map(&:to_s).reject(&:empty?)
+        filter_unknown = Array(extension_plan.dig(:filters, :unknown)).map(&:to_s).reject(&:empty?)
+        errors << "Unknown plugin selectors: #{plugin_unknown.join(', ')}" unless plugin_unknown.empty?
+        errors << "Unknown filter selectors: #{filter_unknown.join(', ')}" unless filter_unknown.empty?
+        raise ASRFacet::PluginError, errors.join(" | ") unless errors.empty?
+      rescue ASRFacet::PluginError
+        raise
+      rescue StandardError
+        nil
+      end
+
+      def serialize_extension_plan(extension_plan)
+        symbolize(extension_plan).transform_values do |plan|
+          symbolize(plan).reject { |key, _value| key == :classes }
+        end
+      rescue StandardError
+        {}
       end
 
       def save_report_bundle(target, payload, requested_format:)

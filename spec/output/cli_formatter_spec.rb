@@ -48,7 +48,7 @@ RSpec.describe ASRFacet::Output::CliFormatter do
   it "does not recommend integrity remediation when no integrity status is present" do
     formatter = described_class.new
     store = ASRFacet::ResultStore.new
-    store.add(:subdomains, "scanme.nmap.org")
+    store.add(:subdomains, "scan.example.test")
 
     payload = {
       store: store,

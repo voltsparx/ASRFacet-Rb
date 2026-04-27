@@ -79,6 +79,8 @@ module ASRFacet
         @server.mount_proc("/api/bootstrap") { |_req, res| handle_bootstrap(res) }
         @server.mount_proc("/api/sessions") { |req, res| handle_sessions(req, res) }
         @server.mount_proc("/api/session") { |req, res| handle_session_lookup(req, res) }
+        @server.mount_proc("/api/session/clone") { |req, res| handle_session_clone(req, res) }
+        @server.mount_proc("/api/session/stop") { |req, res| handle_session_stop(req, res) }
         @server.mount_proc("/api/run") { |req, res| handle_run(req, res) }
         @server.mount_proc("/reports") { |req, res| handle_reports(req, res) }
         @server.mount_proc("/assets/icon") { |_req, res| handle_icon(res) }
@@ -148,10 +150,41 @@ module ASRFacet
       end
 
       def handle_session_lookup(req, res)
+        method = req.respond_to?(:request_method) ? req.request_method.to_s.upcase : "GET"
+        return handle_session_delete(req, res) if method == "DELETE"
+        return respond_json(res, { error: "method_not_allowed" }, status: 405) unless method == "GET"
+
         session = @session_store.fetch(request_param(req, "id").to_s)
         session ? respond_json(res, { session: session }) : respond_json(res, { error: "not_found" }, status: 404)
       rescue StandardError
         respond_json(res, { error: "lookup_failed" }, status: 500)
+      end
+
+      def handle_session_clone(req, res)
+        return respond_json(res, { error: "method_not_allowed" }, status: 405) unless req.request_method == "POST"
+
+        session_id = request_param(req, "id").to_s
+        duplicated = @session_store.duplicate(session_id)
+        return respond_json(res, { error: "not_found" }, status: 404) if duplicated.nil?
+
+        respond_json(res, { session: duplicated })
+      rescue StandardError
+        respond_json(res, { error: "clone_failed" }, status: 500)
+      end
+
+      def handle_session_stop(req, res)
+        return respond_json(res, { error: "method_not_allowed" }, status: 405) unless req.request_method == "POST"
+
+        session_id = request_param(req, "id").to_s
+        return respond_json(res, { error: "not_found" }, status: 404) if @session_store.fetch(session_id).nil?
+
+        if @session_runner.respond_to?(:stop) && @session_runner.stop(session_id)
+          respond_json(res, { ok: true, session_id: session_id, status: "stopped" })
+        else
+          respond_json(res, { ok: false, error: "not_running" }, status: 409)
+        end
+      rescue StandardError
+        respond_json(res, { error: "stop_failed" }, status: 500)
       end
 
       def handle_run(req, res)
@@ -248,7 +281,8 @@ module ASRFacet
           artifacts: item[:artifacts] || {},
           error: item[:error],
           error_details: item[:error_details] || {},
-          integrity: item[:integrity] || {}
+          integrity: item[:integrity] || {},
+          stop_requested: item[:stop_requested] == true
         }
       rescue StandardError
         {}
@@ -261,16 +295,37 @@ module ASRFacet
       end
 
       def capability_payload
+        plugin_engine = ASRFacet::Plugins::Engine.new(selection: "all")
+        filter_engine = ASRFacet::Filters::Engine.new(selection: "all")
         {
           modes: ASRFacet::Web::SessionStore::VALID_MODES,
           formats: ASRFacet::Web::SessionStore::VALID_FORMATS,
           scan_types: ASRFacet::Web::SessionStore::VALID_SCAN_TYPES,
+          raw_backends: ASRFacet::Web::SessionStore::VALID_RAW_BACKENDS,
+          plugins: plugin_engine.names,
+          filters: filter_engine.names,
+          plugins_catalog: plugin_engine.catalog,
+          filters_catalog: filter_engine.catalog,
+          selector_help: ASRFacet::Extensions::AttachableCatalog.selector_help,
           scan_timings: (0..5).to_a,
           port_presets: %w[top100 top1000 top65535 common],
-          webhook_platforms: ASRFacet::Web::SessionStore::VALID_WEBHOOK_PLATFORMS
+          webhook_platforms: ASRFacet::Web::SessionStore::VALID_WEBHOOK_PLATFORMS,
+          session_actions: %w[save run clone stop delete],
+          platform: ASRFacet::Scanner::Platform.host_label,
+          nping_available: ASRFacet::Scanner::Platform.nping_available?,
+          elevation_supported: ASRFacet::Scanner::Platform.elevation_supported?,
+          raw_scan_requirements: ASRFacet::Scanner::Platform.raw_backend_requirements
         }
       rescue StandardError
         {}
+      end
+
+      def handle_session_delete(req, res)
+        session_id = request_param(req, "id").to_s
+        deleted = @session_store.delete(session_id)
+        deleted ? respond_json(res, { ok: true, session_id: session_id }) : respond_json(res, { error: "not_found" }, status: 404)
+      rescue StandardError
+        respond_json(res, { error: "delete_failed" }, status: 500)
       end
 
       def reports_root

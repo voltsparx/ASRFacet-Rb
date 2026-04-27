@@ -18,6 +18,14 @@ module ASRFacet
   module Scanner
     module ScanTypes
       class WindowScan < BaseScan
+        def scan_name
+          "TCP Window Scan"
+        end
+
+        def scan_description
+          "ACK scan variant. Differentiates open/closed on systems that advertise non-zero RST window."
+        end
+
         def probe(host, port)
           response, retries = with_retries do
             @context.tcp_prober.send_probe(host: host, port: port, flags: %i[ack], timeout: rtt_timeout)

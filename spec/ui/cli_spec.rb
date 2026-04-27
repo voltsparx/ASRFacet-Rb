@@ -86,6 +86,43 @@ RSpec.describe ASRFacet::UI::CLI do
       expect(ASRFacet::Pipeline).not_to have_received(:new)
     end
 
+    it "passes session plugins and filters into the scan pipeline" do
+      result = { store: ASRFacet::ResultStore.new, top_assets: [], summary: {} }
+      pipeline = instance_double(ASRFacet::Pipeline, run: result, request_shutdown: true)
+      allow(ASRFacet::Pipeline).to receive(:new).and_return(pipeline)
+
+      capture_stdout do
+        described_class.start([
+          "scan", "example.com",
+          "--plugins", "exposure_score,attack_path",
+          "--filters", "scope_guard,duplicate_signal"
+        ])
+      end
+
+      expect(ASRFacet::Pipeline).to have_received(:new).with(
+        "example.com",
+        hash_including(
+          plugins: "exposure_score,attack_path",
+          filters: "scope_guard,duplicate_signal"
+        )
+      )
+    end
+
+    it "lists plugins with structured catalog filters" do
+      output = capture_stdout { described_class.start(["plugins", "list", "--mode", "scan", "--json"]) }
+
+      expect(output).to include("\"name\": \"attack_path\"")
+      expect(output).to include("\"category\": \"analysis\"")
+    end
+
+    it "resolves filter selectors from the CLI" do
+      output = capture_stdout { described_class.start(["filters", "resolve", "category:scope,-duplicate_signal", "--mode", "scan"]) }
+
+      expect(output).to include("\"selected\"")
+      expect(output).to include("scope_guard")
+      expect(output).to include("\"excluded\"")
+    end
+
     it "stores keys through the keys subcommand" do
       store = instance_double(ASRFacet::KeyStore, set: true)
       allow(ASRFacet::KeyStore).to receive(:new).and_return(store)

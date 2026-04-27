@@ -18,11 +18,26 @@ module ASRFacet
   module Scanner
     module ScanTypes
       class FinScan < BaseScan
+        def scan_name
+          "TCP FIN Scan"
+        end
+
+        def scan_description
+          "Stealthy. Bypasses some stateless firewalls. Works on RFC 793 compliant stacks (not Windows)."
+        end
+
         def probe(host, port)
           response, retries = with_retries do
             @context.tcp_prober.send_probe(host: host, port: port, flags: %i[fin], timeout: rtt_timeout)
           end
-          build_result(port: port, proto: :tcp, state: response[:reply] == :rst ? :closed : :open_filtered, service: service_name(port, :tcp), retries: retries)
+          state = if response[:reply] == :rst
+                    :closed
+                  elsif response[:reply] == :icmp_type_3
+                    :filtered
+                  else
+                    :open_filtered
+                  end
+          build_result(port: port, proto: :tcp, state: state, service: service_name(port, :tcp), retries: retries)
         end
       end
     end

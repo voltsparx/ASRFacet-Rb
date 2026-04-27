@@ -99,7 +99,7 @@ module ASRFacet
           usage: "asrfacet-rb --console",
           details: [
             "Console mode keeps you inside a friendly shell where you can run normal ASRFacet commands without leaving the session.",
-            "Console-specific commands include `banner` to redraw the banner and `clear` to clear the screen.",
+            "Console-specific commands include `banner` to redraw the banner, `clear` to clear the screen, `use <mode>` to switch the active extension mode, and `review` to inspect the resolved attachable plan.",
             "Use `help` or `explain TOPIC` inside the console to learn commands, flags, and workflows."
           ],
           examples: [
@@ -171,6 +171,33 @@ module ASRFacet
             "asrfacet-rb scan example.com --format html --output report.html",
             "asrfacet-rb passive example.com --format json --output passive.json",
             "asrfacet-rb portscan 192.0.2.10 --format pdf --output service-map.pdf"
+          ]
+        },
+        "plugins" => {
+          summary: "Inspect and select pluggable session plugins by name, category, or mode.",
+          usage: "asrfacet-rb plugins list [--mode scan] [--category tls] [--search atlas] or --plugins SPEC",
+          details: [
+            "Plugins are attachable analysis packs that enrich a session after the main collection steps complete.",
+            "Selector syntax supports exact names, category filters, mode filters, and exclusion tokens.",
+            "Use `plugins resolve SPEC --mode MODE` to preview what a selector string will enable before a run."
+          ],
+          examples: [
+            "asrfacet-rb plugins list --mode portscan",
+            "asrfacet-rb plugins resolve category:tls,certificate_atlas --mode scan",
+            "asrfacet-rb scan example.com --plugins category:analysis,-service_cluster"
+          ]
+        },
+        "filters" => {
+          summary: "Inspect and select pluggable session filters that reshape or suppress result signals.",
+          usage: "asrfacet-rb filters list [--mode passive] [--category scope] [--search leak] or --filters SPEC",
+          details: [
+            "Filters run after plugins and can remove out-of-scope data, suppress duplicates, and promote high-value attack-surface artifacts.",
+            "Selector syntax mirrors plugins so the same attachable style works in the CLI, console, and web builder."
+          ],
+          examples: [
+            "asrfacet-rb filters list --mode intel",
+            "asrfacet-rb filters resolve category:focus,interesting_asset --mode scan",
+            "asrfacet-rb passive example.com --filters scope_guard,interesting_asset"
           ]
         },
         "scope" => {
@@ -385,6 +412,19 @@ module ASRFacet
             "wizard"
           ]
         },
+        "review" => {
+          summary: "Inspect the active console attachable plan before you run a command.",
+          usage: "review",
+          details: [
+            "Review shows the active console mode plus the resolved plugin and filter selections that will be injected into matching CLI commands.",
+            "Use `use <mode>`, `select plugins <spec>`, `add filter <spec>`, and `remove plugin <spec>` to refine the plan before you run a command."
+          ],
+          examples: [
+            "use portscan",
+            "select plugins mode:portscan,-internet_exposure",
+            "review"
+          ]
+        },
         "workflow" => {
           summary: "Understand the eight-stage reconnaissance pipeline.",
           usage: "asrfacet-rb manual workflow",
@@ -477,7 +517,13 @@ module ASRFacet
         "man" => "manual",
         "attack-surface" => "recon",
         "config" => "configuration",
-        "configurations" => "configuration"
+        "configurations" => "configuration",
+        "--plugins" => "plugins",
+        "--filters" => "filters",
+        "plugin" => "plugins",
+        "filter" => "filters",
+        "review" => "review",
+        "use" => "console"
       }.freeze
 
       module_function
@@ -520,6 +566,8 @@ module ASRFacet
           "      --exclude LIST Domains or IPs to never touch",
           "      --monitor      Show changes since the previous scan",
           "      --headless     Enable headless browser rendering for SPAs",
+          "      --plugins SPEC Enable attachable plugins by selector",
+          "      --filters SPEC Apply attachable filters by selector",
           "      --webhook-url  Send high-severity alerts to Slack or Discord",
           "      --webhook-platform NAME  slack or discord payload mode",
           "      --delay MS     Base delay between requests in milliseconds",

@@ -66,9 +66,6 @@ module ASRFacet
         private
 
         def default_wordlist_path
-          amass_wordlist = File.expand_path(File.join(__dir__, "..", "..", "..", "..", "temp", "amass", "resources", "alterations.txt"))
-          return amass_wordlist if File.file?(amass_wordlist)
-
           File.expand_path(File.join(__dir__, "..", "..", "..", "..", "wordlists", "subdomains_small.txt"))
         end
 

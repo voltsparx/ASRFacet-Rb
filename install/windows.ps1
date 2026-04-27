@@ -42,10 +42,9 @@ $ManifestName = ".asrfacet-rb-install.json"
 $RuntimePayload = @(
   "bin",
   "config",
+  "data",
   "lib",
   "man",
-  "temp/nmap/nmap-service-probes",
-  "temp/nmap/nmap-services",
   "Gemfile",
   "Gemfile.lock",
   "README.md",

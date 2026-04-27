@@ -26,6 +26,7 @@ module ASRFacet
       VALID_MODES = %w[scan passive dns ports portscan].freeze
       VALID_FORMATS = %w[cli json html txt csv pdf docx all sarif].freeze
       VALID_SCAN_TYPES = %w[connect syn udp ack fin null xmas window maimon ping service].freeze
+      VALID_RAW_BACKENDS = %w[auto nping builtin].freeze
       VALID_WEBHOOK_PLATFORMS = %w[slack discord].freeze
       DEFAULT_CONFIG = {
         mode: "scan",
@@ -46,10 +47,13 @@ module ASRFacet
         webhook_platform: "slack",
         shodan_key: "",
         scan_type: "connect",
+        raw_backend: "auto",
         scan_timing: 3,
         scan_version: false,
         scan_os: false,
-        scan_intensity: 7
+        scan_intensity: 7,
+        plugins: "",
+        filters: ""
       }.freeze
 
       attr_reader :root
@@ -80,10 +84,13 @@ module ASRFacet
             webhook_platform: normalize_webhook_platform(item[:webhook_platform]),
             shodan_key: item[:shodan_key].to_s.strip,
             scan_type: normalize_scan_type(item[:scan_type]),
+            raw_backend: normalize_raw_backend(item[:raw_backend]),
             scan_timing: bounded_integer(item[:scan_timing], 3, min: 0, max: 5),
             scan_version: normalize_boolean(item[:scan_version], default: false),
             scan_os: normalize_boolean(item[:scan_os], default: false),
-            scan_intensity: bounded_integer(item[:scan_intensity], 7, min: 0, max: 9)
+            scan_intensity: bounded_integer(item[:scan_intensity], 7, min: 0, max: 9),
+            plugins: normalize_list_string(item[:plugins]),
+            filters: normalize_list_string(item[:filters])
           }
         rescue StandardError
           default_config
@@ -106,6 +113,11 @@ module ASRFacet
           VALID_SCAN_TYPES.include?(scan_type) ? scan_type : DEFAULT_CONFIG[:scan_type]
         end
 
+        def normalize_raw_backend(value)
+          backend = value.to_s.strip.downcase
+          VALID_RAW_BACKENDS.include?(backend) ? backend : DEFAULT_CONFIG[:raw_backend]
+        end
+
         def normalize_webhook_platform(value)
           platform = value.to_s.strip.downcase
           VALID_WEBHOOK_PLATFORMS.include?(platform) ? platform : DEFAULT_CONFIG[:webhook_platform]
@@ -116,6 +128,12 @@ module ASRFacet
           return DEFAULT_CONFIG[:ports] if cleaned.empty?
 
           cleaned
+        end
+
+        def normalize_list_string(value)
+          value.to_s.split(",").map { |entry| entry.to_s.strip.downcase }.reject(&:empty?).uniq.join(",")
+        rescue StandardError
+          ""
         end
 
         def bounded_integer(value, fallback, min:, max:)
@@ -209,6 +227,45 @@ module ASRFacet
         nil
       end
 
+      def delete(id)
+        return false if id.to_s.strip.empty?
+
+        @mutex.synchronize do
+          path = path_for(id)
+          return false unless File.file?(path)
+
+          File.delete(path)
+          true
+        end
+      rescue StandardError
+        false
+      end
+
+      def duplicate(id, name: nil)
+        source = fetch(id)
+        return nil if source.nil?
+
+        copy_name = name.to_s.strip
+        duplicated = source.reject { |key, _value| %i[id created_at updated_at last_heartbeat_at last_run_started_at last_run_completed_at].include?(key) }
+        duplicated[:name] = copy_name.empty? ? "#{source[:name]} Copy" : copy_name
+        duplicated[:status] = "idle"
+        duplicated[:running] = false
+        duplicated[:summary] = {}
+        duplicated[:integrity] = {}
+        duplicated[:artifacts] = {}
+        duplicated[:payload] = {}
+        duplicated[:events] = []
+        duplicated[:error] = nil
+        duplicated[:error_details] = {}
+        duplicated[:current_stage] = nil
+        duplicated[:stop_requested] = false
+        duplicated[:created_at] = Time.now.utc.iso8601
+        duplicated[:updated_at] = Time.now.utc.iso8601
+        create_or_update(duplicated)
+      rescue StandardError
+        nil
+      end
+
       def mark_running(id, meta = {})
         timestamp = Time.now.utc.iso8601
         update_session(
@@ -218,6 +275,7 @@ module ASRFacet
           last_run_started_at: timestamp,
           last_heartbeat_at: timestamp,
           error: nil,
+          stop_requested: false,
           current_stage: nil,
           run_meta: symbolize(meta)
         )
@@ -264,6 +322,47 @@ module ASRFacet
           running: false,
           error: details[:summary],
           error_details: details,
+          stop_requested: false,
+          last_run_completed_at: timestamp,
+          last_heartbeat_at: timestamp
+        )
+      rescue StandardError
+        nil
+      end
+
+      def request_stop(id, reason: "Stop requested from the control plane.")
+        append_event(id, type: "system", message: reason)
+        update_session(id, stop_requested: true)
+      rescue StandardError
+        nil
+      end
+
+      def stop_requested?(id)
+        fetch(id).to_h[:stop_requested] == true
+      rescue StandardError
+        false
+      end
+
+      def mark_stopped(id, reason: "Run stopped from the control plane.")
+        timestamp = Time.now.utc.iso8601
+        update_session(
+          id,
+          status: "stopped",
+          running: false,
+          stop_requested: false,
+          error: reason,
+          error_details: {
+            summary: reason,
+            reason: reason,
+            details: reason,
+            recommendation: "Review the current session configuration, then rerun when you are ready."
+          },
+          current_stage: {
+            name: "Run stopped",
+            phase: "stopped",
+            updated_at: timestamp,
+            snapshot: {}
+          },
           last_run_completed_at: timestamp,
           last_heartbeat_at: timestamp
         )
@@ -349,6 +448,7 @@ module ASRFacet
           payload: {},
           error: nil,
           error_details: {},
+          stop_requested: false,
           last_heartbeat_at: nil,
           created_at: Time.now.utc.iso8601,
           updated_at: Time.now.utc.iso8601

@@ -19,7 +19,7 @@ require "socket"
 module ASRFacet
   module Scanner
     class VersionDetector
-      DEFAULT_INTENSITY = 7
+      DEFAULT_INTENSITY = 5
 
       def initialize(probe_db:, intensity: DEFAULT_INTENSITY, socket_factory: nil, udp_socket_class: UDPSocket)
         @probe_db = probe_db
@@ -29,28 +29,55 @@ module ASRFacet
       end
 
       def detect(host, port, proto: :tcp)
-        soft_result = nil
+        filtered_probes = @probe_db.probes_for(port, proto, intensity: @intensity).sort_by(&:rarity)
+        filtered_probes = filtered_probes.select do |probe|
+          threshold = ASRFacet::Scanner::ProbeDB::INTENSITY_THRESHOLDS.fetch(@intensity, nil)
+          threshold.nil? || probe.rarity.to_i <= threshold || probe.matches_port?(port)
+        end
+        return nil if filtered_probes.empty?
 
-        @probe_db.probes_for(port, proto).each do |probe|
-          next if probe.rarity > @intensity && !probe.matches_port?(port)
+        banner = initial_banner(host, port, proto)
+        if banner
+          matched = banner_match(banner, port, proto)
+          return build_result(matched, banner) if matched && matched[:confidence].to_i == 10
+        end
 
+        soft_result = banner && banner_match(banner, port, proto)
+        filtered_probes.each do |probe|
           response = transmit(host, port, proto, probe)
           next if response.nil?
 
-          full_match = detect_match(probe.matches, response)
-          return build_result(full_match, response) if full_match
-
-          soft_match = detect_match(probe.softmatches, response)
-          soft_result ||= build_result(soft_match, response) if soft_match
+          matched = banner_match(response, port, proto)
+          return build_result(matched, response) if matched && matched[:confidence].to_i == 10
+          soft_result ||= matched if matched
         end
 
-        soft_result
+        return build_result(soft_result, banner) if soft_result
+        nil
       end
 
       private
 
       def default_tcp_socket(host, port, timeout)
         TCPSocket.new(host, port, connect_timeout: timeout)
+      end
+
+      def initial_banner(host, port, proto)
+        if proto.to_sym == :udp
+          transmit_udp(host, port, 2.0, "".b)
+        else
+          socket = @socket_factory.call(host, port, 2.0)
+          readable = IO.select([socket], nil, nil, 2.0)
+          return nil unless readable
+
+          socket.readpartial(1024)
+        end
+      rescue EOFError
+        "".b
+      rescue Errno::ECONNREFUSED, Errno::ETIMEDOUT, IOError, SystemCallError
+        nil
+      ensure
+        socket&.close
       end
 
       def transmit(host, port, proto, probe)
@@ -86,43 +113,45 @@ module ASRFacet
         socket&.close
       end
 
-      def detect_match(catalog, response)
-        catalog.find do |entry|
-          regex = compile_regex(entry[:pattern_source], entry[:pattern_flags])
-          regex && regex.match?(response)
-        end&.then do |entry|
-          regex = compile_regex(entry[:pattern_source], entry[:pattern_flags])
-          match = regex.match(response)
-          entry.merge(match_data: match)
-        end
-      end
-
-      def compile_regex(pattern, flags)
-        options = 0
-        options |= Regexp::IGNORECASE if flags.include?("i")
-        options |= Regexp::MULTILINE if flags.include?("s") || flags.include?("m")
-        Regexp.new(pattern, options)
-      rescue RegexpError
-        nil
-      end
-
       def build_result(entry, response)
-        metadata = entry[:metadata]
-        match = entry[:match_data]
-        extra = [replace_captures(metadata[:product], match), replace_captures(metadata[:extra], match)].compact.join(" ").strip
         {
           service: entry[:service],
-          version: replace_captures(metadata[:version], match),
-          extra: extra.empty? ? nil : extra,
-          cpe: Array(metadata[:cpes]).map { |value| replace_captures(value, match) }.first,
+          version: entry[:version],
+          extra: entry[:info],
+          extra_info: entry[:info],
+          cpe: entry[:cpe],
+          confidence: entry[:confidence].to_i,
           banner: response
         }
       end
 
-      def replace_captures(value, match)
-        return nil if value.to_s.empty?
+      def banner_match(banner, port, proto)
+        return @probe_db.match_banner(banner, port, proto, intensity: @intensity) if @probe_db.respond_to?(:match_banner)
 
-        value.gsub(/\$(\d+)/) { match[Regexp.last_match(1).to_i].to_s }
+        manual_match(Array(@probe_db.probes_for(port, proto, intensity: @intensity)), banner)
+      rescue StandardError
+        manual_match(Array(@probe_db.probes_for(port, proto, intensity: @intensity)), banner)
+      end
+
+      def manual_match(probes, banner)
+        Array(probes).each do |probe|
+          Array(probe.matches).each do |entry|
+            regex = Regexp.new(entry[:pattern_source], Regexp::MULTILINE)
+            next unless regex.match?(banner.to_s)
+
+            metadata = entry[:metadata] || {}
+            return {
+              service: entry[:service],
+              version: metadata[:version],
+              info: [metadata[:product], metadata[:extra]].compact.join(" ").strip,
+              cpe: Array(metadata[:cpes]).first,
+              confidence: 10
+            }
+          end
+        end
+        nil
+      rescue StandardError
+        nil
       end
     end
   end

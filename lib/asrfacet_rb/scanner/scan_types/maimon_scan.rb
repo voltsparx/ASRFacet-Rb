@@ -18,6 +18,14 @@ module ASRFacet
   module Scanner
     module ScanTypes
       class MaimonScan < BaseScan
+        def scan_name
+          "TCP Maimon Scan"
+        end
+
+        def scan_description
+          "FIN+ACK probe. Some BSD systems drop packets to open ports instead of responding."
+        end
+
         def probe(host, port)
           response, retries = with_retries do
             @context.tcp_prober.send_probe(host: host, port: port, flags: %i[fin ack], timeout: rtt_timeout)

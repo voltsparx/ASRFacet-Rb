@@ -31,4 +31,15 @@ RSpec.describe ASRFacet::ResultStore do
     expect(store.all(:open_ports)).to include(include(host: "198.51.100.10", port: 443))
     expect(store.stats).to include(subdomains: 1, ips: 1, open_ports: 1, findings: 1)
   end
+
+  it "replaces categories cleanly and rebuilds port mappings for filtered sessions" do
+    store = described_class.new
+    store.add(:open_ports, { host: "198.51.100.10", port: 22, service: "ssh" })
+    store.add(:open_ports, { host: "198.51.100.10", port: 443, service: "https" })
+
+    store.replace(:open_ports, [{ host: "198.51.100.10", port: 443, service: "https" }])
+
+    expect(store.all(:open_ports)).to eq([{ host: "198.51.100.10", port: 443, service: "https" }])
+    expect(store.ports["198.51.100.10"]).to eq([{ port: 443, banner: nil, service: "https" }])
+  end
 end

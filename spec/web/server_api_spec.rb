@@ -110,6 +110,53 @@ RSpec.describe ASRFacet::Web::Server do
     expect(JSON.parse(response.body)).to include("error" => "not_found")
   end
 
+  it "duplicates saved sessions through the clone API" do
+    request = Struct.new(:request_method, :query, :query_string, :request_uri).new(
+      "POST",
+      {},
+      "id=session-1",
+      URI("http://127.0.0.1/api/session/clone?id=session-1")
+    )
+    duplicated = { id: "session-2", name: "Scanner Draft Copy", config: { target: "example.com" } }
+    allow(session_store).to receive(:duplicate).with("session-1").and_return(duplicated)
+
+    server.send(:handle_session_clone, request, response)
+
+    expect(response.status).to eq(200)
+    expect(JSON.parse(response.body).dig("session", "id")).to eq("session-2")
+  end
+
+  it "stops active sessions through the stop API" do
+    request = Struct.new(:request_method, :query, :query_string, :request_uri).new(
+      "POST",
+      {},
+      "id=session-1",
+      URI("http://127.0.0.1/api/session/stop?id=session-1")
+    )
+    allow(session_store).to receive(:fetch).with("session-1").and_return({ id: "session-1" })
+    allow(session_runner).to receive(:stop).with("session-1").and_return(true)
+
+    server.send(:handle_session_stop, request, response)
+
+    expect(response.status).to eq(200)
+    expect(JSON.parse(response.body)).to include("ok" => true, "status" => "stopped")
+  end
+
+  it "deletes saved sessions through the lookup endpoint with DELETE" do
+    request = Struct.new(:request_method, :query, :query_string, :request_uri).new(
+      "DELETE",
+      {},
+      "id=session-1",
+      URI("http://127.0.0.1/api/session?id=session-1")
+    )
+    allow(session_store).to receive(:delete).with("session-1").and_return(true)
+
+    server.send(:handle_session_lookup, request, response)
+
+    expect(response.status).to eq(200)
+    expect(JSON.parse(response.body)).to include("ok" => true, "session_id" => "session-1")
+  end
+
   it "serves report artifacts with the correct content type" do
     Dir.mktmpdir do |dir|
       artifact_path = File.join(dir, "report.csv")

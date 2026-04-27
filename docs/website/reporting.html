@@ -100,10 +100,10 @@
         <div class="example-tag">human-readable</div>
       </div>
       <div class="example-body">
-        <div class="example-code"><span class="pn">asrfrb ></span> scan scanme.nmap.org --passive-only
+        <div class="example-code"><span class="pn">asrfrb ></span> scan scan.example.test --passive-only
 Scan Overview
 -------------
-Target: scanme.nmap.org
+Target: scan.example.test
 Subdomains: 2
 Open ports: 0
 Findings: 0
@@ -121,8 +121,8 @@ Use the HTML report for richer offline triage and JSON for automation.</div>
       <div class="example-body">
         <div class="example-code">{
   "subdomains": [
-    "scanme.nmap.org",
-    "nmap.scanme.nmap.org"
+    "scan.example.test",
+    "api.scan.example.test"
   ],
   "generated_at": "2026-04-09T09:16:34Z",
   "top_assets": []
@@ -138,13 +138,13 @@ Use the HTML report for richer offline triage and JSON for automation.</div>
       <div class="example-body">
         <div class="example-code">{
   "nodes": [
-    {"id":"scanme.nmap.org","type":"domain"},
+    {"id":"scan.example.test","type":"domain"},
     {"id":"45.33.32.156","type":"ip"},
-    {"id":"scanme.nmap.org:80","type":"service"}
+    {"id":"scan.example.test:80","type":"service"}
   ],
   "edges": [
-    {"from":"scanme.nmap.org","to":"45.33.32.156","relation":"resolves_to"},
-    {"from":"scanme.nmap.org:80","to":"45.33.32.156","relation":"runs_on"}
+    {"from":"scan.example.test","to":"45.33.32.156","relation":"resolves_to"},
+    {"from":"scan.example.test:80","to":"45.33.32.156","relation":"runs_on"}
   ]
 }</div>
       </div>

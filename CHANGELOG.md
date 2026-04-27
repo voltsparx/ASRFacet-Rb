@@ -6,6 +6,9 @@
 - Expanded the core error hierarchy with scan- and DNS-specific failures.
 - Hardened the encrypted key store contract with machine-derived passphrases, PBKDF2, and dedicated CLI key management commands.
 - Added deterministic spec coverage for the key store and per-source rate limiter.
+- Added a richer ASRFacet-Rb scanner core with bundled service catalogs, probe parsing, passive OS fingerprinting, red-team hint mapping, and terminal-first operator output.
+- Added `enum` and `intel` CLI surfaces with terminal-aware active/passive recon framing.
+- Added dedicated scanner specs for the new hint engine and terminal output renderer.
 
 ### Changed
 - Reworked the rate limiter to use thread-safe concurrent maps, per-source mutexes, and monotonic-clock throttling.

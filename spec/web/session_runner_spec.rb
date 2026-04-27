@@ -34,6 +34,7 @@ RSpec.describe ASRFacet::Web::SessionRunner do
           format: "all",
           ports: "22,80",
           scan_type: "syn",
+          raw_backend: "nping",
           scan_timing: 4,
           scan_version: true,
           scan_os: true,
@@ -54,6 +55,7 @@ RSpec.describe ASRFacet::Web::SessionRunner do
       allow(ASRFacet::Scanner::ScanEngine).to receive(:new).with(
         hash_including(
           scan_type: "syn",
+          raw_backend: "nping",
           timing: 4,
           verbosity: 1,
           version_detection: true,
@@ -139,6 +141,45 @@ RSpec.describe ASRFacet::Web::SessionRunner do
         hash_including(scan_type: "connect", ports: "80,443")
       )
       expect(store.fetch(session[:id])[:status]).to eq("completed")
+    end
+  end
+
+  it "can stop a running session through the control-plane hook" do
+    Dir.mktmpdir do |dir|
+      store = ASRFacet::Web::SessionStore.new(root: File.join(dir, "sessions"))
+      session = store.create_or_update(name: "Stop me", config: { target: "example.com" })
+      runner = described_class.new(session_store: store)
+      sleeper = Thread.new { sleep(60) }
+
+      runner.instance_variable_get(:@mutex).synchronize do
+        runner.instance_variable_get(:@jobs)[session[:id]] = sleeper
+      end
+
+      expect(runner.stop(session[:id])).to be(true)
+      expect(store.fetch(session[:id])[:status]).to eq("stopped")
+    ensure
+      sleeper&.kill
+    end
+  end
+
+  it "fails saved sessions with unknown extension selectors before execution" do
+    Dir.mktmpdir do |dir|
+      store = ASRFacet::Web::SessionStore.new(root: File.join(dir, "sessions"))
+      session = store.create_or_update(
+        name: "Bad extensions",
+        config: {
+          target: "example.com",
+          mode: "scan",
+          plugins: "unknown_plugin"
+        }
+      )
+
+      described_class.new(session_store: store).send(:run_session, session[:id])
+      failed = store.fetch(session[:id])
+
+      expect(failed[:status]).to eq("failed")
+      expect(failed[:error]).to include("Session Runner stopped the run before completion")
+      expect(failed.dig(:error_details, :details).to_s).to include("Unknown plugin selectors")
     end
   end
 end

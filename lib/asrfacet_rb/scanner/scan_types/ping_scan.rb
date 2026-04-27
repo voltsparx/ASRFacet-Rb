@@ -18,11 +18,22 @@ module ASRFacet
   module Scanner
     module ScanTypes
       class PingScan < BaseScan
+        def scan_name
+          "Host Discovery"
+        end
+
+        def scan_description
+          "Identify live hosts without port scanning. Use before targeted port scans."
+        end
+
         def host_up?(target)
           return true if @context.icmp_prober.echo(host: target, timeout: rtt_timeout)
           return true if @context.tcp_prober.send_probe(host: target, port: 80, flags: %i[syn], timeout: rtt_timeout)[:reply] == :syn_ack
+          return true if @context.tcp_prober.send_probe(host: target, port: 443, flags: %i[ack], timeout: rtt_timeout)[:reply] == :rst
 
-          @context.tcp_prober.send_probe(host: target, port: 443, flags: %i[ack], timeout: rtt_timeout)[:reply] == :rst
+          @context.icmp_prober.respond_to?(:timestamp?) && @context.icmp_prober.timestamp?(host: target, timeout: rtt_timeout)
+        rescue StandardError
+          false
         end
 
         def probe(host, _port = nil)

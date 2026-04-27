@@ -25,12 +25,20 @@ module ASRFacet
           @socket_class = socket_class
         end
 
+        def scan_name
+          "TCP Connect Scan"
+        end
+
+        def scan_description
+          "Full TCP handshake. Logged by target. Use when raw sockets unavailable."
+        end
+
         def probe(host, port)
           started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
           result, retries = with_retries do
             socket = @socket_class.new(host, port, connect_timeout: rtt_timeout)
-            socket.close
-            build_result(port: port, proto: :tcp, state: :open, service: service_name(port, :tcp))
+            banner = read_banner(socket)
+            build_result(port: port, proto: :tcp, state: :open, service: service_name(port, :tcp), banner: banner)
           rescue Errno::ECONNREFUSED
             build_result(port: port, proto: :tcp, state: :closed, service: service_name(port, :tcp))
           rescue Errno::ETIMEDOUT, Errno::EHOSTUNREACH, Errno::ENETUNREACH
@@ -41,6 +49,19 @@ module ASRFacet
           result.rtt = ((Process.clock_gettime(Process::CLOCK_MONOTONIC) - started) * 1000.0).round(2)
           result.retries = retries
           result
+        end
+
+        private
+
+        def read_banner(socket)
+          return nil unless socket.is_a?(IO) || socket.respond_to?(:to_io)
+
+          readable = IO.select([socket], nil, nil, 1.0)
+          return nil unless readable
+
+          socket.readpartial(1024)
+        rescue EOFError, IOError, SystemCallError
+          nil
         end
       end
     end

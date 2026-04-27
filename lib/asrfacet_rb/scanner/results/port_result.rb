@@ -18,9 +18,36 @@ module ASRFacet
   module Scanner
     module Results
       class PortResult
-        attr_accessor :port, :proto, :state, :service, :version, :extra, :cpe, :banner, :rtt, :retries
+        RedTeamHint = Struct.new(
+          :cve,
+          :title,
+          :severity,
+          :operator_action,
+          :technique,
+          :tools,
+          :reference,
+          :affected,
+          :note,
+          keyword_init: true
+        ) do
+          def to_h
+            {
+              cve: cve,
+              title: title,
+              severity: severity,
+              operator_action: operator_action,
+              technique: technique,
+              tools: Array(tools),
+              reference: reference,
+              affected: affected,
+              note: note
+            }
+          end
+        end
 
-        def initialize(port:, proto:, state:, service: nil, version: nil, extra: nil, cpe: nil, banner: nil, rtt: nil, retries: 0)
+        attr_accessor :port, :proto, :state, :service, :version, :extra, :cpe, :banner, :rtt, :retries, :redteam_hints
+
+        def initialize(port:, proto:, state:, service: nil, version: nil, extra: nil, cpe: nil, banner: nil, rtt: nil, retries: 0, redteam_hints: [])
           @port = port.to_i
           @proto = proto.to_sym
           @state = state.to_sym
@@ -31,6 +58,7 @@ module ASRFacet
           @banner = banner
           @rtt = rtt
           @retries = retries.to_i
+          @redteam_hints = Array(redteam_hints)
         end
 
         def open?
@@ -52,7 +80,8 @@ module ASRFacet
             cpe: cpe,
             banner: banner,
             rtt: rtt,
-            retries: retries
+            retries: retries,
+            redteam_hints: redteam_hints.map { |hint| hint.respond_to?(:to_h) ? hint.to_h : hint }
           }
         end
       end

@@ -18,6 +18,14 @@ module ASRFacet
   module Scanner
     module ScanTypes
       class ServiceScan < ConnectScan
+        def scan_name
+          "Service and Version Detection"
+        end
+
+        def scan_description
+          "Fingerprint exact service versions. Critical for identifying exploitable targets."
+        end
+
         def probe(host, port)
           result = super
           return result unless result.open?
@@ -27,7 +35,7 @@ module ASRFacet
 
           result.service = detected[:service] if detected[:service]
           result.version = detected[:version] if detected[:version]
-          result.extra = detected[:extra] if detected[:extra]
+          result.extra = detected[:extra_info] if detected[:extra_info]
           result.cpe = detected[:cpe] if detected[:cpe]
           result.banner = detected[:banner] if detected[:banner]
           result

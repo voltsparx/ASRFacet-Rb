@@ -57,7 +57,7 @@ module ASRFacet
         max_rtt_timeout: 10_000,
         initial_rtt_timeout: 1_000,
         max_retries: 10,
-        host_timeout: 0,
+        host_timeout: nil,
         scan_delay: 0,
         max_scan_delay: 1_000,
         min_parallelism: 0,
@@ -75,6 +75,15 @@ module ASRFacet
         5 => Template.new(level: 5, name: "insane", **DEFAULTS.merge(min_rtt_timeout: 50, max_rtt_timeout: 300, initial_rtt_timeout: 250, max_retries: 2, host_timeout: 900_000, max_scan_delay: 5))
       }.freeze
 
+      DESCRIPTIONS = {
+        0 => "T0 (Paranoid)   - IDS evasion. 5 min between probes. Use for stealth ops.",
+        1 => "T1 (Sneaky)     - Low and slow. 15 sec between probes.",
+        2 => "T2 (Polite)     - Reduced noise. 400ms between probes.",
+        3 => "T3 (Normal)     - Balanced. Default for most engagements.",
+        4 => "T4 (Aggressive) - Fast network assumed. Reduced timeouts.",
+        5 => "T5 (Insane)     - LAN only. Maximal speed, will trigger IDS."
+      }.freeze
+
       NAME_INDEX = TEMPLATES.each_with_object({}) do |(_, template), memo|
         memo[template.name] = template
         memo["t#{template.level}"] = template
@@ -87,6 +96,15 @@ module ASRFacet
       def self.from_name(value)
         key = value.to_s.strip.downcase
         NAME_INDEX.fetch(key, get(3))
+      end
+
+      def self.names
+        TEMPLATES.values.map(&:name).freeze
+      end
+
+      def self.describe(value)
+        template = value.is_a?(Template) ? value : get(value)
+        DESCRIPTIONS.fetch(template.level)
       end
     end
   end

@@ -37,4 +37,11 @@ RSpec.describe ASRFacet::UI::Manual do
     expect(manual).to include("OUTPUTS")
     expect(manual).to include("SAFETY")
   end
+
+  it "documents console attachable controls in the console section" do
+    console_text = described_class.plain_text("console")
+
+    expect(console_text).to include("use portscan")
+    expect(console_text).to include("review")
+  end
 end

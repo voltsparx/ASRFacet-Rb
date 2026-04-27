@@ -36,6 +36,7 @@ module ASRFacet
         intensity = 7
         raw_backend = "auto"
         elevate_raw_scan = false
+        extension_mode = "scan"
         if %w[Full Ports Portscan].include?(mode)
           port_choice = @prompt.select("Port range:", ["Top100", "Top1000", "Custom"])
           port_range = port_choice == "Custom" ? @prompt.ask("Custom port range:") : port_choice.downcase
@@ -51,6 +52,9 @@ module ASRFacet
             elevate_raw_scan = @prompt.yes?("If privileges are missing, attempt sudo or Administrator relaunch?")
           end
         end
+        extension_mode = extension_mode_for(mode)
+        plugin_selection = prompt_extensions("Plugins", ASRFacet::Plugins::Engine.new(selection: "all").catalog(mode: extension_mode))
+        filter_selection = prompt_extensions("Filters", ASRFacet::Filters::Engine.new(selection: "all").catalog(mode: extension_mode))
         output_format = @prompt.select("Output format:", ["CLI", "JSON", "HTML", "TXT"]).downcase
         shodan_key = @prompt.yes?("Add a Shodan key?") ? @prompt.mask("Shodan API key:") : nil
 
@@ -59,6 +63,8 @@ module ASRFacet
           "Mode: #{mode}",
           "Ports: #{port_range || 'n/a'}",
           "Scan type: #{mode == 'Portscan' ? scan_type : 'n/a'}",
+          "Plugins: #{plugin_selection.empty? ? 'none' : plugin_selection.join(',')}",
+          "Filters: #{filter_selection.empty? ? 'none' : filter_selection.join(',')}",
           "Format: #{output_format}",
           "Shodan: #{shodan_key.to_s.empty? ? 'no' : 'yes'}"
         ].join(" | ")
@@ -75,7 +81,10 @@ module ASRFacet
           os_detection: os_detection,
           intensity: intensity,
           raw_backend: raw_backend,
-          elevate_raw_scan: elevate_raw_scan
+          elevate_raw_scan: elevate_raw_scan,
+          plugin_selection: plugin_selection,
+          filter_selection: filter_selection,
+          extension_mode: extension_mode
         )
         render_output(result, output_format)
       rescue StandardError => e
@@ -85,7 +94,7 @@ module ASRFacet
 
       private
 
-      def run_with_spinners(target, mode, port_range, shodan_key, scan_type:, timing:, version_detection:, os_detection:, intensity:, raw_backend:, elevate_raw_scan:)
+      def run_with_spinners(target, mode, port_range, shodan_key, scan_type:, timing:, version_detection:, os_detection:, intensity:, raw_backend:, elevate_raw_scan:, plugin_selection:, filter_selection:, extension_mode:)
         case mode
         when "Full"
           dashboard = ASRFacet::ProgressDashboard.new
@@ -93,6 +102,8 @@ module ASRFacet
             target,
             ports: port_range || "top100",
             api_keys: { shodan: shodan_key },
+            plugins: plugin_selection.join(","),
+            filters: filter_selection.join(","),
             stage_callback: lambda do |index, name, phase = :start, snapshot = {}|
               if phase.to_sym == :start
                 dashboard.start(index - 1)
@@ -174,8 +185,60 @@ module ASRFacet
           ASRFacet::Core::ThreadSafe.print_good("DNS collection complete")
           { store: store, top_assets: [] }
         end
+          .then do |payload|
+            augment_payload(
+              target,
+              payload,
+              mode: extension_mode,
+              plugins: plugin_selection,
+              filters: filter_selection
+            )
+          end
       rescue StandardError
         { store: ASRFacet::ResultStore.new, top_assets: [] }
+      end
+
+      def extension_mode_for(mode)
+        case mode.to_s
+        when "Passive" then "passive"
+        when "Ports" then "ports"
+        when "Portscan" then "portscan"
+        when "DNS" then "dns"
+        else "scan"
+        end
+      rescue StandardError
+        "scan"
+      end
+
+      def prompt_extensions(label, catalog)
+        return [] if Array(catalog).empty?
+
+        @prompt.multi_select("#{label} (optional):", per_page: 12, filter: true) do |menu|
+          Array(catalog).each do |entry|
+            menu.choice("#{entry[:title]} [#{entry[:category]}] - #{entry[:description]}", entry[:name])
+          end
+        end
+      rescue StandardError
+        []
+      end
+
+      def augment_payload(target, payload, mode:, plugins:, filters:)
+        runtime = ASRFacet::Extensions::SessionAugmentor.new(logger: ASRFacet::Core::ThreadSafe).apply(
+          target: target,
+          store: payload[:store],
+          graph: payload[:graph],
+          options: { plugins: plugins.join(","), filters: filters.join(",") },
+          mode: mode
+        )
+        payload.merge(
+          store: runtime[:store] || payload[:store],
+          summary: runtime[:summary] || payload[:summary],
+          runtime_plugins: Array(runtime[:plugin_trace]),
+          runtime_filters: Array(runtime[:filter_trace]),
+          extension_resolution: runtime[:extension_resolution] || {}
+        )
+      rescue StandardError
+        payload
       end
 
       def render_output(result, output_format)

@@ -95,6 +95,23 @@ RSpec.describe ASRFacet::Pipeline do
     expect(result[:execution][:integrity][:status]).to eq("ok")
   end
 
+  it "applies session plugins and filters through the pipeline result" do
+    allow(port_engine).to receive(:scan).and_return([{ host: "198.51.100.10", port: 443, service: "https" }])
+
+    result = described_class.new(
+      "example.com",
+      threads: 5,
+      plugins: "exposure_score,attack_path,service_cluster",
+      filters: "interesting_asset,duplicate_signal"
+    ).run
+
+    expect(result[:extensions_applied]).to be(true)
+    expect(result[:store].all(:plugin_priority_targets)).not_to be_empty
+    expect(result[:store].all(:attack_paths)).not_to be_empty
+    expect(result[:store].all(:service_clusters)).not_to be_empty
+    expect(result[:store].all(:interesting_subdomains)).to include("app.example.com")
+  end
+
   it "blocks the scan early when framework integrity is critically broken" do
     allow(ASRFacet::Core::IntegrityChecker).to receive(:check).and_return(
       status: "critical",

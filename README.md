@@ -32,6 +32,7 @@ Project website: [https://voltsparx.github.io/ASRFacet-Rb/](https://voltsparx.gi
 - [Transparency and Operator Expectations](#transparency-and-operator-expectations)
 - [Testing and Release Verification](#testing-and-release-verification)
 - [Troubleshooting Guide](#troubleshooting-guide)
+- [Reverse Engineering Notes](#reverse-engineering-notes)
 - [Documentation Map](#documentation-map)
 
 ## What It Solves

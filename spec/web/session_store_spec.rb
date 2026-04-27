@@ -112,10 +112,13 @@ RSpec.describe ASRFacet::Web::SessionStore do
           adaptive_rate: "0",
           webhook_platform: "teams",
           scan_type: "SYN",
+          raw_backend: "NPING",
           scan_timing: "9",
           scan_version: "yes",
           scan_os: "true",
-          scan_intensity: "-4"
+          scan_intensity: "-4",
+          plugins: " exposure_score , attack_path ",
+          filters: " scope_guard , duplicate_signal "
         }
       )
 
@@ -137,11 +140,31 @@ RSpec.describe ASRFacet::Web::SessionStore do
         adaptive_rate: false,
         webhook_platform: "slack",
         scan_type: "syn",
+        raw_backend: "nping",
         scan_timing: 5,
         scan_version: true,
         scan_os: true,
-        scan_intensity: 0
+        scan_intensity: 0,
+        plugins: "exposure_score,attack_path",
+        filters: "scope_guard,duplicate_signal"
       )
+    end
+  end
+
+  it "duplicates and deletes saved sessions cleanly" do
+    Dir.mktmpdir do |dir|
+      store = described_class.new(root: dir)
+      session = store.create_or_update(name: "Baseline", config: { target: "example.com", mode: "portscan", raw_backend: "nping" })
+
+      duplicated = store.duplicate(session[:id])
+
+      expect(duplicated).not_to be_nil
+      expect(duplicated[:id]).not_to eq(session[:id])
+      expect(duplicated[:name]).to include("Baseline")
+      expect(duplicated[:status]).to eq("idle")
+      expect(duplicated.dig(:config, :raw_backend)).to eq("nping")
+      expect(store.delete(session[:id])).to be(true)
+      expect(store.fetch(session[:id])).to be_nil
     end
   end
 end

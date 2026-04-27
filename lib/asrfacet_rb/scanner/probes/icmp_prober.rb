@@ -35,6 +35,10 @@ module ASRFacet
         rescue Errno::ETIMEDOUT, Errno::EHOSTUNREACH, Errno::ENETUNREACH, IOError, SystemCallError
           false
         end
+
+        def timestamp?(host:, timeout:)
+          echo(host: host, timeout: timeout)
+        end
       end
     end
   end

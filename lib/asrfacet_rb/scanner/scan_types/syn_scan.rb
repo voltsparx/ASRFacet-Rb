@@ -18,6 +18,14 @@ module ASRFacet
   module Scanner
     module ScanTypes
       class SynScan < BaseScan
+        def scan_name
+          "TCP SYN Stealth Scan"
+        end
+
+        def scan_description
+          "Half-open scan. Less likely to be logged. Preferred for stealth. Requires root."
+        end
+
         def probe(host, port)
           started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
           response, retries = with_retries do
@@ -33,6 +41,7 @@ module ASRFacet
             proto: :tcp,
             state: state,
             service: service_name(port, :tcp),
+            banner: response[:data],
             rtt: ((Process.clock_gettime(Process::CLOCK_MONOTONIC) - started) * 1000.0).round(2),
             retries: retries
           )

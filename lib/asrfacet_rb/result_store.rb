@@ -52,6 +52,24 @@ module ASRFacet
       []
     end
 
+    def replace(category, items)
+      key = category.to_sym
+      bucket = UNIQUE_CATEGORIES.include?(key) ? Concurrent::Set.new : Concurrent::Array.new
+      Array(items).each do |item|
+        normalized_item = normalize_item(item)
+        if bucket.is_a?(Concurrent::Set)
+          bucket.add(normalized_item)
+        else
+          bucket << normalized_item unless bucket.include?(normalized_item)
+        end
+      end
+      @data[key] = bucket
+      rebuild_ports! if key == :open_ports
+      bucket.to_a
+    rescue ASRFacet::Error
+      []
+    end
+
     def to_h
       hash = {}
       @data.each_pair do |key, values|
@@ -172,6 +190,13 @@ module ASRFacet
         banner: entry[:banner],
         service: entry[:service]
       }
+    rescue ASRFacet::Error
+      nil
+    end
+
+    def rebuild_ports!
+      @ports.clear
+      all(:open_ports).each { |entry| track_open_port(entry) }
     rescue ASRFacet::Error
       nil
     end

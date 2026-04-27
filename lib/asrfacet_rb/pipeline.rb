@@ -52,6 +52,7 @@ module ASRFacet
       @processed_asn_ips = Set.new
       @stage_history = []
       @pipeline_failures = []
+      @extensions_applied = false
       @shutdown_mutex = Mutex.new
       @shutdown_requested = false
       @shutdown_reason = nil
@@ -96,6 +97,7 @@ module ASRFacet
       @processed_asn_ips = Set.new
       @stage_history = []
       @pipeline_failures = []
+      @extensions_applied = false
       @shutdown_mutex = Mutex.new
       @shutdown_requested = false
       @shutdown_reason = nil
@@ -840,6 +842,7 @@ module ASRFacet
     end
 
     def build_result
+      apply_extensions_once!
       {
         store: @store,
         graph: @graph,
@@ -853,6 +856,7 @@ module ASRFacet
         stream_path: @streamer&.path,
         output_directory: resolve_output_directory,
         summary: @store.summary,
+        extensions_applied: @extensions_applied,
         execution: {
           stages: @stage_history,
           failures: @pipeline_failures,
@@ -877,6 +881,7 @@ module ASRFacet
         stream_path: @streamer&.path,
         output_directory: resolve_output_directory,
         summary: {},
+        extensions_applied: @extensions_applied,
         execution: {
           stages: Array(@stage_history),
           failures: Array(@pipeline_failures),
@@ -981,6 +986,27 @@ module ASRFacet
       end
     rescue StandardError
       { requested: false, reason: "" }
+    end
+
+    def apply_extensions_once!
+      return if @extensions_applied
+
+      runtime = ASRFacet::Extensions::SessionAugmentor.new(logger: ASRFacet::Core::ThreadSafe).apply(
+        target: @target.domain,
+        store: @store,
+        graph: @graph,
+        options: @options,
+        mode: :scan,
+        scope: @scope,
+        execution: {
+          stages: @stage_history,
+          failures: @pipeline_failures
+        }
+      )
+      @store = runtime[:store] if runtime[:store]
+      @extensions_applied = true
+    rescue StandardError
+      @extensions_applied = true
     end
   end
 end

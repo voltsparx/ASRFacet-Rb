@@ -118,8 +118,9 @@ ordering, or orchestration policy.
 ## Performance Posture
 
 ASRFacet-Rb is optimized for operator workflow, correlation, reporting, and
-bounded concurrent reconnaissance. It is not intended to out-throughput native
-specialists such as Nmap, Masscan, or high-scale Go tooling in raw scan volume.
+bounded concurrent reconnaissance. It is tuned for observability, controlled
+parallelism, and operator-guided attack-surface mapping rather than unbounded
+raw-packet throughput.
 
 That means the healthy performance posture is:
 
@@ -127,8 +128,8 @@ That means the healthy performance posture is:
 - keep concurrency bounded and observable
 - prefer streaming and incremental storage over large in-memory fanout
 - use execution adapters as helpers, not as independent control planes
-- treat very high-scale enumeration as a candidate for native-tool delegation
-  later rather than pretending Ruby has no ceiling
+- treat very high-scale enumeration as a candidate for a future native
+  acceleration layer rather than pretending Ruby has no ceiling
 
 ## Resilience Controls
 

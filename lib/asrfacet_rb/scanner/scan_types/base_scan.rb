@@ -18,8 +18,11 @@ module ASRFacet
   module Scanner
     module ScanTypes
       class BaseScan
-        def initialize(context, sleep_proc: ->(duration) { sleep(duration) })
+        def initialize(context, timing: nil, logger: nil, terminal: nil, sleep_proc: ->(duration) { sleep(duration) })
           @context = context
+          @timing = timing || (context.respond_to?(:timing) ? context.timing : nil)
+          @logger = logger || (context.respond_to?(:logger) ? context.logger : nil)
+          @terminal = terminal || (context.respond_to?(:terminal) ? context.terminal : nil)
           @sleep_proc = sleep_proc
         end
 
@@ -31,15 +34,19 @@ module ASRFacet
           self.class.name.split("::").last.gsub(/Scan\z/, "").downcase
         end
 
+        def scan_description
+          scan_name
+        end
+
         def sleep_delay
-          @context.timing.scan_delay.to_f / 1000.0
+          @timing&.scan_delay.to_f / 1000.0
         end
 
         def rtt_timeout
-          @context.timing.initial_rtt_timeout.to_f / 1000.0
+          (@timing&.max_rtt_timeout || @timing&.initial_rtt_timeout).to_f / 1000.0
         end
 
-        def with_retries(max: @context.timing.max_retries)
+        def with_retries(max: @timing&.max_retries)
           retries = 0
           begin
             result = yield(retries)

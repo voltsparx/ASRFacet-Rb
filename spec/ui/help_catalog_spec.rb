@@ -34,4 +34,11 @@ RSpec.describe ASRFacet::UI::HelpCatalog do
     expect(described_class.normalize("config")).to eq("configuration")
     expect(described_class.normalize("--format")).to eq("format")
   end
+
+  it "documents the console attachable review flow" do
+    text = described_class.explain("review")
+
+    expect(text).to include("active console mode")
+    expect(text).to include("select plugins")
+  end
 end

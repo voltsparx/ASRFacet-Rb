@@ -33,6 +33,8 @@ module ASRFacet
           "show commands" => "List every console command in a framework-style table.",
           "show options" => "Display the most useful global flags and what they do.",
           "show workflow" => "Display the eight-stage reconnaissance pipeline.",
+          "show plugins" => "List the built-in and user session plugins.",
+          "show filters" => "List the built-in and user session filters.",
           "show config" => "Display the current effective framework configuration.",
           "show learning" => "Show beginner-oriented recon and scan concepts.",
           "info <topic>" => "Explain a command, flag, or workflow in more detail.",
@@ -50,6 +52,21 @@ module ASRFacet
           "ports <host>" => "Run a focused TCP port scan.",
           "lab" => "Launch the local validation lab for safe testing.",
           "interactive" => "Launch the beginner-friendly guided workflow."
+        },
+        "Extensions" => {
+          "plugins list" => "List session plugins with categories, modes, and descriptions.",
+          "plugins show <name>" => "Show one plugin in structured detail.",
+          "filters list" => "List session filters with categories, modes, and descriptions.",
+          "filters show <name>" => "Show one filter in structured detail.",
+          "use <mode>" => "Switch the active extension mode for console sessions.",
+          "select plugins <spec>" => "Replace the active mode plugin selectors.",
+          "add plugin <spec>" => "Append plugin selectors to the active mode.",
+          "remove plugin <spec>" => "Exclude plugin selectors from the active mode.",
+          "select filters <spec>" => "Replace the active mode filter selectors.",
+          "add filter <spec>" => "Append filter selectors to the active mode.",
+          "remove filter <spec>" => "Exclude filter selectors from the active mode.",
+          "review" => "Show the resolved extension plan for the active mode.",
+          "show extensions" => "Show current extension specs and resolved attachables."
         }
       }.freeze
       CONSOLE_TOPICS = {
@@ -66,7 +83,7 @@ module ASRFacet
           usage: "clear"
         },
         "show commands" => {
-          summary: "Display the framework command list in a Metasploit-style table.",
+          summary: "Display the framework command list in an operator-style table.",
           usage: "show commands"
         },
         "show options" => {
@@ -97,6 +114,14 @@ module ASRFacet
           summary: "Launch the guided planner that recommends a scan based on your goal and safety preference.",
           usage: "wizard"
         },
+        "review" => {
+          summary: "Display the active console mode and the resolved plugin and filter attachables.",
+          usage: "review"
+        },
+        "use" => {
+          summary: "Switch the active extension mode used for console attachables and command injection.",
+          usage: "use <scan|passive|dns|ports|portscan|enum|intel>"
+        },
         "exit" => {
           summary: "Leave the console shell.",
           usage: "exit"
@@ -106,9 +131,11 @@ module ASRFacet
       def initialize
         @history = []
         @pastel = Pastel.new
+        @extension_state = ASRFacet::UI::ExtensionConsoleState.new
       rescue StandardError
         @history = []
         @pastel = Pastel.new
+        @extension_state = ASRFacet::UI::ExtensionConsoleState.new
       end
 
       def start
@@ -153,6 +180,12 @@ module ASRFacet
           render_options_table
         when "show workflow"
           render_manual_section("workflow")
+        when "show plugins"
+          dispatch_cli("plugins list")
+        when "show filters"
+          dispatch_cli("filters list")
+        when "show extensions"
+          render_extension_review
         when "show config"
           render_config
         when "show learning"
@@ -161,8 +194,14 @@ module ASRFacet
           ASRFacet::Core::ThreadSafe.print_warning("You are already inside the ASRFacet console.")
         when "wizard"
           run_wizard
+        when "review"
+          render_extension_review
         when "?"
           render_help
+        when /\Ause\s+(.+)\z/i
+          use_console_mode(Regexp.last_match(1))
+        when /\A(?:select|add|remove|enable|disable)\s+(.+)\z/i
+          handle_extension_command(command)
         when /\Ahelp(?:\s+(.*))?\z/i
           topic = Regexp.last_match(1)
           render_help(topic)
@@ -184,6 +223,7 @@ module ASRFacet
         return nil if argv.empty?
 
         argv.reject! { |arg| %w[--console -C console].include?(arg) }
+        inject_console_extensions!(argv)
         ASRFacet::UI::CLI.start(argv)
       rescue StandardError => e
         ASRFacet::Core::ThreadSafe.print_error(e.message)
@@ -279,6 +319,8 @@ module ASRFacet
           ["--webhook-platform NAME", "Choose slack or discord for webhook payload formatting."],
           ["--delay MS", "Apply a base delay between requests in milliseconds."],
           ["--adaptive-rate", "Back off automatically when 429 or 503 responses appear."],
+          ["--plugins SPEC", "Enable extension packs by name, category, or mode."],
+          ["--filters SPEC", "Apply result filters by name, category, or mode."],
           ["-C, --console", "Open the persistent ASRFacet console shell."]
         ]
         render_ascii_table(
@@ -373,9 +415,61 @@ module ASRFacet
         nil
       end
 
+      def use_console_mode(mode)
+        if @extension_state.use_mode(mode)
+          ASRFacet::Core::ThreadSafe.print_good("Active extension mode set to #{@extension_state.active_mode}")
+          render_extension_review
+        else
+          ASRFacet::Core::ThreadSafe.print_warning("Unknown mode `#{mode}`. Use scan, passive, dns, ports, portscan, enum, or intel.")
+        end
+      rescue StandardError => e
+        ASRFacet::Core::ThreadSafe.print_error(e.message)
+      end
+
+      def handle_extension_command(command)
+        tokens = command.to_s.strip.split(/\s+/, 3)
+        return if tokens.length < 3
+
+        verb = tokens[0].to_s.downcase
+        kind = normalize_extension_kind(tokens[1])
+        spec = tokens[2].to_s
+        return if kind.nil?
+
+        result = case verb
+                 when "select" then @extension_state.set(kind, spec)
+                 when "add", "enable" then @extension_state.add(kind, spec)
+                 when "remove", "disable" then @extension_state.remove(kind, spec)
+                 end
+        return if result.nil?
+
+        if result[:ok]
+          ASRFacet::Core::ThreadSafe.print_good("#{kind.to_s.capitalize} updated for #{@extension_state.active_mode}.")
+          render_extension_review
+        else
+          ASRFacet::Core::ThreadSafe.print_warning(result[:error])
+        end
+      rescue StandardError => e
+        ASRFacet::Core::ThreadSafe.print_error(e.message)
+      end
+
       def render_config
         rows = flatten_config(ASRFacet::Config.load)
+        rows << ["console.active_mode", @extension_state.active_mode]
+        rows << ["console.plugins", @extension_state.spec_for(:plugins)]
+        rows << ["console.filters", @extension_state.spec_for(:filters)]
         render_ascii_table(["Setting", "Value"], rows)
+      rescue StandardError => e
+        ASRFacet::Core::ThreadSafe.print_error(e.message)
+      end
+
+      def render_extension_review
+        plan = @extension_state.review
+        rows = []
+        rows << ["Mode", plan[:mode], "", ""]
+        rows.concat(extension_rows("Plugins", plan[:plugins], @extension_state.spec_for(:plugins, mode: plan[:mode])))
+        rows.concat(extension_rows("Filters", plan[:filters], @extension_state.spec_for(:filters, mode: plan[:mode])))
+        render_ascii_table(["Kind", "Configured", "Resolved", "Unknown"], rows)
+        ASRFacet::Core::ThreadSafe.puts("Selector syntax: #{ASRFacet::Extensions::AttachableCatalog.selector_help.join(', ')}")
       rescue StandardError => e
         ASRFacet::Core::ThreadSafe.print_error(e.message)
       end
@@ -568,6 +662,43 @@ module ASRFacet
         end
       rescue StandardError
         false
+      end
+
+      def inject_console_extensions!(argv)
+        command = argv.first.to_s
+        mode = @extension_state.mode_for_command(command)
+        @extension_state.use_mode(mode) unless mode.nil?
+        flags = @extension_state.flags_for_command(
+          command,
+          explicit_plugins: argv.include?("--plugins"),
+          explicit_filters: argv.include?("--filters")
+        )
+        argv.concat(flags) unless flags.empty?
+      rescue StandardError
+        argv
+      end
+
+      def normalize_extension_kind(value)
+        case value.to_s.strip.downcase
+        when "plugin", "plugins" then :plugins
+        when "filter", "filters" then :filters
+        else
+          ASRFacet::Core::ThreadSafe.print_warning("Unknown attachable kind `#{value}`. Use plugin(s) or filter(s).")
+          nil
+        end
+      rescue StandardError
+        nil
+      end
+
+      def extension_rows(label, plan, configured)
+        [[
+          label,
+          configured.to_s,
+          Array(plan[:selected]).map { |entry| entry[:name] }.join(","),
+          Array(plan[:unknown]).join(",")
+        ]]
+      rescue StandardError
+        [[label, "", "", ""]]
       end
     end
   end
