@@ -4,12 +4,6 @@
 self-assessment/
 temp/
 tmp/
-!temp/
-temp/*
-!temp/nmap/
-temp/nmap/*
-!temp/nmap/nmap-services
-!temp/nmap/nmap-service-probes
 #===========================================================
 
 

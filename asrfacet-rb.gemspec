@@ -38,8 +38,6 @@ Gem::Specification.new do |spec|
     Rakefile
     Procfile
     .dockerignore
-    temp/nmap/nmap-service-probes
-    temp/nmap/nmap-services
   ]
   spec.bindir = "bin"
   spec.executables = %w[asrfacet-rb asrfrb]
