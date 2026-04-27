@@ -1,0 +1,65 @@
+AllCops:
+  NewCops: disable
+  TargetRubyVersion: 3.2
+  SuggestExtensions: false
+  Include:
+    - "Gemfile"
+    - "Rakefile"
+    - "asrfacet-rb.gemspec"
+    - "bin/**/*.rb"
+    - "lib/**/*.rb"
+    - "spec/**/*_spec.rb"
+    - "test/**/*.rb"
+  Exclude:
+    - "install/test-root/**/*"
+    - "output/**/*"
+    - "releases/**/*"
+    - "temp/**/*"
+    - "tmp/**/*"
+    - "vendor/**/*"
+    - "docs/website/**/*"
+
+Layout:
+  Enabled: false
+
+Metrics:
+  Enabled: false
+
+Naming:
+  Enabled: false
+
+Style:
+  Enabled: false
+
+Bundler:
+  Enabled: false
+
+Gemspec:
+  Enabled: false
+
+Lint/MissingSuper:
+  Enabled: false
+
+Lint/RedundantRequireStatement:
+  Enabled: false
+
+Lint/ShadowedException:
+  Enabled: false
+
+Lint/DuplicateRescueException:
+  Enabled: false
+
+Lint/RescueException:
+  Enabled: false
+
+Lint/RedundantSafeNavigation:
+  Enabled: false
+
+Lint/ConstantDefinitionInBlock:
+  Enabled: false
+
+Lint/UnusedBlockArgument:
+  Enabled: false
+
+Lint/UselessAssignment:
+  Enabled: false

@@ -1,4 +1,4 @@
-.TH ASRFACET-RB 1 "April 2026" "ASRFacet-Rb 1.5.0" "User Commands"
+.TH ASRFACET-RB 1 "April 2026" "ASRFacet-Rb 2.0.0" "User Commands"
 .SH NAME
 asrfacet-rb \- authorized attack surface reconnaissance and security mapping framework
 .SH SYNOPSIS
@@ -24,12 +24,13 @@ asrfacet-rb
 asrfrb
 .SH DESCRIPTION
 ASRFacet-Rb is a Ruby 3.2+ framework for authorized attack surface reconnaissance.
-It combines passive discovery, recursive DNS and certificate enrichment, service mapping,
-HTTP probing, crawling, JavaScript endpoint mining, asset scoring, monitoring, and
-lightweight finding generation.
+It combines passive discovery, DNS and certificate enrichment, service fingerprinting,
+HTTP probing, crawling, JavaScript endpoint mining, relationship-aware intelligence,
+workspace tracking, reporting, and change detection.
 .PP
 The framework is intended only for systems you own or have explicit written permission
-to test. Scope control, recon memory, and educational self-documentation are built in.
+to test. Scope control, recon memory, guided help, and local validation surfaces are
+built in.
 .SH COMMANDS
 .TP
 .B scan DOMAIN
@@ -39,13 +40,38 @@ Run the full reconnaissance pipeline. Aliases: s, sc.
 Run passive discovery only. Aliases: p, pa.
 .TP
 .B ports HOST
-Run a focused TCP port scan. Aliases: pt, po.
+Run a focused TCP connectivity scan. Aliases: pt, po.
+.TP
+.B portscan TARGET
+Run the scanner engine directly with explicit scan type, timing, and optional version
+or OS detection.
 .TP
 .B dns DOMAIN
 Collect DNS records only. Aliases: d, dn.
 .TP
-.B console
-Launch the framework console. Aliases: c, con, shell.
+.B keys SUBCOMMAND
+Manage encrypted API keys with set, get, list, and delete.
+.TP
+.B workspace SUBCOMMAND
+Manage persisted intelligence workspaces with list, show, delete, and export.
+.TP
+.B graph SUBCOMMAND
+Export the legacy knowledge graph as DOT, JSON, or Mermaid.
+.TP
+.B track TARGET
+Diff the current workspace graph against the latest stored snapshot on or before a date.
+.TP
+.B viz TARGET
+Render a workspace graph as DOT, JSON, or Mermaid.
+.TP
+.B subs TARGET
+List stored FQDN assets from a workspace.
+.TP
+.B lab
+Launch the local validation lab.
+.TP
+.B deploy
+Start the web control panel and optional local lab in one go.
 .TP
 .B web
 Launch the local web control panel. Aliases: w, ui.
@@ -53,8 +79,103 @@ Launch the local web control panel. Aliases: w, ui.
 .B interactive
 Launch the standalone guided workflow. Aliases: i, int.
 .TP
+.B console
+Launch the framework console. Aliases: c, con, shell.
+.TP
+.B about
+Show a framework overview, storage paths, and safety notes. Alias: a.
+.TP
 .B help [topic], explain TOPIC, manual [section]
-Show built-in documentation. Help aliases: h, ?. Explain aliases: x, exp. Manual aliases: m, man. Version aliases: v, ver.
+Show built-in documentation. Help aliases: h, ?. Explain aliases: x, exp.
+Manual aliases: m, man. Version aliases: v, ver.
+.SH GLOBAL OPTIONS
+.TP
+.B \-o, --output PATH
+Save output to a file or directory.
+.TP
+.B \-f, --format cli|json|html|txt|csv|pdf|docx|all|sarif
+Select the output renderer.
+.TP
+.B \-v, --verbose
+Print stage-by-stage status messages.
+.TP
+.B \-t, --threads N
+Set worker concurrency for threaded engines.
+.TP
+.B --timeout SEC
+Set the network timeout for active operations.
+.TP
+.B --scope LIST
+Comma-separated authorized domains or IPs.
+.TP
+.B --exclude LIST
+Comma-separated domains or IPs to never touch.
+.TP
+.B --monitor
+Show changes since the previous scan.
+.TP
+.B --memory
+Skip already confirmed subdomains when previous recon memory exists.
+.TP
+.B --headless
+Enable headless browser probing for JavaScript-heavy applications.
+.TP
+.B --webhook-url URL
+Send alerts to Slack or Discord.
+.TP
+.B --webhook-platform slack|discord
+Choose the webhook payload format.
+.TP
+.B --delay MS
+Set a base delay between requests in milliseconds.
+.TP
+.B --adaptive-rate
+Enable adaptive rate control.
+.TP
+.B \-C, --console
+Launch the persistent console shell.
+.TP
+.B --web-session
+Launch the local web control panel.
+.TP
+.B --web-host HOST
+Bind host for web or deploy mode.
+.TP
+.B --web-port N
+Bind port for web or deploy mode.
+.SH PORTSCAN
+The
+.B portscan
+command provides direct scanner-engine control:
+.TP
+.B --type connect|syn|udp|ack|fin|null|xmas|window|maimon|ping|service
+Choose the scan type.
+.TP
+.B \-T, --timing 0-5
+Select the scanner timing template.
+.TP
+.B \-p, --ports SPEC
+Use presets such as top100 or top1000, ranges such as 1-1024, or lists such as 22,80,443.
+.TP
+.B \-sV, --version
+Enable service version detection.
+.TP
+.B \-O, --os
+Enable OS fingerprinting.
+.TP
+.B --intensity 0-9
+Set version detection intensity.
+.TP
+.B --raw-backend auto|nping|builtin
+Choose the raw TCP backend for raw-style scan types.
+.TP
+.B --sudo, --elevate
+Attempt a sudo or Administrator relaunch when a raw scan needs elevation.
+.PP
+Raw-style TCP modes such as syn, ack, fin, null, xmas, window, and maimon require
+a raw-capable backend and elevated privileges. ASRFacet-Rb can use Nping across
+Linux, macOS, and Windows when it is installed and the host has the required raw
+packet support.
 .SH CONSOLE
 The console is the richest operator interface and supports framework-style commands such as:
 .IP
@@ -78,26 +199,30 @@ Normal framework commands can also be run directly inside the console.
 .SH WEB SESSION
 Web session mode starts a local browser-facing control panel, bound to 127.0.0.1:4567
 by default unless overridden.
-It keeps saved sessions, live activity, report links, and built-in docs in one shell.
+It keeps saved sessions, live activity, report links, command previews, and built-in docs in one shell.
 .PP
 The web UI is local, not hosted. Drafts are stored under
 .I ~/.asrfacet_rb/web_sessions/
-and runs still use the same underlying reconnaissance pipeline as the CLI.
-.SH WIZARD
-The console-only wizard asks what you are trying to achieve, how careful you want to be,
-what format you want, and whether monitoring or memory should be enabled.
-It then recommends a concrete command and can execute it for you.
+and runs still use the same underlying reconnaissance and scanner surfaces as the CLI.
+.SH LOCAL LAB
+The local lab starts a safe placeholder validation target on 127.0.0.1:9292 by default.
+It exposes intentionally weak headers, permissive CORS, JavaScript endpoint patterns,
+debug-style routes, and reporting-friendly placeholder content so operators can test
+the framework locally before using a real authorized target.
+.SH DEPLOY
+Deploy mode starts the web control panel and, by default, the local lab together.
+It waits for readiness, prints the service URLs, and writes a runtime manifest under
+.I ~/.asrfacet_rb/runtime/
+unless overridden with
+.B --manifest .
+Use
+.B --public
+only when you intentionally want the stack bound to 0.0.0.0.
 .SH RECON BASICS
 Passive reconnaissance uses third-party data without touching the target.
 Active reconnaissance confirms assets by making requests or opening connections.
 Effective attack surface mapping combines both approaches, then ranks the results so
 deeper testing focuses on the most valuable assets first.
-.SH CONFIGURATION
-Project defaults are stored in
-.I config/default.yml
-and user overrides are stored in
-.I ~/.asrfacet_rb/config.yml .
-Common settings include timeouts, thread counts, wordlists, output preferences, and HTTP behavior.
 .SH OUTPUTS
 .TP
 .B cli
@@ -111,6 +236,21 @@ Offline report with findings, graph relationships, and top targets.
 .TP
 .B txt
 Plain-text export.
+.TP
+.B csv
+Flat exports for subdomains, IPs, ports, findings, and JavaScript endpoints.
+.TP
+.B pdf
+Dark-theme printable report for evidence capture and sharing.
+.TP
+.B docx
+Editable document export for formal reporting workflows.
+.TP
+.B sarif
+Structured security-tooling export for downstream pipelines.
+.TP
+.B all
+Generate every supported report flavor in one request.
 .PP
 Automatic report bundles are stored under
 .I ~/.asrfacet_rb/output/reports/<target>/<timestamp>/
@@ -133,11 +273,17 @@ User configuration overrides.
 .I ~/.asrfacet_rb/memory/
 Per-target scan memory.
 .TP
+.I ~/.asrfacet_rb/workspaces/
+Persisted workspace graphs, session metadata, and exports.
+.TP
 .I ~/.asrfacet_rb/output/
 Stored reports and generated artifacts.
 .TP
 .I ~/.asrfacet_rb/web_sessions/
 Persistent web-session drafts and recovered state.
+.TP
+.I ~/.asrfacet_rb/runtime/
+Deployment manifests and runtime state.
 .TP
 .I man/asrfacet-rb.1
 Primary manual page source.
@@ -159,6 +305,15 @@ Run a full scan and save an HTML report.
 .TP
 .B asrfacet-rb passive example.com --format json --output passive.json
 Run passive discovery only and save JSON output.
+.TP
+.B asrfacet-rb portscan 192.0.2.10 --type syn --timing 4 --ports 1-1024 --raw-backend nping --sudo
+Run a raw-capable SYN scan with elevation support.
+.TP
+.B asrfacet-rb workspace list
+List persisted workspaces.
+.TP
+.B asrfacet-rb deploy --public --web-port 8080 --lab-port 9393
+Start the full local operator stack.
 .TP
 .B asrfacet-rb --web-session
 Open the local control panel.
