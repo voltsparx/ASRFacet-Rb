@@ -44,6 +44,46 @@ module ASRFacet
       ROOT = File.expand_path("../../../temp/nmap", __dir__)
       SERVICES_PATH = File.join(ROOT, "nmap-services")
       PROBES_PATH = File.join(ROOT, "nmap-service-probes")
+      FALLBACK_SERVICE_NAMES = {
+        1 => "tcpmux",
+        7 => "echo",
+        20 => "ftp-data",
+        21 => "ftp",
+        22 => "ssh",
+        23 => "telnet",
+        25 => "smtp",
+        53 => "domain",
+        80 => "http",
+        110 => "pop3",
+        111 => "rpcbind",
+        135 => "msrpc",
+        139 => "netbios-ssn",
+        143 => "imap",
+        389 => "ldap",
+        443 => "https",
+        445 => "microsoft-ds",
+        465 => "smtps",
+        587 => "submission",
+        993 => "imaps",
+        995 => "pop3s"
+      }.freeze
+      FALLBACK_SERVICE_LOOKUP_EXTRAS = {
+        [53, :udp] => "domain",
+        [67, :udp] => "bootps",
+        [68, :udp] => "bootpc",
+        [69, :udp] => "tftp",
+        [123, :udp] => "ntp",
+        [161, :udp] => "snmp",
+        [443, :tcp] => "https",
+        [1433, :tcp] => "ms-sql-s",
+        [1434, :udp] => "ms-sql-m",
+        [3306, :tcp] => "mysql",
+        [5060, :udp] => "sip",
+        [5432, :tcp] => "postgresql",
+        [6379, :tcp] => "redis",
+        [8443, :tcp] => "https-alt",
+        [27017, :tcp] => "mongodb"
+      }.freeze
       SERVICE_FAMILY_ALIASES = {
         "null" => { probe_names: ["NULL"], services: [] },
         "genericlines" => { probe_names: ["GenericLines"], services: [] },
@@ -66,6 +106,8 @@ module ASRFacet
         private
 
         def load_services
+          return fallback_services unless File.file?(SERVICES_PATH)
+
           top_ports = []
           lookup = {}
 
@@ -95,6 +137,8 @@ module ASRFacet
         end
 
         def load_probes
+          return fallback_probes unless File.file?(PROBES_PATH)
+
           probes = []
           current = nil
 
@@ -236,6 +280,76 @@ module ASRFacet
               segment.to_i
             end
           end.uniq
+        end
+
+        def fallback_services
+          top_ports = (1..1000).map do |port|
+            {
+              port: port,
+              proto: :tcp,
+              service: FALLBACK_SERVICE_NAMES.fetch(port, "unknown"),
+              frequency: (1001 - port).to_f
+            }
+          end
+          lookup = top_ports.each_with_object({}) do |entry, memo|
+            memo[[entry[:port], entry[:proto]]] = entry[:service]
+          end
+          FALLBACK_SERVICE_LOOKUP_EXTRAS.each do |key, value|
+            lookup[key] = value
+          end
+          [top_ports.freeze, lookup.freeze]
+        end
+
+        def fallback_probes
+          [
+            fallback_probe("NULL", :tcp, "", matches: [], softmatches: []),
+            fallback_probe("GenericLines", :tcp, "\r\n", ports: [21, 22, 23, 25, 80, 110, 143], matches: [], softmatches: []),
+            fallback_probe("HTTPOptions", :tcp, "OPTIONS / HTTP/1.0\r\n\r\n", ports: [80, 8080, 8000], ssl_ports: [443, 8443], matches: [match_entry("http", "^HTTP/1\\.[01] 200", metadata: { product: "Generic HTTP", version: nil, extra: nil, cpes: [] })]),
+            fallback_probe("RTSPRequest", :tcp, "OPTIONS * RTSP/1.0\r\n\r\n", ports: [554], matches: [match_entry("rtsp", "^RTSP/", metadata: { product: "Generic RTSP", version: nil, extra: nil, cpes: [] })]),
+            fallback_probe("SSLSessionReq", :tcp, "", ports: [], ssl_ports: [443, 8443], matches: [], softmatches: [match_entry("ssl", "a^", metadata: { product: nil, version: nil, extra: nil, cpes: [] })]),
+            fallback_probe("SSHSessionReq", :tcp, "SSH-2.0-ASRFacet-Rb\r\n", ports: [22], matches: [match_entry("ssh", "^SSH-", metadata: { product: "Generic SSH", version: nil, extra: nil, cpes: [] })]),
+            fallback_probe("SMTPRequest", :tcp, "EHLO asrfacet-rb.local\r\n", ports: [25, 465, 587], matches: [match_entry("smtp", "^220", metadata: { product: "Generic SMTP", version: nil, extra: nil, cpes: [] })]),
+            fallback_probe("FTPRequest", :tcp, "QUIT\r\n", ports: [21], matches: [match_entry("ftp", "^220", metadata: { product: "Generic FTP", version: nil, extra: nil, cpes: [] })]),
+            fallback_probe("Sqlping", :udp, "\x02".b, ports: [1434], matches: [match_entry("ms-sql-s", ".", flags: "s", metadata: { product: "Microsoft SQL Server", version: nil, extra: nil, cpes: [] })]),
+            fallback_probe("MySQLRequest", :tcp, "\n".b, ports: [3306], matches: [match_entry("mysql", ".", flags: "s", metadata: { product: "MySQL", version: nil, extra: nil, cpes: [] })]),
+            fallback_probe("PostgresRequest", :tcp, "\x00\x00\x00\x08\x04\xd2\x16/".b, ports: [5432], matches: [match_entry("postgresql", ".", flags: "s", metadata: { product: "PostgreSQL", version: nil, extra: nil, cpes: [] })]),
+            fallback_probe("redis-server", :tcp, "INFO\r\n", ports: [6379], matches: [match_entry("redis", ".", flags: "s", metadata: { product: "Redis", version: nil, extra: nil, cpes: [] })]),
+            fallback_probe("mongodb", :tcp, "\x3a\x00\x00\x00".b, ports: [27_017], matches: [match_entry("mongodb", ".", flags: "s", metadata: { product: "MongoDB", version: nil, extra: nil, cpes: [] })]),
+            fallback_probe("DNSVersionBindReq", :udp, "\x00\x00\x10\x00\x00\x01\x00\x00\x00\x00\x00\x00\x07version\x04bind\x00\x00\x10\x00\x03".b, ports: [53], matches: [match_entry("domain", ".", flags: "s", metadata: { product: "DNS", version: nil, extra: nil, cpes: [] })]),
+            fallback_probe("SIPOptions", :udp, "OPTIONS sip:asrfacet-rb SIP/2.0\r\n\r\n", ports: [5060], matches: [match_entry("sip", "SIP/", metadata: { product: "SIP", version: nil, extra: nil, cpes: [] })])
+          ].freeze
+        end
+
+        def fallback_probe(name, proto, probe_str, ports: [], ssl_ports: [], matches: nil, softmatches: nil, rarity: 5, wait_ms: 5000)
+          Probe.new(
+            name: name,
+            proto: proto,
+            probe_str: probe_str,
+            rarity: rarity,
+            wait_ms: wait_ms,
+            ports: ports,
+            ssl_ports: ssl_ports,
+            matches: matches || [],
+            softmatches: softmatches || []
+          )
+        end
+
+        def match_entry(service, pattern_source, flags: "", metadata: {})
+          {
+            soft: false,
+            service: service,
+            pattern_source: pattern_source,
+            pattern_flags: flags,
+            metadata: {
+              product: metadata[:product],
+              version: metadata[:version],
+              extra: metadata[:extra],
+              hostname: metadata[:hostname],
+              os: metadata[:os],
+              device: metadata[:device],
+              cpes: Array(metadata[:cpes])
+            }
+          }
         end
       end
 
