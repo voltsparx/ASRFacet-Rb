@@ -1,41 +1,55 @@
 --------------------------------------------------
-ASRFacet-Rb v1.0 Proprietary License
+ASRFacet-Rb Source License (ASRSL) v2.0
 --------------------------------------------------
 
 Copyright (c) 2026 Voltsparx
 All rights reserved.
 
-Permission is hereby granted, free of charge, to use ASRFacet-Rb solely for
-personal, educational, or internal security purposes on systems you own or are
-explicitly authorized to assess.
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of ASRFacet-Rb and its associated documentation files (the "Software"), to use,
+copy, modify, fork, merge, publish, and distribute the Software, subject to the
+following conditions:
 
-Any other use, including but not limited to modification, distribution,
-commercial use, rebranding, or sublicensing, requires explicit written
-permission from the copyright holder.
+1. Attribution Requirement
+   Any use, redistribution, modification, or fork of this Software must clearly
+   include original credit to the author:
 
-You may not:
+   "ASRFacet-Rb (v1.0.0+) by Voltsparx (2026)
+    Original project: https://github.com/voltsparx/ASRFacet-Rb"
 
-1. Remove, alter, or obscure any copyright, license, or attribution notices.
-2. Claim authorship or ownership of ASRFacet-Rb or derivative works.
-3. Redistribute ASRFacet-Rb, in whole or in part, in source or binary form,
-   without prior written permission.
-4. Use ASRFacet-Rb for unauthorized penetration testing, hacking, or any
-   illegal activity.
+   This attribution must be preserved in all copies, substantial portions, and
+   derivative works.
 
-Attribution must be retained in any permitted use:
+2. Same License Requirement (Copyleft Condition)
+   Any redistributed or modified version of this Software, including forks and
+   derivative works, must be released under this same ASRFacet-Rb Source License
+   (ASRSL v1.0). No alternative licensing is permitted for derived works.
 
-  "ASRFacet-Rb v1.0+ (c) 2026 Voltsparx. All rights reserved.
-   Original project: https://github.com/voltsparx/ASRFacet-Rb"
+3. Permissions Granted
+   You are allowed to:
+   - Use the Software for personal, educational, or research purposes
+   - Modify the Software
+   - Create forks and derivative works
+   - Redistribute the Software (source or modified form)
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT. IN NO EVENT SHALL THE
-AUTHOR BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY, WHETHER IN AN
-ACTION OF CONTRACT, TORT, OR OTHERWISE, ARISING FROM, OUT OF, OR IN CONNECTION
-WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+   Provided that all conditions in this license are followed.
 
-For permissions beyond personal or internal use, contact:
+4. Restrictions
+   You may NOT:
+   - Remove or alter copyright, license, or attribution notices
+   - Claim original authorship of ASRFacet-Rb
+   - Re-license the Software or any derivative work under different terms
+   - Distribute without proper attribution
+   - Use the Software for illegal or unauthorized activities
 
-Voltsparx
-voltsparx@gmail.com
-https://github.com/voltsparx/ASRFacet-Rb
+5. No Warranty
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   IMPLIED, INCLUDING BUT NOT LIMITED TO MERCHANTABILITY, FITNESS FOR A
+   PARTICULAR PURPOSE, AND NON-INFRINGEMENT.
+
+   IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY CLAIM, DAMAGES, OR LIABILITY
+   ARISING FROM THE USE OF THE SOFTWARE.
+
+--------------------------------------------------
+End of License
+--------------------------------------------------
